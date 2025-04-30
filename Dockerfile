@@ -1,5 +1,5 @@
 # Build stage
-FROM python:3.11-slim as builder
+FROM python:3.12-slim as builder
 
 WORKDIR /app
 ENV PYTHONFAULTHANDLER=1 \
@@ -12,7 +12,7 @@ RUN poetry config virtualenvs.in-project true && \
     poetry install --no-dev --no-interaction --no-ansi
 
 # Runtime stage
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 WORKDIR /app
 COPY --from=builder /app/.venv .venv
