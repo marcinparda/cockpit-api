@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: cockpit_api
+    restart: unless-stopped
+    ports:
+      - '8000:80'
+    volumes:
+      - ./app:/app/app
+      - database_volume:/app/data
+    environment:
+      - PYTHONPATH=/app
+      - TZ=Europe/Warsaw
+
+volumes:
+  database_volume:
