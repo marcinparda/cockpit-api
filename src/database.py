@@ -5,7 +5,7 @@ import os
 
 # Get database connection parameters from environment variables with defaults
 DB_USER = os.getenv("DB_USER", "postgres")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "Bright#1270")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "secure_dev_password")
 DB_HOST = os.getenv("DB_HOST", "db")  # Use 'db' as default for Docker
 DB_NAME = os.getenv("DB_NAME", "dockert")
 
