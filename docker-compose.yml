@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   web:
     build: .
@@ -8,11 +6,22 @@ services:
     ports:
       - '8000:80'
     volumes:
-      - ./app:/app/app
-      - database_volume:/app/data
+      - ./:/src:ro
     environment:
-      - PYTHONPATH=/app
-      - TZ=Europe/Warsaw
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_HOST: db
+      DB_NAME: ${POSTGRES_DB}
+  db:
+    image: postgres:15-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    expose:
+      - 5432
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
 
 volumes:
-  database_volume:
+  postgres_data:
