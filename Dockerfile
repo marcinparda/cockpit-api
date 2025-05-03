@@ -38,5 +38,5 @@ USER appuser
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:80/health || exit 1
 
-# Use exec form for proper signal handling
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "80"]
+# Use exec form for proper signal handling with hot reload enabled
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "80", "--reload"]

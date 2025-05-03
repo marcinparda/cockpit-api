@@ -1,0 +1,30 @@
+services:
+  web:
+    build: .
+    container_name: cockpit_api
+    restart: unless-stopped
+    ports:
+      - '8000:80'
+    working_dir: /src
+    volumes:
+      - ./:/src
+    environment:
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: ${DB_HOST}
+      DB_NAME: ${DB_NAME}
+      DB_PORT: ${DB_PORT}
+  db:
+    image: postgres:15-alpine
+    container_name: ${DB_HOST}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    expose:
+      - ${DB_PORT}
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+
+volumes:
+  postgres_data:

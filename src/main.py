@@ -4,8 +4,22 @@ from src.core.config import settings
 
 app = FastAPI(title="Cockpit API", version="0.0.1", docs_url="/api/docs")
 
-app.include_router(expenses.router, prefix="/api/v1/expenses", tags=["expenses"])
-app.include_router(categories.router, prefix="/api/v1/categories", tags=["categories"])
+app.include_router(
+    expenses.router, prefix="/api/v1/expenses", tags=["expenses"])
+app.include_router(categories.router,
+                   prefix="/api/v1/categories", tags=["categories"])
+
+
+@app.get("/", tags=["root"])
+async def read_root():
+    return {"message": "Welcome to the Cockpit API!"}
+
+# Add a health check endpoint
+
+
+@app.get("/health", tags=["health"])
+async def health_check():
+    return {"status": "ok"}
 
 if __name__ == "__main__":
     import uvicorn
