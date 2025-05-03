@@ -15,10 +15,11 @@ services:
       DB_PORT: ${DB_PORT}
   db:
     image: postgres:15-alpine
+    container_name: ${DB_HOST}
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     expose:
-      - 5432
+      - ${DB_PORT}
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
