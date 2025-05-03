@@ -1,0 +1,32 @@
+from pydantic import BaseModel, Field
+from typing import Optional
+from datetime import date, datetime
+
+
+class ExpenseBase(BaseModel):
+    amount: float = Field(..., gt=0)
+    category_id: int
+    payment_method_id: int
+    date: date
+    description: Optional[str] = None
+
+
+class ExpenseCreate(ExpenseBase):
+    pass
+
+
+class ExpenseUpdate(ExpenseBase):
+    pass
+
+
+class ExpenseInDBBase(ExpenseBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
+class Expense(ExpenseInDBBase):
+    pass

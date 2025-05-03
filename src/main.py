@@ -1,20 +1,12 @@
 from fastapi import FastAPI
-from contextlib import asynccontextmanager
-from .core.database import init_db
+from src.api.v1.endpoints import expenses, categories
+from src.core.config import settings
 
-app = FastAPI()
+app = FastAPI(title="Cockpit API", version="0.0.1", docs_url="/api/docs")
 
+app.include_router(expenses.router, prefix="/api/v1/expenses", tags=["expenses"])
+app.include_router(categories.router, prefix="/api/v1/categories", tags=["categories"])
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup code
-    init_db()
-    yield
-    # Shutdown code (if any)
-
-app = FastAPI(lifespan=lifespan)
-
-
-@app.get("/health")
-def health_check():
-    return {"status": "ok"}
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("src.main:app", host="0.0.0.0", port=8000, reload=True)
