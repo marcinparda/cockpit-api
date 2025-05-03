@@ -19,12 +19,26 @@ services:
     container_name: ${DB_HOST}
     volumes:
       - postgres_data:/var/lib/postgresql/data/
-    expose:
-      - ${DB_PORT}
+    ports:
+      - '5432:${DB_PORT}'
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin4
+    restart: unless-stopped
+    ports:
+      - '5050:80'
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - db
 
 volumes:
   postgres_data:
+  pgadmin_data:
