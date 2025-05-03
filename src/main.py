@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from .database import init_db
+from .core.database import init_db
 
 app = FastAPI()
 
