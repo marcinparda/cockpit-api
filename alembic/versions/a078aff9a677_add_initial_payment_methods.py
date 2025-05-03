@@ -26,11 +26,13 @@ def upgrade():
         sa.column('created_at', sa.DateTime),
         sa.column('updated_at', sa.DateTime)
     )
-    now = datetime.utcnow()
     op.bulk_insert(payment_methods, [
-        {'name': 'Credit Card', 'created_at': now, 'updated_at': now},
-        {'name': 'Cash', 'created_at': now, 'updated_at': now},
-        {'name': 'Bank Transfer', 'created_at': now, 'updated_at': now},
+        {'name': 'Credit Card', 'created_at': datetime(
+            2025, 5, 1), 'updated_at': datetime(2025, 5, 1)},
+        {'name': 'Cash', 'created_at': datetime(
+            2025, 5, 1), 'updated_at': datetime(2025, 5, 1)},
+        {'name': 'Bank Transfer', 'created_at': datetime(
+            2025, 5, 1), 'updated_at': datetime(2025, 5, 1)},
     ])
 
 
