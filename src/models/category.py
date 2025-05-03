@@ -16,6 +16,9 @@ class Category(BaseModel):
     parent = relationship("Category", remote_side=[
                           id], back_populates="children")
 
+    # Relationship with expenses
+    expenses = relationship("Expense", back_populates="category")
+
     # For leaf node validation
     @property
     def is_leaf(self):
