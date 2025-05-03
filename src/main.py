@@ -1,10 +1,7 @@
 from fastapi import FastAPI
-from src.api.v1.endpoints import expenses, categories
-from src.core.config import settings
+from src.api.v1.endpoints import expenses, categories, payment_methods
 from alembic.config import Config
 from alembic import command
-from src.core.config import settings
-from contextlib import asynccontextmanager
 
 # @asynccontextmanager
 # async def lifespan(app: FastAPI):
@@ -25,6 +22,8 @@ app.include_router(
     expenses.router, prefix="/api/v1/expenses", tags=["expenses"])
 app.include_router(categories.router,
                    prefix="/api/v1/categories", tags=["categories"])
+app.include_router(
+    payment_methods.router, prefix="/api/v1/payment_methods", tags=["payment_methods"])
 
 
 @app.get("/", tags=["root"])
