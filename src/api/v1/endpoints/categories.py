@@ -16,7 +16,7 @@ async def list_categories(db: AsyncSession = Depends(get_db)):
 
 @router.post("/", response_model=Category)
 async def create_category(category: CategoryCreate, db: AsyncSession = Depends(get_db)):
-    db_category = CategoryModel(**category.dict())
+    db_category = CategoryModel(**category.model_dump())
     db.add(db_category)
     await db.commit()
     await db.refresh(db_category)
@@ -36,7 +36,7 @@ async def update_category(category_id: int, category_update: CategoryUpdate, db:
     category = await db.get(CategoryModel, category_id)
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
-    for key, value in category_update.dict(exclude_unset=True).items():
+    for key, value in category_update.model_dump(exclude_unset=True).items():
         setattr(category, key, value)
     await db.commit()
     await db.refresh(category)
