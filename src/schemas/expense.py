@@ -25,7 +25,7 @@ class ExpenseInDBBase(ExpenseBase):
     updated_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class Expense(ExpenseInDBBase):
