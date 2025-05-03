@@ -3,20 +3,8 @@ from src.api.v1.endpoints import expenses, categories, payment_methods
 from alembic.config import Config
 from alembic import command
 
-# @asynccontextmanager
-# async def lifespan(app: FastAPI):
-#     # Run migrations at startup
-#     alembic_cfg = Config("alembic.ini")
-#     alembic_cfg.set_main_option(
-#         "sqlalchemy.url", settings.SQLALCHEMY_DATABASE_URI)
-#     command.upgrade(alembic_cfg, "head")
-#     yield
-#     # Cleanup code can go here if needed
-
-
 app = FastAPI(title="Cockpit API", version="0.0.1",
               docs_url="/api/docs")
-# docs_url = "/api/docs", lifespan = lifespan)
 
 app.include_router(
     expenses.router, prefix="/api/v1/expenses", tags=["expenses"])
@@ -29,6 +17,10 @@ app.include_router(
 @app.get("/", tags=["root"])
 async def read_root():
     return {"message": "Welcome to the Cockpit API!"}
+
+@app.get("/health", tags=["health"])
+async def health_check():
+    return {"status": "healthy"}
 
 if __name__ == "__main__":
     import uvicorn
