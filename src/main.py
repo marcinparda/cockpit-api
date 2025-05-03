@@ -14,13 +14,6 @@ app.include_router(categories.router,
 async def read_root():
     return {"message": "Welcome to the Cockpit API!"}
 
-# Add a health check endpoint
-
-
-@app.get("/health", tags=["health"])
-async def health_check():
-    return {"status": "ok"}
-
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("src.main:app", host="0.0.0.0", port=8000, reload=True)
