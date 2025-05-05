@@ -1,12 +1,12 @@
-from pydantic import BaseModel
-from typing import Optional, List, UUID, Dict
+from pydantic import BaseModel, UUID4
+from typing import Optional, List, Dict
 from datetime import datetime
 
 
 class APIKeyBase(BaseModel):
     key: str
     is_active: bool = True
-    created_by: Optional[UUID] = None
+    created_by: Optional[UUID4] = None
 
 
 class APIKeyCreate(APIKeyBase):

@@ -14,9 +14,6 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
-# Import the permissions from your application
-from src.permissions import PermissionPresets
-
 
 revision: str = 'a49bc23d4f1a'
 down_revision: Union[str, None] = 'f28374a12c5d'
@@ -32,7 +29,7 @@ def upgrade() -> None:
     api_key_id = uuid.uuid4()
 
     # Get admin permissions from the preset and convert to JSON string
-    admin_permissions = json.dumps(PermissionPresets.ADMIN)
+    admin_permissions = json.dumps([])
 
     # Insert the admin API key
     op.execute(f"""

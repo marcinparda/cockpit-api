@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Security
-from src.api.v1.endpoints import expenses, categories, payment_methods, api_key
+from src.api.v1.endpoints import expenses, categories, payment_methods
 from fastapi.security import APIKeyHeader
 
 api_key_header = APIKeyHeader(name="X-API-KEY")
@@ -13,13 +13,12 @@ app.include_router(categories.router,
                    prefix="/api/v1/categories", tags=["categories"])
 app.include_router(
     payment_methods.router, prefix="/api/v1/payment_methods", tags=["payment_methods"])
-app.include_router(
-    api_key.router, prefix="/api/v1/api_key", tags=["api_key"])
 
 
 @app.get("/", tags=["root"])
 async def read_root():
     return {"message": "Welcome to the Cockpit API!"}
+
 
 @app.get("/health", tags=["health"])
 async def health_check():
