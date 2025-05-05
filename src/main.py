@@ -5,14 +5,14 @@ from fastapi.security import APIKeyHeader
 api_key_header = APIKeyHeader(name="X-API-KEY")
 
 app = FastAPI(title="Cockpit API", version="0.0.1",
-              docs_url="/api/docs", dependencies=[Security(api_key_header)])
+              docs_url="/api/docs")
 
 app.include_router(
-    expenses.router, prefix="/api/v1/expenses", tags=["expenses"])
+    expenses.router, prefix="/api/v1/expenses", tags=["expenses"], dependencies=[Security(api_key_header)])
 app.include_router(categories.router,
-                   prefix="/api/v1/categories", tags=["categories"])
+                   prefix="/api/v1/categories", tags=["categories"], dependencies=[Security(api_key_header)])
 app.include_router(
-    payment_methods.router, prefix="/api/v1/payment_methods", tags=["payment_methods"])
+    payment_methods.router, prefix="/api/v1/payment_methods", tags=["payment_methods"], dependencies=[Security(api_key_header)])
 
 
 @app.get("/", tags=["root"])
