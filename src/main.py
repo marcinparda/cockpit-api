@@ -1,11 +1,11 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Security
 from src.api.v1.endpoints import expenses, categories, payment_methods, api_key
 from fastapi.security import APIKeyHeader
 
 api_key_header = APIKeyHeader(name="X-API-KEY")
 
 app = FastAPI(title="Cockpit API", version="0.0.1",
-              docs_url="/api/docs", dependencies=[Depends(api_key_header)])
+              docs_url="/api/docs", dependencies=[Security(api_key_header)])
 
 app.include_router(
     expenses.router, prefix="/api/v1/expenses", tags=["expenses"])

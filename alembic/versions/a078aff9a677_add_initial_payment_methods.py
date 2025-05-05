@@ -27,11 +27,7 @@ def upgrade():
         sa.column('updated_at', sa.DateTime)
     )
     op.bulk_insert(payment_methods, [
-        {'name': 'Credit Card', 'created_at': datetime(
-            2025, 5, 1), 'updated_at': datetime(2025, 5, 1)},
         {'name': 'Cash', 'created_at': datetime(
-            2025, 5, 1), 'updated_at': datetime(2025, 5, 1)},
-        {'name': 'Bank Transfer', 'created_at': datetime(
             2025, 5, 1), 'updated_at': datetime(2025, 5, 1)},
     ])
 
