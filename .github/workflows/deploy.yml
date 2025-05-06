@@ -20,13 +20,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set lowercase repository name
+        id: repo
+        run: echo "REPO_LOWERCASE=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
       - name: Build and push ARM image
         uses: docker/build-push-action@v4
         with:
           context: .
           platforms: linux/arm/v7
           push: true
-          tags: ghcr.io/${{ github.repository.lowercase }}:latest
+          tags: ghcr.io/${{ env.REPO_LOWERCASE }}:latest
 
       - name: SSH into Raspberry Pi
         uses: appleboy/ssh-action@v1
