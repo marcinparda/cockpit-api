@@ -5,8 +5,9 @@ WORKDIR /app
 ENV PYTHONFAULTHANDLER=1 \
     PYTHONUNBUFFERED=1
 
-RUN apt -y update && apt -y install curl
-RUN curl -sSL https://install.python-poetry.org | POETRY_VERSION=1.8.5 python3 -
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc build-essential python3-dev && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN pip install poetry
 
