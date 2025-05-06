@@ -5,10 +5,18 @@ WORKDIR /app
 ENV PYTHONFAULTHANDLER=1 \
     PYTHONUNBUFFERED=1
 
+RUN mkdir /opt/poetry
+
+ENV POETRY_NO_INTERACTION=1 \
+    POETRY_VIRTUALENVS_IN_PROJECT=1 \
+    POETRY_VIRTUALENVS_CREATE=1 \
+    POETRY_CACHE_DIR=/tmp/poetry_cache \
+    POETRY_HOME=/opt/poetry
+
+ENV PATH="$POETRY_HOME/bin:${PATH}"
+
 RUN apt -y update && apt -y install curl
 RUN curl -sSL https://install.python-poetry.org | POETRY_VERSION=1.8.5 python3 -
-
-RUN pip install poetry
 
 COPY pyproject.toml poetry.lock ./
 RUN poetry config virtualenvs.in-project true && \
