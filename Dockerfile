@@ -16,7 +16,7 @@ ENV POETRY_NO_INTERACTION=1 \
 ENV PATH="$POETRY_HOME/bin:${PATH}"
 
 RUN apt -y update && apt -y install curl
-RUN curl -sSL https://install.python-poetry.org | POETRY_VERSION=1.8.5 python3 -
+RUN curl -sSL https://install.python-poetry.org | POETRY_VERSION=2.1.2 python3 -
 
 COPY pyproject.toml poetry.lock ./
 RUN poetry config virtualenvs.in-project true && \
