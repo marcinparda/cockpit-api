@@ -1,66 +1,41 @@
-# Build stage
-FROM python:3.12-slim AS builder
-
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-
-# Install build dependencies needed for poetry and other packages
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    build-essential \
-    libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set environment variables
-ENV PATH="/app/.poetry/bin:/app/.venv/bin:$PATH" \
-    PYTHONPATH="/app" \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    POETRY_VERSION=2.1.2 \
-    POETRY_HOME="/app/.poetry" \
-    POETRY_VENV_PATH="/app/.venv" \
-    POETRY_CACHE_DIR="/app/.cache"
-
-RUN curl -sSL https://install.python-poetry.org | python3 -
-
-WORKDIR /app
-COPY pyproject.toml poetry.lock /app/
-RUN poetry install --no-root --no-dev
-
-# Runtime stage
 FROM python:3.12-slim
 
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y gcc libpq-dev curl && \
+    pip install --upgrade pip && \
+    curl -sSL https://install.python-poetry.org | python3 - && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Configure Poetry
+ENV PATH="/root/.local/bin:$PATH" \
+    POETRY_VIRTUALENVS_CREATE=false \
+    POETRY_NO_INTERACTION=1
+
 WORKDIR /app
 
-# Create non-root user for security
+# Copy dependencies first
+COPY pyproject.toml poetry.lock* ./
+RUN poetry install --no-root
+
+# Create non-root user
 RUN adduser --disabled-password --gecos "" appuser
 
-# Install runtime dependencies only
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set environment variables
-ENV PATH="/app/.venv/bin:$PATH" \
-    PYTHONPATH="/app" \
+# Set Python environment
+ENV PYTHONPATH="/app" \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-# Copy virtual environment from builder
-COPY --from=builder /app/.venv .venv
+# Copy application code with proper permissions
+COPY --chown=appuser:appuser . .
 
-# Copy application code
-COPY . .
-
-# Make entrypoint script executable
+# Configure entrypoint
 RUN chmod +x /app/entrypoint.sh
-
-# Switch to non-root user
 USER appuser
+ENTRYPOINT ["/app/entrypoint.sh"]
 
-# Add health check
+# Healthcheck
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:80/health || exit 1
+    CMD curl -f http://localhost:8000/health || exit 1
 
-# Use entrypoint script to run migrations before starting the app
 CMD ["/app/entrypoint.sh"]
