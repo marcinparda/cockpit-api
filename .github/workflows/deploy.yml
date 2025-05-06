@@ -24,9 +24,9 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
-          platforms: linux/arm/v7
-          push: true
-          tags: ghcr.io/${{ github.repository | lowercase }}:latest
+                platforms: linux/arm/v7
+                push: true
+                tags: ghcr.io/${{ github.repository | toLowerCase() }}:latest
 
       - name: SSH into Raspberry Pi
         uses: appleboy/ssh-action@v1
