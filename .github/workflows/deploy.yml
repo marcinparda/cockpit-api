@@ -26,7 +26,7 @@ jobs:
           context: .
           platforms: linux/arm/v7
           push: true
-          tags: ghcr.io/${{ github.repository | toLowerCase() }}:latest
+          tags: ghcr.io/${{ github.repository.toLowerCase() }}:latest
 
       - name: SSH into Raspberry Pi
         uses: appleboy/ssh-action@v1
