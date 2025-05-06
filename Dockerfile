@@ -1,5 +1,5 @@
 # Build stage
-FROM python:3.12-slim as builder
+FROM python:3.12-slim AS builder
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -17,13 +17,14 @@ ENV PATH="/app/.poetry/bin:/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     POETRY_VERSION=2.1.2 \
     POETRY_HOME="/app/.poetry" \
+    POETRY_VENV_PATH="/app/.venv" \
     POETRY_CACHE_DIR="/app/.cache"
 
 RUN curl -sSL https://install.python-poetry.org | python3 -
 
 WORKDIR /app
 COPY pyproject.toml poetry.lock /app/
-RUN poetry config virtualenvs.in-project true && poetry install --no-root
+RUN poetry install --no-root --no-dev
 
 # Runtime stage
 FROM python:3.12-slim
