@@ -13,7 +13,8 @@ from datetime import datetime
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.sql import text
-from src.permissions import Actions, Features
+from src.auth.enums.actions import Actions
+from src.auth.enums.features import Features
 
 
 # revision identifiers, used by Alembic.

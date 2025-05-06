@@ -4,18 +4,27 @@ from sqlalchemy.future import select
 from src.core.database import get_db
 from src.models.expense import Expense as ExpenseModel
 from src.schemas.expense import Expense, ExpenseCreate, ExpenseUpdate
+from src.auth.enums.actions import Actions
+from src.auth.permission_helpers import get_expenses_permissions
 
 router = APIRouter()
 
 
 @router.get("/", response_model=list[Expense])
-async def list_expenses(db: AsyncSession = Depends(get_db)):
+async def list_expenses(
+    db: AsyncSession = Depends(get_db),
+    _: None = Depends(get_expenses_permissions(Actions.READ))
+):
     result = await db.execute(select(ExpenseModel))
     return result.scalars().all()
 
 
 @router.post("/", response_model=Expense)
-async def create_expense(expense: ExpenseCreate, db: AsyncSession = Depends(get_db)):
+async def create_expense(
+    expense: ExpenseCreate,
+    db: AsyncSession = Depends(get_db),
+    _: None = Depends(get_expenses_permissions(Actions.CREATE))
+):
     db_expense = ExpenseModel(**expense.dict())
     db.add(db_expense)
     await db.commit()
@@ -24,7 +33,11 @@ async def create_expense(expense: ExpenseCreate, db: AsyncSession = Depends(get_
 
 
 @router.get("/{expense_id}", response_model=Expense)
-async def get_expense(expense_id: int, db: AsyncSession = Depends(get_db)):
+async def get_expense(
+    expense_id: int,
+    db: AsyncSession = Depends(get_db),
+    _: None = Depends(get_expenses_permissions(Actions.READ))
+):
     expense = await db.get(ExpenseModel, expense_id)
     if not expense:
         raise HTTPException(status_code=404, detail="Expense not found")
@@ -32,7 +45,12 @@ async def get_expense(expense_id: int, db: AsyncSession = Depends(get_db)):
 
 
 @router.put("/{expense_id}", response_model=Expense)
-async def update_expense(expense_id: int, expense_update: ExpenseUpdate, db: AsyncSession = Depends(get_db)):
+async def update_expense(
+    expense_id: int,
+    expense_update: ExpenseUpdate,
+    db: AsyncSession = Depends(get_db),
+    _: None = Depends(get_expenses_permissions(Actions.UPDATE))
+):
     expense = await db.get(ExpenseModel, expense_id)
     if not expense:
         raise HTTPException(status_code=404, detail="Expense not found")
@@ -44,7 +62,11 @@ async def update_expense(expense_id: int, expense_update: ExpenseUpdate, db: Asy
 
 
 @router.delete("/{expense_id}", status_code=204)
-async def delete_expense(expense_id: int, db: AsyncSession = Depends(get_db)):
+async def delete_expense(
+    expense_id: int,
+    db: AsyncSession = Depends(get_db),
+    _: None = Depends(get_expenses_permissions(Actions.DELETE))
+):
     expense = await db.get(ExpenseModel, expense_id)
     if not expense:
         raise HTTPException(status_code=404, detail="Expense not found")
