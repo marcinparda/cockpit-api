@@ -1,44 +1,48 @@
 services:
-  web:
-    build: .
-    container_name: cockpit_api
-    restart: unless-stopped
-    ports:
-      - '8000:80'
-    working_dir: /src
-    volumes:
-      - ./:/src
-    environment:
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_HOST: ${DB_HOST}
-      DB_NAME: ${DB_NAME}
-      DB_PORT: ${DB_PORT}
-  db:
+  cockpit_db:
     image: postgres:15-alpine
-    container_name: ${DB_HOST}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/
-    ports:
-      - '5432:${DB_PORT}'
+    container_name: cockpit_db
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: pgadmin4
-    restart: unless-stopped
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
     ports:
-      - '5050:80'
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin
+      - "${DB_PORT}:5432"
     volumes:
-      - pgadmin_data:/var/lib/pgadmin
+      - cockpit_postgres_data:/var/lib/postgresql/data
+    networks:
+      - cockpit_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  cockpit_api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: cockpit_api
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=cockpit_db
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
     depends_on:
-      - db
+      cockpit_db:
+        condition: service_healthy
+    networks:
+      - cockpit_network
+
+networks:
+  cockpit_network:
+    driver: bridge
 
 volumes:
-  postgres_data:
-  pgadmin_data:
+  cockpit_postgres_data:

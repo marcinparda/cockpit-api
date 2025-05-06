@@ -1,44 +1,45 @@
-name: Deploy to Raspberry Pi
+name: Deploy to Production
+
 on:
   push:
-    branches: [master]
+    branches:
+      - main
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+      - name: Create .env file
+        run: |
+          cat > .env << EOL
+          # PostgreSQL Environment Variables
+          DB_USER=${{ secrets.DB_USER }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_HOST=cockpit_db
+          DB_NAME=${{ secrets.DB_NAME }}
+          DB_PORT=${{ secrets.DB_PORT }}
+          EOL
 
-      - name: Log in to GHCR
-        uses: docker/login-action@v2
+      - name: Copy files to server
+        uses: appleboy/scp-action@master
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: '., !venv, !.git'
+          target: '~/cockpit-api'
 
-      - name: Set lowercase repository name
-        id: repo
-        run: echo "REPO_LOWERCASE=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
-
-      - name: Build and push ARM image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          platforms: linux/arm/v7
-          push: true
-          tags: ghcr.io/${{ env.REPO_LOWERCASE }}:latest
-
-      - name: SSH into Raspberry Pi
-        uses: appleboy/ssh-action@v1
+      - name: Deploy application
+        uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            docker compose pull
-            docker compose up -f docker-compose.prod.yml -d
-            docker compose exec cockpit_api alembic upgrade head
+            cd ~/cockpit-api
+            docker-compose -f docker-compose.prod.yml down
+            docker-compose -f docker-compose.prod.yml build
+            docker-compose -f docker-compose.prod.yml up -d
