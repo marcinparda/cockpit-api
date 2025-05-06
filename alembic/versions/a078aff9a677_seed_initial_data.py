@@ -13,6 +13,7 @@ from datetime import datetime
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.sql import text
+from src.permissions import Actions, Features
 
 
 # revision identifiers, used by Alembic.
@@ -39,7 +40,7 @@ def upgrade() -> None:
     ])
 
     # 2. Insert features
-    features = ["api_keys", "categories", "expenses", "payment_methods"]
+    features = [feature.value for feature in Features]
     feature_ids = {}
     for feature in features:
         feature_id = str(uuid.uuid4())
@@ -62,7 +63,7 @@ def upgrade() -> None:
     )
 
     # 3. Insert actions
-    actions = ["create", "read", "update", "delete"]
+    actions = [action.value for action in Features]
     action_ids = {}
     for action in actions:
         action_id = str(uuid.uuid4())
@@ -88,13 +89,13 @@ def upgrade() -> None:
     permission_ids = {}
     permission_data = []
     for feature in features:
-        for action in actions:
+        for action in Actions:
             permission_id = str(uuid.uuid4())
-            permission_ids[(feature, action)] = permission_id
+            permission_ids[(feature, action.value)] = permission_id
             permission_data.append({
                 'id': permission_id,
                 'feature_id': feature_ids[feature],
-                'action_id': action_ids[action],
+                'action_id': action_ids[action.value],
                 'created_at': now,
                 'updated_at': now
             })
