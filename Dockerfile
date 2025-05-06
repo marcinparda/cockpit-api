@@ -1,5 +1,5 @@
 # Build stage
-FROM python:3.12-slim as builder
+FROM python:3.12-slim AS builder
 
 # Set environment variables for Poetry
 ENV POETRY_VERSION=2.1.2 \
