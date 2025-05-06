@@ -1,29 +1,21 @@
 # Build stage
-FROM python:3.12 AS builder
+FROM python:3.12-slim as builder
+
+# Set environment variables for Poetry
+ENV POETRY_VERSION=2.1.2 \
+    POETRY_HOME="/opt/poetry" \
+    POETRY_NO_INTERACTION=1
+
+# Add Poetry to PATH
+ENV PATH="$POETRY_HOME/bin:$PATH"
+
+# Install Poetry using pip (official recommended way for Docker)
+RUN pip install "poetry==$POETRY_VERSION" --no-cache-dir
 
 WORKDIR /app
-ENV PYTHONFAULTHANDLER=1 \
-    PYTHONUNBUFFERED=1
-
-RUN mkdir /opt/poetry
-
-ENV POETRY_NO_INTERACTION=1 \
-    POETRY_VIRTUALENVS_IN_PROJECT=1 \
-    POETRY_VIRTUALENVS_CREATE=1 \
-    POETRY_CACHE_DIR=/tmp/poetry_cache \
-    POETRY_HOME=/opt/poetry
-
-ENV PATH="$POETRY_HOME/bin:${PATH}"
-
-RUN apt -y update && apt -y install curl
-RUN curl -sSL https://install.python-poetry.org | POETRY_VERSION=2.1.2 python3 -
-
-COPY pyproject.toml poetry.lock ./
-RUN poetry config virtualenvs.in-project true && \
-    poetry install --only main --no-root --no-interaction --no-ansi
 
 # Runtime stage
-FROM python:3.12
+FROM python:3.12-slim
 
 WORKDIR /app
 
