@@ -90,13 +90,13 @@ def upgrade() -> None:
     permission_ids = {}
     permission_data = []
     for feature in features:
-        for action in Actions:
+        for action in actions:
             permission_id = str(uuid.uuid4())
-            permission_ids[(feature, action.value)] = permission_id
+            permission_ids[(feature, action)] = permission_id
             permission_data.append({
                 'id': permission_id,
                 'feature_id': feature_ids[feature],
-                'action_id': action_ids[action.value],
+                'action_id': action_ids[action],
                 'created_at': now,
                 'updated_at': now
             })

@@ -1,46 +1,29 @@
 # Build stage
-FROM python:3.12-slim AS builder
+FROM python:3.12-slim as builder
 
-ENV PYTHONUNBUFFERED=1 \
-    # prevents python creating .pyc files
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+# Install build dependencies needed for poetry and other packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set environment variables
+ENV PATH="/app/.poetry/bin:/app/.venv/bin:$PATH" \
+    PYTHONPATH="/app" \
     PYTHONDONTWRITEBYTECODE=1 \
-    \
-    # pip
-    PIP_NO_CACHE_DIR=off \
-    PIP_DISABLE_PIP_VERSION_CHECK=on \
-    PIP_DEFAULT_TIMEOUT=100 \
-    \
-    # poetry
-    # https://python-poetry.org/docs/configuration/#using-environment-variables
+    PYTHONUNBUFFERED=1 \
     POETRY_VERSION=2.1.2 \
-    # make poetry install to this location
-    POETRY_HOME="/opt/poetry" \
-    # make poetry create the virtual environment in the project's root
-    # it gets named `.venv`
-    POETRY_VIRTUALENVS_IN_PROJECT=true \
-    # do not ask any interactive question
-    POETRY_NO_INTERACTION=1 \
-    \
-    # paths
-    # this is where our requirements + virtual environment will live
-    PYSETUP_PATH="/opt/pysetup" \
-    VENV_PATH="/opt/pysetup/.venv"
+    POETRY_HOME="/app/.poetry" \
+    POETRY_CACHE_DIR="/app/.cache"
 
+RUN curl -sSL https://install.python-poetry.org | python3 -
 
-# prepend poetry and venv to path
-ENV PATH="$POETRY_HOME/bin:$VENV_PATH/bin:$PATH"
-
-
-RUN apt-get update \
-    && apt-get install --no-install-recommends -y \
-        # deps for installing poetry
-        curl \
-        # deps for building python deps
-        build-essential
-
-# install poetry - respects $POETRY_VERSION & $POETRY_HOME
-RUN curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python
-
+WORKDIR /app
+COPY pyproject.toml poetry.lock /app/
+RUN poetry config virtualenvs.in-project true && poetry install --no-root
 
 # Runtime stage
 FROM python:3.12-slim
@@ -50,9 +33,11 @@ WORKDIR /app
 # Create non-root user for security
 RUN adduser --disabled-password --gecos "" appuser
 
-# Install curl for healthcheck and required dependencies for psycopg2
-RUN apt-get update && apt-get install -y curl libpq-dev && \
-    rm -rf /var/lib/apt/lists/*
+# Install runtime dependencies only
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set environment variables
 ENV PATH="/app/.venv/bin:$PATH" \
@@ -63,7 +48,7 @@ ENV PATH="/app/.venv/bin:$PATH" \
 # Copy virtual environment from builder
 COPY --from=builder /app/.venv .venv
 
-# Copy application code - updating to copy from project root instead of assuming ./app directory
+# Copy application code
 COPY . .
 
 # Make entrypoint script executable
