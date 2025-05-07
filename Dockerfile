@@ -1,4 +1,4 @@
-FROM python:3.11-slim as builder
+FROM python:3.12-slim as builder
 
 # Install system dependencies
 RUN apt-get update \
@@ -23,10 +23,10 @@ WORKDIR /app
 COPY pyproject.toml poetry.lock* ./
 
 # Install dependencies
-RUN poetry install --no-dev --no-root
+RUN poetry install --no-root
 
 # Production stage
-FROM python:3.11-slim as production
+FROM python:3.12-slim as production
 
 # Install runtime dependencies
 RUN apt-get update \
