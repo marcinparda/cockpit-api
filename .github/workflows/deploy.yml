@@ -29,9 +29,9 @@ jobs:
           chmod 644 ~/.ssh/known_hosts
           cat <<EOF > ~/.ssh/config
           Host ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }}
-          User ${{ secrets.RASPBERRY_PI_USERNAME }}
-          IdentityFile ~/.ssh/id_ed25519
-          ProxyCommand cloudflared access ssh --hostname %h
+            User ${{ secrets.RASPBERRY_PI_USERNAME }}
+            IdentityFile ~/.ssh/id_ed25519
+            ProxyCommand cloudflared access ssh --hostname %h
           EOF
           chmod 600 ~/.ssh/config
         shell: bash
