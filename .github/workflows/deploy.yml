@@ -43,8 +43,14 @@ jobs:
           ssh-add ~/.ssh/github && \
           cd ~/cockpit-api && \
           git pull && \
-          docker-compose -f docker-compose.prod.yml down && \
-          docker-compose -f docker-compose.prod.yml build && \
-          docker-compose -f docker-compose.prod.yml up -d"
+          echo "DB_USER='${{ secrets.DB_USER }}'" > .env && \
+          echo "DB_PASSWORD='${{ secrets.DB_PASSWORD }}'" >> .env && \
+          echo "DB_HOST='${{ secrets.DB_HOST }}'" >> .env && \
+          echo "DB_NAME='${{ secrets.DB_NAME }}'" >> .env && \
+          echo "DB_PORT='${{ secrets.DB_PORT }}'" >> .env && \
+          echo "CORS_ORIGINS='${{ secrets.CORS_ORIGINS }}'" >> .env && \
+          docker compose -f docker-compose.prod.yml down && \
+          docker compose -f docker-compose.prod.yml build && \
+          docker compose -f docker-compose.prod.yml up -d"
 
         shell: bash
