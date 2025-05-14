@@ -1,47 +1,50 @@
-name: Deploy to Production
+name: Deploy to Raspberry Pi
 
 on:
   push:
-    branches:
-      - master
+    branches: [master]
+  pull_request:
+    branches: [master]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-      - name: Create .env file
+      - name: Set up Cloudflared
         run: |
-          cat > .env << EOL
-          # PostgreSQL Environment Variables
-          DB_USER=${{ secrets.DB_USER }}
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-          DB_HOST=cockpit_db
-          DB_NAME=${{ secrets.DB_NAME }}
-          DB_PORT=${{ secrets.DB_PORT }}
-          EOL
+          sudo mkdir -p --mode=0755 /usr/share/keyrings
+          curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | sudo tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
+          echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared jammy main' | sudo tee /etc/apt/sources.list.d/cloudflared.list
+          sudo apt-get update && sudo apt-get install cloudflared
 
-      - name: Copy files to server
-        uses: appleboy/scp-action@v0.1.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: '., !venv, !.git'
-          target: '~/cockpit-api'
-          timeout: "120s"  # Increase connection timeout to 2 minutes
-          command_timeout: "30m"  # Increase command timeout to 30 minutes
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.RASPBERRY_PI_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+          cat <<EOF > ~/.ssh/config
+          Host ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }}
+          User ${{ secrets.RASPBERRY_PI_USERNAME }}
+          IdentityFile ~/.ssh/id_ed25519
+          ProxyCommand cloudflared access ssh --hostname %h
+          EOF
+          chmod 600 ~/.ssh/config
+        shell: bash
 
-      - name: Deploy application
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd ~/cockpit-api
-            docker-compose -f docker-compose.prod.yml down
-            docker-compose -f docker-compose.prod.yml build
-            docker-compose -f docker-compose.prod.yml up -d
+      - name: Deploy via SSH
+        run: |
+          ssh -vvv -o StrictHostKeyChecking=no ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }} "\
+          eval \"\$(ssh-agent -s)\" && \
+          ssh-add ~/.ssh/github && \
+          cd ~/cockpit-api && \
+          git pull && \
+          docker-compose -f docker-compose.prod.yml down && \
+          docker-compose -f docker-compose.prod.yml build && \
+          docker-compose -f docker-compose.prod.yml up -d"
+
+        shell: bash

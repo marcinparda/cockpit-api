@@ -26,7 +26,7 @@ app.include_router(
 
 @app.get("/", tags=["root"])
 async def read_root():
-    return {"message": "Welcome to the Cockpit API"}
+    return {"message": "Welcome to the Cockpit API!"}
 
 
 @app.get("/health", tags=["health"])
