@@ -1,15 +1,18 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.api.v1.endpoints import expenses, categories, payment_methods, shopping_items
-from src.auth.dependencies import api_key_header
 from src.core.config import settings
+from typing import List
 
 app = FastAPI(title="Cockpit API", version="0.0.1",
               docs_url="/api/docs")
 
+origins: List[str] = [str(origin) for origin in settings.CORS_ORIGINS] if isinstance(
+    settings.CORS_ORIGINS, list) else [str(settings.CORS_ORIGINS)]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=origins,
     allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
     allow_methods=settings.CORS_ALLOW_METHODS,
     allow_headers=settings.CORS_ALLOW_HEADERS,
