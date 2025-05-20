@@ -22,7 +22,7 @@ app.include_router(categories.router,
 app.include_router(
     payment_methods.router, prefix="/api/v1/payment_methods", tags=["payment_methods"])
 app.include_router(
-    shopping_items.router, prefix="/api/v1/shopping", tags=["shopping"])
+    shopping_items.router, prefix="/api/v1/shopping/items", tags=["shopping_items"])
 
 
 @app.get("/", tags=["root"])

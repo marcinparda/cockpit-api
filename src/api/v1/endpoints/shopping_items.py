@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, List
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -12,15 +12,18 @@ from src.schemas.shopping_item import (
     ShoppingItemCreate,
     ShoppingItemUpdate,
 )
+from src.auth.enums.actions import Actions
+from src.auth.permission_helpers import get_shopping_items_permissions
 
 router = APIRouter()
 
 
-@router.get("/items", response_model=List[ShoppingItemSchema])
+@router.get("/", response_model=List[ShoppingItemSchema])
 async def get_shopping_items(
     db: AsyncSession = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
+    _: None = Depends(get_shopping_items_permissions(Actions.READ))
 ) -> Any:
     """
     Retrieve all shopping items.
@@ -29,11 +32,12 @@ async def get_shopping_items(
     return result.scalars().all()
 
 
-@router.post("/items", response_model=ShoppingItemSchema, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=ShoppingItemSchema, status_code=status.HTTP_201_CREATED)
 async def create_shopping_item(
     *,
     db: AsyncSession = Depends(get_db),
     item_in: ShoppingItemCreate,
+    _: None = Depends(get_shopping_items_permissions(Actions.CREATE))
 ) -> Any:
     """
     Create new shopping item.
@@ -51,11 +55,12 @@ async def create_shopping_item(
     return db_item
 
 
-@router.get("/items/{item_id}", response_model=ShoppingItemSchema)
+@router.get("/{item_id}", response_model=ShoppingItemSchema)
 async def get_shopping_item(
     *,
     db: AsyncSession = Depends(get_db),
     item_id: int,
+    _: None = Depends(get_shopping_items_permissions(Actions.READ))
 ) -> Any:
     """
     Get shopping item by ID.
@@ -69,12 +74,13 @@ async def get_shopping_item(
     return item
 
 
-@router.put("/items/{item_id}", response_model=ShoppingItemSchema)
+@router.put("/{item_id}", response_model=ShoppingItemSchema)
 async def update_shopping_item(
     *,
     db: AsyncSession = Depends(get_db),
     item_id: int,
     item_in: ShoppingItemUpdate,
+    _: None = Depends(get_shopping_items_permissions(Actions.UPDATE))
 ) -> Any:
     """
     Update a shopping item.
@@ -101,11 +107,12 @@ async def update_shopping_item(
     return db_item
 
 
-@router.delete("/items/{item_id}", response_model=ShoppingItemSchema)
+@router.delete("/{item_id}", response_model=ShoppingItemSchema)
 async def delete_shopping_item(
     *,
     db: AsyncSession = Depends(get_db),
     item_id: int,
+    _: None = Depends(get_shopping_items_permissions(Actions.DELETE))
 ) -> Any:
     """
     Delete a shopping item.

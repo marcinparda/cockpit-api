@@ -6,3 +6,4 @@ class Features(str, Enum):
     CATEGORIES = "categories"
     EXPENSES = "expenses"
     PAYMENT_METHODS = "payment_methods"
+    SHOPPING_ITEMS = "shopping_items"

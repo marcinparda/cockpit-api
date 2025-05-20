@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from datetime import datetime
@@ -20,7 +20,7 @@ async def list_payment_methods(
     return result.scalars().all()
 
 
-@router.post("/", response_model=PaymentMethod)
+@router.post("/", response_model=PaymentMethod, status_code=status.HTTP_201_CREATED)
 async def create_payment_method(
     payment_method: PaymentMethodCreate,
     db: AsyncSession = Depends(get_db),
@@ -46,7 +46,8 @@ async def get_payment_method(
 ):
     payment_method = await db.get(PaymentMethodModel, payment_method_id)
     if not payment_method:
-        raise HTTPException(status_code=404, detail="Payment method not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Payment method not found")
     return payment_method
 
 
@@ -59,7 +60,8 @@ async def update_payment_method(
 ):
     payment_method = await db.get(PaymentMethodModel, payment_method_id)
     if not payment_method:
-        raise HTTPException(status_code=404, detail="Payment method not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Payment method not found")
 
     update_data = payment_method_update.dict(exclude_unset=True)
     for key, value in update_data.items():
@@ -79,6 +81,7 @@ async def delete_payment_method(
 ):
     payment_method = await db.get(PaymentMethodModel, payment_method_id)
     if not payment_method:
-        raise HTTPException(status_code=404, detail="Payment method not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Payment method not found")
     await db.delete(payment_method)
     await db.commit()

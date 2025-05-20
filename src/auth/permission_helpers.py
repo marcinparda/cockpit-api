@@ -34,6 +34,11 @@ def get_payment_methods_permissions(action: Actions):
     return get_feature_permissions(Features.PAYMENT_METHODS, action)
 
 
+def get_shopping_items_permissions(action: Actions):
+    """Returns a dependency that checks permissions for the shopping items feature."""
+    return get_feature_permissions(Features.SHOPPING_ITEMS, action)
+
+
 def get_api_keys_permissions(action: Actions):
     """Returns a dependency that checks permissions for the API keys feature."""
     return get_feature_permissions(Features.API_KEYS, action)
