@@ -1,13 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.api.v1.endpoints import expenses, categories, payment_methods
+from src.api.v1.endpoints import expenses, categories, payment_methods, shopping_items
 from src.auth.dependencies import api_key_header
 from src.core.config import settings
 
 app = FastAPI(title="Cockpit API", version="0.0.1",
               docs_url="/api/docs")
 
-# Add CORS middleware with settings from config
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
@@ -22,6 +21,8 @@ app.include_router(categories.router,
                    prefix="/api/v1/categories", tags=["categories"])
 app.include_router(
     payment_methods.router, prefix="/api/v1/payment_methods", tags=["payment_methods"])
+app.include_router(
+    shopping_items.router, prefix="/api/v1/shopping", tags=["shopping"])
 
 
 @app.get("/", tags=["root"])
