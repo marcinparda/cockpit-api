@@ -1,10 +1,11 @@
 from typing import Any, List
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
+from sqlalchemy import desc, asc
 
 from src.core.database import get_db
 from src.models.todo_item import TodoItem
@@ -25,14 +26,27 @@ async def get_todo_items(
     db: AsyncSession = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
+    sort_by: str = Query(
+        "name", description="Field to sort by: id, name, created_at, updated_at, is_closed, completed_at"),
+    order: str = Query("asc", description="Sort order: asc or desc"),
     _: None = Depends(get_todo_items_permissions(Actions.READ))
 ) -> Any:
     """
     Retrieve all todo items.
     """
+    allowed_sort_fields = {"id", "name", "created_at",
+                           "updated_at", "is_closed", "completed_at"}
+    if sort_by not in allowed_sort_fields:
+        raise HTTPException(
+            status_code=400, detail=f"Invalid sort_by field: {sort_by}")
+    order_func = desc if order.lower() == "desc" else asc
+    sort_column = getattr(TodoItem, sort_by)
     result = await db.execute(
-        select(TodoItem).options(selectinload(
-            TodoItem.project)).offset(skip).limit(limit)
+        select(TodoItem)
+        .options(selectinload(TodoItem.project))
+        .order_by(order_func(sort_column))
+        .offset(skip)
+        .limit(limit)
     )
     return result.scalars().all()
 
@@ -61,7 +75,8 @@ async def create_todo_item(
     )
     db.add(db_item)
     await db.commit()
-    await db.refresh(db_item)
+    # Eagerly load the project relationship after creation
+    await db.refresh(db_item, attribute_names=["project"])
     return db_item
 
 
