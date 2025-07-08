@@ -4,9 +4,11 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
 
 from src.core.database import get_db
 from src.models.todo_item import TodoItem
+from src.models.todo_project import TodoProject
 from src.schemas.todo_item import (
     TodoItem as TodoItemSchema,
     TodoItemCreate,
@@ -28,7 +30,10 @@ async def get_todo_items(
     """
     Retrieve all todo items.
     """
-    result = await db.execute(select(TodoItem).offset(skip).limit(limit))
+    result = await db.execute(
+        select(TodoItem).options(selectinload(
+            TodoItem.project)).offset(skip).limit(limit)
+    )
     return result.scalars().all()
 
 
@@ -42,12 +47,17 @@ async def create_todo_item(
     """
     Create new todo item.
     """
+    project = None
+    if item_in.project_id:
+        project = await db.get(TodoProject, item_in.project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
     db_item = TodoItem(
         name=item_in.name,
         description=item_in.description,
         is_closed=False,
-        categories=item_in.categories,
-        shops=item_in.shops
+        shops=item_in.shops,
+        project=project
     )
     db.add(db_item)
     await db.commit()
@@ -65,7 +75,7 @@ async def get_todo_item(
     """
     Get todo item by ID.
     """
-    item = await db.get(TodoItem, item_id)
+    item = await db.get(TodoItem, item_id, options=[selectinload(TodoItem.project)])
     if not item:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -85,23 +95,26 @@ async def update_todo_item(
     """
     Update a todo item.
     """
-    db_item = await db.get(TodoItem, item_id)
+    db_item = await db.get(TodoItem, item_id, options=[selectinload(TodoItem.project)])
     if not db_item:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Todo item with ID {item_id} not found"
         )
-
     update_data = item_in.dict(exclude_unset=True)
-
-    # If item is being closed and completed_at is not provided, set it to now
-    if update_data.get("is_closed") and not update_data.get("completed_at"):
-        update_data["completed_at"] = datetime.now()
-
+    if "project_id" in update_data:
+        if update_data["project_id"] is not None:
+            project = await db.get(TodoProject, update_data["project_id"])
+            if not project:
+                raise HTTPException(
+                    status_code=404, detail="Project not found")
+            db_item.project = project
+        else:
+            db_item.project = None
+        del update_data["project_id"]
     for key, value in update_data.items():
         setattr(db_item, key, value)
-
-    db.add(db_item)
+    db_item.updated_at = datetime.utcnow()
     await db.commit()
     await db.refresh(db_item)
     return db_item
@@ -123,7 +136,6 @@ async def delete_todo_item(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Todo item with ID {item_id} not found"
         )
-
     await db.delete(db_item)
     await db.commit()
     return db_item
