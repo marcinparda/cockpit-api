@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.api.v1.endpoints import expenses, categories, payment_methods, shopping_items
+from src.api.v1.endpoints import expenses, categories, payment_methods, todo_items
 from src.core.config import settings
 from typing import List
 
@@ -25,7 +25,7 @@ app.include_router(categories.router,
 app.include_router(
     payment_methods.router, prefix="/api/v1/payment_methods", tags=["payment_methods"])
 app.include_router(
-    shopping_items.router, prefix="/api/v1/shopping/items", tags=["shopping_items"])
+    todo_items.router, prefix="/api/v1/todo/items", tags=["todo_items"])
 
 
 @app.get("/", tags=["root"])

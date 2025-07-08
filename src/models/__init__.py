@@ -6,7 +6,7 @@ from .api_key_permission import APIKeyPermission
 from .permission import Permission
 from .feature import Feature
 from .action import Action
-from .shopping_item import ShoppingItem
+from .todo_item import TodoItem
 
 __all__ = ["Category", "Expense", "PaymentMethod", "APIKey",
-           "APIKeyPermission", "Permission", "Feature", "Action", "ShoppingItem"]
+           "APIKeyPermission", "Permission", "Feature", "Action", "TodoItem"]

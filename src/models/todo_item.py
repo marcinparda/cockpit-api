@@ -3,8 +3,8 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text
 from .base import BaseModel
 
 
-class ShoppingItem(BaseModel):
-    __tablename__ = "shopping_items"
+class TodoItem(BaseModel):
+    __tablename__ = "todo_items"
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False, index=True)

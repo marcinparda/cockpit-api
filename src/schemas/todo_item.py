@@ -3,18 +3,18 @@ from datetime import datetime
 from pydantic import BaseModel
 
 
-class ShoppingItemBase(BaseModel):
+class TodoItemBase(BaseModel):
     name: str
     description: Optional[str] = None
     categories: Optional[str] = None
     shops: Optional[str] = None
 
 
-class ShoppingItemCreate(ShoppingItemBase):
+class TodoItemCreate(TodoItemBase):
     pass
 
 
-class ShoppingItemUpdate(BaseModel):
+class TodoItemUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     is_closed: Optional[bool] = None
@@ -23,7 +23,7 @@ class ShoppingItemUpdate(BaseModel):
     completed_at: Optional[datetime] = None
 
 
-class ShoppingItemInDBBase(ShoppingItemBase):
+class TodoItemInDBBase(TodoItemBase):
     id: int
     is_closed: bool
     created_at: datetime
@@ -34,5 +34,5 @@ class ShoppingItemInDBBase(ShoppingItemBase):
         from_attributes = True
 
 
-class ShoppingItem(ShoppingItemInDBBase):
+class TodoItem(TodoItemInDBBase):
     pass

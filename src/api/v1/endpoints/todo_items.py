@@ -6,43 +6,43 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from src.core.database import get_db
-from src.models.shopping_item import ShoppingItem
-from src.schemas.shopping_item import (
-    ShoppingItem as ShoppingItemSchema,
-    ShoppingItemCreate,
-    ShoppingItemUpdate,
+from src.models.todo_item import TodoItem
+from src.schemas.todo_item import (
+    TodoItem as TodoItemSchema,
+    TodoItemCreate,
+    TodoItemUpdate,
 )
 from src.auth.enums.actions import Actions
-from src.auth.permission_helpers import get_shopping_items_permissions
+from src.auth.permission_helpers import get_todo_items_permissions
 
 router = APIRouter()
 
 
-@router.get("/", response_model=List[ShoppingItemSchema])
-async def get_shopping_items(
+@router.get("/", response_model=List[TodoItemSchema])
+async def get_todo_items(
     db: AsyncSession = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
-    _: None = Depends(get_shopping_items_permissions(Actions.READ))
+    _: None = Depends(get_todo_items_permissions(Actions.READ))
 ) -> Any:
     """
-    Retrieve all shopping items.
+    Retrieve all todo items.
     """
-    result = await db.execute(select(ShoppingItem).offset(skip).limit(limit))
+    result = await db.execute(select(TodoItem).offset(skip).limit(limit))
     return result.scalars().all()
 
 
-@router.post("/", response_model=ShoppingItemSchema, status_code=status.HTTP_201_CREATED)
-async def create_shopping_item(
+@router.post("/", response_model=TodoItemSchema, status_code=status.HTTP_201_CREATED)
+async def create_todo_item(
     *,
     db: AsyncSession = Depends(get_db),
-    item_in: ShoppingItemCreate,
-    _: None = Depends(get_shopping_items_permissions(Actions.CREATE))
+    item_in: TodoItemCreate,
+    _: None = Depends(get_todo_items_permissions(Actions.CREATE))
 ) -> Any:
     """
-    Create new shopping item.
+    Create new todo item.
     """
-    db_item = ShoppingItem(
+    db_item = TodoItem(
         name=item_in.name,
         description=item_in.description,
         is_closed=False,
@@ -55,41 +55,41 @@ async def create_shopping_item(
     return db_item
 
 
-@router.get("/{item_id}", response_model=ShoppingItemSchema)
-async def get_shopping_item(
+@router.get("/{item_id}", response_model=TodoItemSchema)
+async def get_todo_item(
     *,
     db: AsyncSession = Depends(get_db),
     item_id: int,
-    _: None = Depends(get_shopping_items_permissions(Actions.READ))
+    _: None = Depends(get_todo_items_permissions(Actions.READ))
 ) -> Any:
     """
-    Get shopping item by ID.
+    Get todo item by ID.
     """
-    item = await db.get(ShoppingItem, item_id)
+    item = await db.get(TodoItem, item_id)
     if not item:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Shopping item with ID {item_id} not found"
+            detail=f"Todo item with ID {item_id} not found"
         )
     return item
 
 
-@router.put("/{item_id}", response_model=ShoppingItemSchema)
-async def update_shopping_item(
+@router.put("/{item_id}", response_model=TodoItemSchema)
+async def update_todo_item(
     *,
     db: AsyncSession = Depends(get_db),
     item_id: int,
-    item_in: ShoppingItemUpdate,
-    _: None = Depends(get_shopping_items_permissions(Actions.UPDATE))
+    item_in: TodoItemUpdate,
+    _: None = Depends(get_todo_items_permissions(Actions.UPDATE))
 ) -> Any:
     """
-    Update a shopping item.
+    Update a todo item.
     """
-    db_item = await db.get(ShoppingItem, item_id)
+    db_item = await db.get(TodoItem, item_id)
     if not db_item:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Shopping item with ID {item_id} not found"
+            detail=f"Todo item with ID {item_id} not found"
         )
 
     update_data = item_in.dict(exclude_unset=True)
@@ -107,21 +107,21 @@ async def update_shopping_item(
     return db_item
 
 
-@router.delete("/{item_id}", response_model=ShoppingItemSchema)
-async def delete_shopping_item(
+@router.delete("/{item_id}", response_model=TodoItemSchema)
+async def delete_todo_item(
     *,
     db: AsyncSession = Depends(get_db),
     item_id: int,
-    _: None = Depends(get_shopping_items_permissions(Actions.DELETE))
+    _: None = Depends(get_todo_items_permissions(Actions.DELETE))
 ) -> Any:
     """
-    Delete a shopping item.
+    Delete a todo item.
     """
-    db_item = await db.get(ShoppingItem, item_id)
+    db_item = await db.get(TodoItem, item_id)
     if not db_item:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Shopping item with ID {item_id} not found"
+            detail=f"Todo item with ID {item_id} not found"
         )
 
     await db.delete(db_item)
