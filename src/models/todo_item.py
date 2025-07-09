@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime, Text
 from sqlalchemy.orm import relationship
 
 from .base import BaseModel
@@ -13,5 +13,5 @@ class TodoItem(BaseModel):
     is_closed = Column(Boolean, default=False)
     completed_at = Column(DateTime(timezone=True), nullable=True)
     shops = Column(String(255), nullable=True)
-    project_id = Column(Integer, ForeignKey('todo_projects.id'), nullable=True)
-    project = relationship("TodoProject", backref="todo_items")
+    project_id = Column(Integer, ForeignKey("todo_projects.id", ondelete="SET NULL"), nullable=True)
+    project = relationship("TodoProject", back_populates="items")
