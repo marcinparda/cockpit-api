@@ -4,21 +4,6 @@ Cockpit API is the backend service for a personal productivity platform that lev
 
 Built with [FastAPI](https://fastapi.tiangolo.com/), Cockpit API ensures high performance, modern Python type safety, and automatic OpenAPI documentation. It is designed to be the core data and intelligence layer for your productivity tools, integrating AI-driven features seamlessly into your daily workflow.
 
-## Project Structure
-
-```
-cockpit-api/
-├── app/
-│   ├── main.py
-│   ├── api/
-│   │   ├── router.py
-│   │   └── ... 
-│   ├── models/
-│   │   └── ...
-│   └── ...
-└── README.md
-```
-
 ## Getting Started
 
 ### Prerequisites
@@ -33,6 +18,7 @@ Prepare your environment by copying the example environment file:
 ```bash
 cp .env.example .env
 ```
+
 Update the `.env` file with your database connection details and other configurations.
 
 Start the development server using Docker Compose:
