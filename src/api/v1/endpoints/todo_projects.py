@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy import update
 from datetime import datetime
 from src.core.database import get_db
 from src.models.todo_project import TodoProject as TodoProjectModel
+from src.models.todo_item import TodoItem
 from src.schemas.todo_project import TodoProject, TodoProjectCreate, TodoProjectUpdate
 from src.auth.enums.actions import Actions
 from src.auth.permission_helpers import get_categories_permissions
@@ -77,5 +79,11 @@ async def delete_todo_project(
     todo_project = await db.get(TodoProjectModel, todo_project_id)
     if not todo_project:
         raise HTTPException(status_code=404, detail="Todo project not found")
+    # Set project_id to None for all related todo items
+    await db.execute(
+        update(TodoItem)
+        .where(TodoItem.project_id == todo_project_id)
+        .values(project_id=None)
+    )
     await db.delete(todo_project)
     await db.commit()
