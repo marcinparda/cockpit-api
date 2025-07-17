@@ -7,3 +7,4 @@ class Features(str, Enum):
     EXPENSES = "expenses"
     PAYMENT_METHODS = "payment_methods"
     SHOPPING_ITEMS = "todo_items"
+    SHARED = "shared"

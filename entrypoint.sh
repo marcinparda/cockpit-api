@@ -10,7 +10,7 @@ echo "Database is ready!"
 
 # Run database migrations
 echo "Running database migrations..."
-alembic upgrade head
+/app/.venv/bin/alembic upgrade head
 
 # If command is provided, execute it, otherwise start the application
 if [ "$#" -gt 0 ]; then

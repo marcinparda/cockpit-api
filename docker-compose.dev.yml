@@ -9,13 +9,13 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
     ports:
-      - "${DB_PORT}:5432"
+      - '${DB_PORT}:5432'
     volumes:
       - cockpit_postgres_data:/var/lib/postgresql/data
     networks:
       - cockpit_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER} -d ${DB_NAME}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -30,9 +30,13 @@ services:
     environment:
       - DB_HOST=cockpit_db
     volumes:
-      - .:/app
+      - ./src:/app/src
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
+      - ./pyproject.toml:/app/pyproject.toml
+      - ./poetry.lock:/app/poetry.lock
     ports:
-      - "8000:8000"
+      - '8000:8000'
     command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
     depends_on:
       cockpit_db:

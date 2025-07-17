@@ -42,3 +42,8 @@ def get_todo_items_permissions(action: Actions):
 def get_api_keys_permissions(action: Actions):
     """Returns a dependency that checks permissions for the API keys feature."""
     return get_feature_permissions(Features.API_KEYS, action)
+
+
+def get_shared_permissions(action: Actions):
+    """Returns a dependency that checks permissions for the shared feature."""
+    return get_feature_permissions(Features.SHARED, action)
