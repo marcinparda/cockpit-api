@@ -28,13 +28,19 @@ RUN poetry install --no-root
 # Production stage
 FROM python:3.12-slim as production
 
-# Install runtime dependencies
+# Install runtime dependencies including OpenGL libraries for OpenCV
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
     libpq-dev \
     netcat-openbsd \
     tesseract-ocr \
     tesseract-ocr-eng \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
