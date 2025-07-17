@@ -19,15 +19,15 @@ app.add_middleware(
 )
 
 app.include_router(
-    expenses.router, prefix="/api/v1/expenses", tags=["expenses"])
+    expenses.router, prefix="/api/v1/expenses", tags=["ai-budget/expenses"])
 app.include_router(categories.router,
-                   prefix="/api/v1/categories", tags=["categories"])
+                   prefix="/api/v1/categories", tags=["ai-budget/categories"])
 app.include_router(
-    payment_methods.router, prefix="/api/v1/payment_methods", tags=["payment_methods"])
+    payment_methods.router, prefix="/api/v1/payment_methods", tags=["ai-budget/payment_methods"])
 app.include_router(
-    todo_items.router, prefix="/api/v1/todo/items", tags=["todo_items"])
+    todo_items.router, prefix="/api/v1/todo/items", tags=["todo/todo_items"])
 app.include_router(
-    todo_projects.router, prefix="/api/v1/todo/projects", tags=["todo_projects"])
+    todo_projects.router, prefix="/api/v1/todo/projects", tags=["todo/todo_projects"])
 
 
 @app.get("/", tags=["root"])
