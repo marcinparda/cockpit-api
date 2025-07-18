@@ -5,6 +5,7 @@ from uuid import UUID
 from datetime import datetime
 from src.models.user_role import UserRole
 from src.schemas.user_role import UserRoleCreate, UserRoleUpdate, UserRole as UserRoleSchema
+from src.auth.enums.roles import Roles
 
 
 class TestUserRoleModel:
@@ -49,7 +50,7 @@ class TestUserRoleSchemas:
         """Test UserRoleCreate schema validation errors."""
         # Missing name should fail
         with pytest.raises(ValidationError):
-            UserRoleCreate() # type: ignore
+            UserRoleCreate()  # type: ignore
 
         # Empty name should fail
         with pytest.raises(ValidationError):
@@ -77,7 +78,7 @@ class TestUserRoleSchemas:
 
         role_data = {
             "id": role_id,
-            "name": "Admin",
+            "name": Roles.ADMIN.value,
             "description": "Administrator role",
             "created_at": now,
             "updated_at": now
@@ -85,7 +86,7 @@ class TestUserRoleSchemas:
 
         role = UserRoleSchema(**role_data)
         assert str(role.id) == role_id
-        assert role.name == "Admin"
+        assert role.name == Roles.ADMIN.value
         assert role.description == "Administrator role"
         assert role.created_at == now
         assert role.updated_at == now
@@ -127,22 +128,23 @@ class TestUserRoleIntegration:
     def test_default_roles_structure(self):
         """Test that default roles have expected structure."""
         admin_role = UserRoleCreate(
-            name="Admin",
+            name=Roles.ADMIN.value,
             description="Full system access with all permissions"
         )
         user_role = UserRoleCreate(
-            name="User",
+            name=Roles.USER.value,
             description="Standard user access with assigned permissions"
         )
         test_user_role = UserRoleCreate(
-            name="TestUser",
+            name=Roles.TEST_USER.value,
             description="Limited access for testing purposes"
         )
 
         # Verify all default roles can be created
-        assert admin_role.name == "Admin"
-        assert user_role.name == "User"
-        assert test_user_role.name == "TestUser"
+        # Test role names
+        assert admin_role.name == Roles.ADMIN.value
+        assert user_role.name == Roles.USER.value
+        assert test_user_role.name == Roles.TEST_USER.value
 
         # Verify they all have descriptions
         assert admin_role.description is not None

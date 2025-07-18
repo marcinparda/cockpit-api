@@ -2,6 +2,7 @@
 """Simple validation script for UserRole implementation."""
 from src.schemas.user_role import UserRoleCreate, UserRoleUpdate, UserRole as UserRoleSchema
 from src.models.user_role import UserRole
+from src.auth.enums.roles import Roles
 from datetime import datetime
 from uuid import UUID
 import sys
@@ -68,7 +69,7 @@ def test_user_role_schemas():
 
     role_response = UserRoleSchema(**response_data)
     assert str(role_response.id) == role_id, f"Wrong id: {role_response.id}"
-    assert role_response.name == "Admin", f"Wrong name: {role_response.name}"
+    assert role_response.name == Roles.ADMIN.value, f"Wrong name: {role_response.name}"
     assert role_response.description == "Administrator role", f"Wrong description: {role_response.description}"
     assert role_response.created_at == now, f"Wrong created_at: {role_response.created_at}"
     assert role_response.updated_at == now, f"Wrong updated_at: {role_response.updated_at}"
@@ -85,7 +86,7 @@ def test_default_roles():
         name="Admin",
         description="Full system access with all permissions"
     )
-    assert admin_role.name == "Admin", f"Wrong admin name: {admin_role.name}"
+    assert admin_role.name == Roles.ADMIN.value, f"Wrong admin name: {admin_role.name}"
     assert admin_role.description is not None, "Admin description should not be None"
 
     # Test User role
@@ -93,7 +94,7 @@ def test_default_roles():
         name="User",
         description="Standard user access with assigned permissions"
     )
-    assert user_role.name == "User", f"Wrong user name: {user_role.name}"
+    assert user_role.name == Roles.USER.value, f"Wrong user name: {user_role.name}"
     assert user_role.description is not None, "User description should not be None"
 
     # Test TestUser role
@@ -101,7 +102,7 @@ def test_default_roles():
         name="TestUser",
         description="Limited access for testing purposes"
     )
-    assert test_user_role.name == "TestUser", f"Wrong test user name: {test_user_role.name}"
+    assert test_user_role.name == Roles.TEST_USER.value, f"Wrong test user name: {test_user_role.name}"
     assert test_user_role.description is not None, "TestUser description should not be None"
 
     print("✅ Default role tests passed!")
