@@ -36,7 +36,7 @@ def get_payment_methods_permissions(action: Actions):
 
 def get_todo_items_permissions(action: Actions):
     """Returns a dependency that checks permissions for the todo items feature."""
-    return get_feature_permissions(Features.SHOPPING_ITEMS, action)
+    return get_feature_permissions(Features.TODO_ITEMS, action)
 
 
 def get_api_keys_permissions(action: Actions):
