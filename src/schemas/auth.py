@@ -3,7 +3,7 @@
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, field_validator
 
 
 class TokenData(BaseModel):
@@ -19,3 +19,28 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     expires_in: int
+
+
+class LoginRequest(BaseModel):
+    """Schema for login request."""
+    email: EmailStr
+    password: str
+
+
+class LoginResponse(BaseModel):
+    """Schema for login response."""
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int
+    user_id: UUID
+    email: str
+    role_name: str
+    password_changed: bool
+
+
+class TokenPayload(BaseModel):
+    """JWT token payload structure."""
+    sub: UUID  # subject (user_id)
+    email: str
+    exp: int   # expiration timestamp
+    iat: int   # issued at timestamp

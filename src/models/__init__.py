@@ -9,6 +9,9 @@ from .action import Action
 from .todo_item import TodoItem
 from .todo_project import TodoProject
 from .user_role import UserRole
+from .user import User
+from .user_permission import UserPermission
 
 __all__ = ["Category", "Expense", "PaymentMethod", "APIKey",
-           "APIKeyPermission", "Permission", "Feature", "Action", "TodoItem", "TodoProject", "UserRole"]
+           "APIKeyPermission", "Permission", "Feature", "Action", "TodoItem", "TodoProject", 
+           "UserRole", "User", "UserPermission"]

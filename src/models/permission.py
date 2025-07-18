@@ -17,3 +17,4 @@ class Permission(BaseModel):
     feature = relationship('Feature', back_populates='permissions')
     action = relationship('Action', back_populates='permissions')
     api_keys = relationship('APIKeyPermission', back_populates='permission')
+    users = relationship('UserPermission', back_populates='permission')
