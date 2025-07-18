@@ -1,6 +1,7 @@
 # Custom instructions for Copilot
 
 ## FastAPI
+
 - Use Python type hints for all function signatures.
 - Organize endpoints using APIRouter.
 - Validate request/response models with Pydantic.
@@ -9,5 +10,5 @@
 - Use pytest for testing API endpoints.
 
 ## Documentation
-- Add docstrings to exported functions and components.
+
 - Do not write comments unless it is docstrings.
