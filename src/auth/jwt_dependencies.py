@@ -22,14 +22,14 @@ async def get_current_user(
 ) -> User:
     """
     Get current authenticated user from JWT token.
-    
+
     Args:
         credentials: JWT token from Authorization header
         db: Database session
-        
+
     Returns:
         User object for authenticated user
-        
+
     Raises:
         HTTPException: If token is invalid or user not found
     """
@@ -39,21 +39,21 @@ async def get_current_user(
             detail="Authorization token is missing",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     try:
         # Verify and decode JWT token
         payload = verify_token(credentials.credentials)
         user_id_str = payload.get("sub")
-        
+
         if user_id_str is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token payload",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        
+
         user_id = UUID(user_id_str)
-        
+
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -66,24 +66,24 @@ async def get_current_user(
             detail="Invalid or expired token",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     # Get user from database
     user = await get_user_with_role(db, user_id)
-    
+
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    if not user.is_active:
+
+    if user.is_active is False:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User account is inactive",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     return user
 
 
@@ -92,10 +92,10 @@ async def get_current_active_user(
 ) -> User:
     """
     Get current active user (convenience dependency).
-    
+
     Args:
         current_user: Current authenticated user
-        
+
     Returns:
         User object for active authenticated user
     """
