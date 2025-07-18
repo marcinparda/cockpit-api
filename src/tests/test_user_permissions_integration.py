@@ -3,13 +3,13 @@
 import pytest
 from src.auth.permissions import check_user_permissions, get_user_permissions
 from src.auth.permission_helpers import (
-    get_user_feature_permissions,
-    get_user_expenses_permissions,
-    get_user_categories_permissions,
-    get_user_payment_methods_permissions,
-    get_user_todo_items_permissions,
-    get_user_api_keys_permissions,
-    get_user_shared_permissions
+    get_feature_permissions,
+    get_expenses_permissions,
+    get_categories_permissions,
+    get_payment_methods_permissions,
+    get_todo_items_permissions,
+    get_api_keys_permissions,
+    get_shared_permissions
 )
 from src.auth.dependencies import require_user_permissions, require_admin_role
 from src.auth.enums.features import Features
@@ -26,13 +26,13 @@ class TestUserPermissionSystemIntegration:
         assert callable(get_user_permissions)
 
         # Test permission helpers
-        assert callable(get_user_feature_permissions)
-        assert callable(get_user_expenses_permissions)
-        assert callable(get_user_categories_permissions)
-        assert callable(get_user_payment_methods_permissions)
-        assert callable(get_user_todo_items_permissions)
-        assert callable(get_user_api_keys_permissions)
-        assert callable(get_user_shared_permissions)
+        assert callable(get_feature_permissions)
+        assert callable(get_expenses_permissions)
+        assert callable(get_categories_permissions)
+        assert callable(get_payment_methods_permissions)
+        assert callable(get_todo_items_permissions)
+        assert callable(get_api_keys_permissions)
+        assert callable(get_shared_permissions)
 
         # Test dependencies
         assert callable(require_user_permissions)
@@ -41,10 +41,10 @@ class TestUserPermissionSystemIntegration:
     def test_user_permission_helpers_create_dependencies(self):
         """Test that user permission helpers create proper dependencies."""
         # Test creating permission dependencies
-        expenses_create_dep = get_user_expenses_permissions(Actions.CREATE)
-        expenses_read_dep = get_user_expenses_permissions(Actions.READ)
-        categories_update_dep = get_user_categories_permissions(Actions.UPDATE)
-        shared_delete_dep = get_user_shared_permissions(Actions.DELETE)
+        expenses_create_dep = get_expenses_permissions(Actions.CREATE)
+        expenses_read_dep = get_expenses_permissions(Actions.READ)
+        categories_update_dep = get_categories_permissions(Actions.UPDATE)
+        shared_delete_dep = get_shared_permissions(Actions.DELETE)
 
         # All should be callable
         assert callable(expenses_create_dep)
@@ -55,17 +55,17 @@ class TestUserPermissionSystemIntegration:
     def test_user_permission_helpers_use_correct_features(self):
         """Test that permission helpers use the correct feature enums."""
         # Test that helpers are created with correct feature types
-        feature_dep = get_user_feature_permissions(
+        feature_dep = get_feature_permissions(
             Features.EXPENSES, Actions.READ)
         assert callable(feature_dep)
 
         # Test specific feature helpers exist
-        assert callable(get_user_expenses_permissions(Actions.READ))
-        assert callable(get_user_categories_permissions(Actions.CREATE))
-        assert callable(get_user_payment_methods_permissions(Actions.UPDATE))
-        assert callable(get_user_todo_items_permissions(Actions.DELETE))
-        assert callable(get_user_api_keys_permissions(Actions.READ))
-        assert callable(get_user_shared_permissions(Actions.READ))
+        assert callable(get_expenses_permissions(Actions.READ))
+        assert callable(get_categories_permissions(Actions.CREATE))
+        assert callable(get_payment_methods_permissions(Actions.UPDATE))
+        assert callable(get_todo_items_permissions(Actions.DELETE))
+        assert callable(get_api_keys_permissions(Actions.READ))
+        assert callable(get_shared_permissions(Actions.READ))
 
     def test_permission_system_architecture(self):
         """Test that the permission system has proper architecture."""
@@ -76,7 +76,7 @@ class TestUserPermissionSystemIntegration:
             user_has_admin_role,
             get_admin_permissions
         )
-        from src.auth.permission_helpers import get_user_feature_permissions
+        from src.auth.permission_helpers import get_feature_permissions
         from src.auth.dependencies import require_user_permissions, require_admin_role
 
         # Test that all components exist
@@ -84,7 +84,7 @@ class TestUserPermissionSystemIntegration:
         assert get_user_permissions is not None
         assert user_has_admin_role is not None
         assert get_admin_permissions is not None
-        assert get_user_feature_permissions is not None
+        assert get_feature_permissions is not None
         assert require_user_permissions is not None
         assert require_admin_role is not None
 
@@ -117,19 +117,19 @@ class TestUserPermissionSystemIntegration:
         # Test that permission helpers can be created for all combinations
         for feature in features:
             for action in actions:
-                dep = get_user_feature_permissions(feature, action)
+                dep = get_feature_permissions(feature, action)
                 assert callable(dep)
 
     def test_permission_system_imports_work(self):
         """Test that all permission system imports work correctly."""
         # Test imports from different modules
         from src.auth.permissions import check_user_permissions
-        from src.auth.permission_helpers import get_user_shared_permissions
+        from src.auth.permission_helpers import get_shared_permissions
         from src.auth.dependencies import require_user_permissions
         from src.services.user_service import check_user_permission
 
         # All should be imported successfully
         assert check_user_permissions is not None
-        assert get_user_shared_permissions is not None
+        assert get_shared_permissions is not None
         assert require_user_permissions is not None
         assert check_user_permission is not None

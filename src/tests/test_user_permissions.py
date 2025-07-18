@@ -306,30 +306,30 @@ class TestUserPermissionHelpers:
     def test_user_feature_permissions_helper_import(self):
         """Test that user permission helpers can be imported."""
         from src.auth.permission_helpers import (
-            get_user_feature_permissions,
-            get_user_expenses_permissions,
-            get_user_categories_permissions,
-            get_user_payment_methods_permissions,
-            get_user_todo_items_permissions,
-            get_user_api_keys_permissions,
-            get_user_shared_permissions
+            get_feature_permissions,
+            get_expenses_permissions,
+            get_categories_permissions,
+            get_payment_methods_permissions,
+            get_todo_items_permissions,
+            get_api_keys_permissions,
+            get_shared_permissions
         )
 
         # Test that helpers are callable
-        assert callable(get_user_feature_permissions)
-        assert callable(get_user_expenses_permissions)
-        assert callable(get_user_categories_permissions)
-        assert callable(get_user_payment_methods_permissions)
-        assert callable(get_user_todo_items_permissions)
-        assert callable(get_user_api_keys_permissions)
-        assert callable(get_user_shared_permissions)
+        assert callable(get_feature_permissions)
+        assert callable(get_expenses_permissions)
+        assert callable(get_categories_permissions)
+        assert callable(get_payment_methods_permissions)
+        assert callable(get_todo_items_permissions)
+        assert callable(get_api_keys_permissions)
+        assert callable(get_shared_permissions)
 
     def test_user_permission_dependency_creation(self):
         """Test that user permission dependencies can be created."""
-        from src.auth.permission_helpers import get_user_feature_permissions
+        from src.auth.permission_helpers import get_feature_permissions
 
         # Test creating a permission dependency
-        permission_dep = get_user_feature_permissions(
+        permission_dep = get_feature_permissions(
             Features.EXPENSES, Actions.READ)
         assert callable(permission_dep)
 
