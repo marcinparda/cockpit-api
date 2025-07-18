@@ -1,33 +1,49 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from uuid import UUID
+from typing import Sequence
 
 from src.models.feature import Feature
 from src.models.action import Action
 from src.models.permission import Permission
-from src.models.api_key_permission import APIKeyPermission
+from src.models.user import User
+from src.models.user_permission import UserPermission
 from src.auth.enums.actions import Actions
 from src.auth.enums.features import Features
+from src.auth.enums.roles import Roles
 
 
-async def check_api_key_permissions(
+async def check_user_permissions(
     db: AsyncSession,
-    api_key_id: UUID,
+    user_id: UUID,
     feature: Features,
     action: Actions
 ) -> bool:
     """
-    Check if an API key has permission to perform an action on a feature.
+    Check if a current user has permission to perform an action on a feature.
 
     Args:
         db: Database session
-        api_key_id: UUID of the API key
+        user_id: UUID of the user
         feature: Feature to check permission for
         action: Action to check permission for
 
     Returns:
-        True if the API key has permission, False otherwise
+        True if the user has permission, False otherwise
     """
+    # Get user with role
+    user_query = await db.execute(
+        select(User).where(User.id == user_id)
+    )
+    user = user_query.scalars().first()
+
+    if not user or user.is_active is False:
+        return False
+
+    # Admin users have all permissions
+    if user.role and user.role.name == Roles.ADMIN.value:
+        return True
+
     # Get feature and action IDs
     feature_query = await db.execute(select(Feature).where(Feature.name == feature.value))
     feature_obj = feature_query.scalars().first()
@@ -53,14 +69,88 @@ async def check_api_key_permissions(
     if not permission:
         return False
 
-    # Check if API key has this permission
-    api_key_permission_query = await db.execute(
-        select(APIKeyPermission).where(
-            APIKeyPermission.api_key_id == api_key_id,
-            APIKeyPermission.permission_id == permission.id
+    # Check if user has this permission
+    user_permission_query = await db.execute(
+        select(UserPermission).where(
+            UserPermission.user_id == user_id,
+            UserPermission.permission_id == permission.id
         )
     )
 
-    api_key_permission = api_key_permission_query.scalars().first()
+    user_permission = user_permission_query.scalars().first()
 
-    return api_key_permission is not None
+    return user_permission is not None
+
+
+async def get_user_permissions(
+    db: AsyncSession,
+    user_id: UUID
+) -> Sequence[Permission]:
+    """
+    Get all permissions for a user.
+
+    Args:
+        db: Database session
+        user_id: UUID of the user
+
+    Returns:
+        Sequence of Permission objects
+    """
+    # Get user with role
+    user_query = await db.execute(
+        select(User).where(User.id == user_id)
+    )
+    user = user_query.scalars().first()
+
+    if not user or user.is_active is False:
+        return []
+
+    # Admin users have all permissions
+    if user.role and user.role.name == Roles.ADMIN.value:
+        return await get_admin_permissions(db)
+
+    # Get user-specific permissions
+    result = await db.execute(
+        select(Permission)
+        .join(UserPermission)
+        .where(UserPermission.user_id == user_id)
+    )
+    return result.scalars().all()
+
+
+async def user_has_admin_role(
+    db: AsyncSession,
+    user_id: UUID
+) -> bool:
+    """
+    Check if user has admin role.
+
+    Args:
+        db: Database session
+        user_id: UUID of the user
+
+    Returns:
+        True if user has admin role, False otherwise
+    """
+    user_query = await db.execute(
+        select(User).where(User.id == user_id)
+    )
+    user = user_query.scalars().first()
+
+    return bool(user and user.role and user.role.name == Roles.ADMIN.value)
+
+
+async def get_admin_permissions(
+    db: AsyncSession
+) -> Sequence[Permission]:
+    """
+    Get all permissions for admin role.
+
+    Args:
+        db: Database session
+
+    Returns:
+        Sequence of all Permission objects
+    """
+    result = await db.execute(select(Permission))
+    return result.scalars().all()

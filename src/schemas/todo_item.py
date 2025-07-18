@@ -1,6 +1,6 @@
 from typing import Optional
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from src.schemas.todo_project import TodoProject
 
 
@@ -32,8 +32,7 @@ class TodoItemInDBBase(TodoItemBase):
     completed_at: Optional[datetime] = None
     project: Optional[TodoProject] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TodoItem(TodoItemInDBBase):

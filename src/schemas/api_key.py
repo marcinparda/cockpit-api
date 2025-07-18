@@ -1,4 +1,4 @@
-from pydantic import BaseModel, UUID4
+from pydantic import BaseModel, UUID4, ConfigDict
 from typing import Optional, List, Dict
 from datetime import datetime
 
@@ -23,8 +23,7 @@ class APIKeyInDBBase(APIKeyBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class APIKey(APIKeyInDBBase):

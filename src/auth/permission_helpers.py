@@ -1,49 +1,50 @@
 from fastapi import Depends
+from functools import partial
 
-from src.auth.dependencies import require_permissions, get_api_key
+from src.auth.dependencies import require_user_permissions
 from src.auth.enums.actions import Actions
 from src.auth.enums.features import Features
-from src.core.database import get_db
 
 
 def get_feature_permissions(feature: Features, action: Actions):
     """
-    Returns a dependency that checks permissions for the specified feature and action.
+    Generic user permission dependency for any feature/action combination.
 
-    Usage:
-        @router.get("/", dependencies=[Depends(get_feature_permissions(Features.CATEGORIES, Actions.READ))])
+    Args:
+        feature: Feature to check permission for
+        action: Action to check permission for
+
+    Returns:
+        FastAPI dependency that requires user permission
     """
-    return lambda api_key=Depends(get_api_key), db=Depends(get_db): require_permissions(
-        feature, action, api_key, db
-    )
+    return partial(require_user_permissions, feature, action)
 
 
 def get_expenses_permissions(action: Actions):
-    """Returns a dependency that checks permissions for the expenses feature."""
+    """User-based expenses permissions dependency."""
     return get_feature_permissions(Features.EXPENSES, action)
 
 
-# Add more feature-specific permissions helpers as needed
 def get_categories_permissions(action: Actions):
-    """Returns a dependency that checks permissions for the categories feature."""
+    """User-based categories permissions dependency."""
     return get_feature_permissions(Features.CATEGORIES, action)
 
 
 def get_payment_methods_permissions(action: Actions):
-    """Returns a dependency that checks permissions for the payment methods feature."""
+    """User-based payment methods permissions dependency."""
     return get_feature_permissions(Features.PAYMENT_METHODS, action)
 
 
 def get_todo_items_permissions(action: Actions):
-    """Returns a dependency that checks permissions for the todo items feature."""
-    return get_feature_permissions(Features.SHOPPING_ITEMS, action)
+    """User-based todo items permissions dependency."""
+    return get_feature_permissions(Features.TODO_ITEMS, action)
 
 
 def get_api_keys_permissions(action: Actions):
-    """Returns a dependency that checks permissions for the API keys feature."""
+    """User-based API keys permissions dependency."""
     return get_feature_permissions(Features.API_KEYS, action)
 
 
 def get_shared_permissions(action: Actions):
-    """Returns a dependency that checks permissions for the shared feature."""
+    """User-based shared permissions dependency."""
     return get_feature_permissions(Features.SHARED, action)

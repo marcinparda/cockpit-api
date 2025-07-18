@@ -31,9 +31,7 @@ async def get_todo_items(
     order: str = Query("asc", description="Sort order: asc or desc"),
     _: None = Depends(get_todo_items_permissions(Actions.READ))
 ) -> Any:
-    """
-    Retrieve all todo items.
-    """
+    """Retrieve all todo items."""
     allowed_sort_fields = {"id", "name", "created_at",
                            "updated_at", "is_closed", "completed_at"}
     if sort_by not in allowed_sort_fields:
@@ -58,9 +56,7 @@ async def create_todo_item(
     item_in: TodoItemCreate,
     _: None = Depends(get_todo_items_permissions(Actions.CREATE))
 ) -> Any:
-    """
-    Create new todo item.
-    """
+    """Create new todo item."""
     project = None
     if item_in.project_id:
         project = await db.get(TodoProject, item_in.project_id)
@@ -87,9 +83,7 @@ async def get_todo_item(
     item_id: int,
     _: None = Depends(get_todo_items_permissions(Actions.READ))
 ) -> Any:
-    """
-    Get todo item by ID.
-    """
+    """Get todo item by ID."""
     item = await db.get(TodoItem, item_id, options=[selectinload(TodoItem.project)])
     if not item:
         raise HTTPException(
@@ -107,9 +101,7 @@ async def update_todo_item(
     item_in: TodoItemUpdate,
     _: None = Depends(get_todo_items_permissions(Actions.UPDATE))
 ) -> Any:
-    """
-    Update a todo item.
-    """
+    """Update a todo item."""
     db_item = await db.get(TodoItem, item_id, options=[selectinload(TodoItem.project)])
     if not db_item:
         raise HTTPException(
@@ -142,9 +134,7 @@ async def delete_todo_item(
     item_id: int,
     _: None = Depends(get_todo_items_permissions(Actions.DELETE))
 ) -> Any:
-    """
-    Delete a todo item.
-    """
+    """Delete a todo item."""
     db_item = await db.get(TodoItem, item_id)
     if not db_item:
         raise HTTPException(
