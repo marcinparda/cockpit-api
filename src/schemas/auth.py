@@ -84,3 +84,22 @@ class RefreshTokenRequest(BaseModel):
 class LogoutRequest(BaseModel):
     """Schema for logout request."""
     refresh_token: Optional[str] = None
+
+
+class PasswordChangeResponse(BaseModel):
+    """Response model for password change endpoint."""
+    message: str
+
+
+class UserInfoResponse(BaseModel):
+    """Response model for user information endpoint."""
+    user_id: UUID
+    email: str
+    is_active: bool
+    password_changed: bool
+    created_at: str  # ISO format datetime string
+
+
+class LogoutResponse(BaseModel):
+    """Response model for logout endpoint."""
+    message: str

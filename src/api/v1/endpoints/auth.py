@@ -6,8 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_db
 from src.schemas.auth import (
-    LoginRequest, LoginResponse, PasswordChangeRequest,
-    RefreshTokenRequest, RefreshTokenResponse, LogoutRequest
+    LoginRequest, LoginResponse, PasswordChangeRequest, PasswordChangeResponse,
+    RefreshTokenRequest, RefreshTokenResponse, LogoutRequest, LogoutResponse,
+    UserInfoResponse
 )
 from src.services.auth_service import (
     login_user, refresh_user_tokens, logout_user
@@ -25,30 +26,7 @@ async def login(
     login_request: LoginRequest,
     db: AsyncSession = Depends(get_db)
 ) -> LoginResponse:
-    """
-    Authenticate user with email and password.
-
-    Returns JWT access token, refresh token and user information on successful authentication.
-
-    **Parameters:**
-    - **email**: User's email address
-    - **password**: User's password
-
-    **Returns:**
-    - **access_token**: JWT access token
-    - **refresh_token**: JWT refresh token
-    - **token_type**: Token type (bearer)
-    - **expires_in**: Access token expiration time in seconds
-    - **refresh_expires_in**: Refresh token expiration time in seconds
-    - **user_id**: User's unique identifier
-    - **email**: User's email address
-    - **is_active**: User account status
-    - **password_changed**: Whether user has changed initial password
-
-    **Errors:**
-    - **401 Unauthorized**: Invalid email or password
-    - **401 Unauthorized**: User account is inactive
-    """
+    """Authenticate user with email and password."""
     try:
         login_response = await login_user(
             db=db,
@@ -69,37 +47,13 @@ async def login(
         )
 
 
-@router.post("/change-password")
+@router.post("/change-password", response_model=PasswordChangeResponse)
 async def change_password(
     password_request: PasswordChangeRequest,
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
-) -> dict:
-    """
-    Change current user's password.
-
-    Requires valid JWT token. User must provide current password for verification.
-
-    **Parameters:**
-    - **current_password**: Current password for verification
-    - **new_password**: New password (must meet complexity requirements)
-
-    **Password Requirements:**
-    - Minimum 8 characters
-    - At least one uppercase letter
-    - At least one lowercase letter  
-    - At least one digit
-    - At least one special character
-
-    **Returns:**
-    - **message**: Success confirmation
-
-    **Errors:**
-    - **400 Bad Request**: Current password is incorrect
-    - **400 Bad Request**: New password doesn't meet requirements
-    - **401 Unauthorized**: Invalid or missing JWT token
-    - **404 Not Found**: User not found
-    """
+) -> PasswordChangeResponse:
+    """Change current user's password."""
     try:
         success = await change_user_password(
             db=db,
@@ -109,7 +63,7 @@ async def change_password(
         )
 
         if success:
-            return {"message": "Password changed successfully"}
+            return PasswordChangeResponse(message="Password changed successfully")
         else:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -128,31 +82,17 @@ async def change_password(
         )
 
 
-@router.get("/me")
+@router.get("/me", response_model=UserInfoResponse)
 async def get_current_user_info(
     current_user: User = Depends(get_current_active_user)
-) -> dict:
-    """
-    Get current authenticated user information.
-
-    Requires valid JWT token.
-
-    **Returns:**
-    - **user_id**: User's unique identifier
-    - **email**: User's email address
-    - **is_active**: User account status
-    - **password_changed**: Whether user has changed initial password
-    - **created_at**: User account creation timestamp
-
-    **Errors:**
-    - **401 Unauthorized**: Invalid or missing JWT token
-    """
+):
+    """Get current authenticated user information."""
     return {
         "user_id": current_user.id,
         "email": current_user.email,
         "is_active": current_user.is_active,
         "password_changed": current_user.password_changed,
-        "created_at": current_user.created_at
+        "created_at": current_user.created_at.isoformat()
     }
 
 
@@ -161,22 +101,7 @@ async def refresh_tokens(
     refresh_request: RefreshTokenRequest,
     db: AsyncSession = Depends(get_db)
 ) -> RefreshTokenResponse:
-    """
-    Refresh access token using refresh token.
-
-    **Parameters:**
-    - **refresh_token**: Valid refresh token
-
-    **Returns:**
-    - **access_token**: New JWT access token
-    - **refresh_token**: New JWT refresh token
-    - **token_type**: Token type (bearer)
-    - **expires_in**: Access token expiration time in seconds
-    - **refresh_expires_in**: Refresh token expiration time in seconds
-
-    **Errors:**
-    - **401 Unauthorized**: Invalid or expired refresh token
-    """
+    """Refresh access token using refresh token."""
     try:
         refresh_response = await refresh_user_tokens(refresh_request.refresh_token)
         return refresh_response
@@ -193,24 +118,13 @@ async def refresh_tokens(
         )
 
 
-@router.post("/logout")
+@router.post("/logout", response_model=LogoutResponse)
 async def logout(
     request: Request,
     logout_request: LogoutRequest = LogoutRequest(),
     user_token: tuple[User, str] = Depends(get_current_user_with_token)
-) -> dict:
-    """
-    Logout user by invalidating tokens.
-
-    **Parameters:**
-    - **refresh_token**: Optional refresh token to invalidate
-
-    **Returns:**
-    - **message**: Success confirmation
-
-    **Errors:**
-    - **401 Unauthorized**: Invalid or missing JWT token
-    """
+):
+    """Logout user by invalidating tokens."""
     try:
         current_user, access_token = user_token
 

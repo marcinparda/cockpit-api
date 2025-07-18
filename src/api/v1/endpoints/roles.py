@@ -20,25 +20,7 @@ async def list_all_roles(
     admin_user: User = Depends(require_admin_role),
     db: AsyncSession = Depends(get_db)
 ) -> List[UserRoleSchema]:
-    """
-    List all available user roles (admin only).
-
-    **Returns:**
-    - List of all user roles in the system
-
-    **Role Types:**
-    - **Admin**: Full system access with all permissions
-    - **User**: Standard user access with assigned permissions  
-    - **TestUser**: Limited access for testing purposes
-
-    **Requires:**
-    - Admin role
-    - Valid JWT token
-
-    **Errors:**
-    - **401 Unauthorized**: Invalid or missing JWT token
-    - **403 Forbidden**: User is not admin
-    """
+    """List all available user roles (admin only)."""
     roles = await get_all_roles(db)
     return [UserRoleSchema.model_validate(role) for role in roles]
 
@@ -49,29 +31,7 @@ async def get_role_default_permissions(
     admin_user: User = Depends(require_admin_role),
     db: AsyncSession = Depends(get_db)
 ) -> List[PermissionSchema]:
-    """
-    Get default permissions for a specific role (admin only).
-
-    **Parameters:**
-    - **role_id**: UUID of the role
-
-    **Returns:**
-    - List of permissions typically assigned to this role
-
-    **Note:**
-    - Admin role users have all permissions by default (not stored in database)
-    - Regular users and TestUsers get specific permissions assigned individually
-    - This endpoint shows recommended permissions for the role type
-
-    **Requires:**
-    - Admin role
-    - Valid JWT token
-
-    **Errors:**
-    - **401 Unauthorized**: Invalid or missing JWT token
-    - **403 Forbidden**: User is not admin
-    - **404 Not Found**: Role not found
-    """
+    """Get default permissions for a specific role (admin only)."""
     # For now, return empty list as permissions are assigned individually
     # This could be extended to show recommended permissions per role
     return []

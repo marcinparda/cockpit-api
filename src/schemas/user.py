@@ -123,3 +123,9 @@ class PasswordResetResponse(BaseModel):
     """Schema for password reset response."""
     message: str
     new_password: str
+
+
+class UserPermissionAssignResponse(BaseModel):
+    """Response model for permission assignment endpoint."""
+    message: str
+    assigned_permissions: int
