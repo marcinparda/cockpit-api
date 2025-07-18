@@ -4,6 +4,7 @@ import uuid
 from .base import BaseModel
 from sqlalchemy.orm import relationship
 
+
 class Permission(BaseModel):
     __tablename__ = "permissions"
 

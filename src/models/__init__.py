@@ -13,5 +13,5 @@ from .user import User
 from .user_permission import UserPermission
 
 __all__ = ["Category", "Expense", "PaymentMethod", "APIKey",
-           "APIKeyPermission", "Permission", "Feature", "Action", "TodoItem", "TodoProject", 
+           "APIKeyPermission", "Permission", "Feature", "Action", "TodoItem", "TodoProject",
            "UserRole", "User", "UserPermission"]

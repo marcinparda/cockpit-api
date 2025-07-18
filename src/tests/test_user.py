@@ -16,7 +16,7 @@ class TestUserModel:
     def test_user_model_attributes(self):
         """Test that User model has all required attributes."""
         user = User()
-        
+
         # Check all required attributes exist
         assert hasattr(user, 'id')
         assert hasattr(user, 'email')
@@ -27,7 +27,7 @@ class TestUserModel:
         assert hasattr(user, 'created_by')
         assert hasattr(user, 'created_at')
         assert hasattr(user, 'updated_at')
-        
+
         # Check relationships
         assert hasattr(user, 'role')
         assert hasattr(user, 'permissions')
@@ -40,7 +40,7 @@ class TestUserModel:
         user.id = user_id
         user.email = "test@example.com"
         user.is_active = True
-        
+
         expected = f"<User(id={user_id}, email=test@example.com, is_active=True)>"
         assert repr(user) == expected
 
@@ -51,7 +51,7 @@ class TestUserSchemas:
     def test_user_create_schema(self):
         """Test UserCreate schema validation."""
         role_id = uuid4()
-        
+
         # Valid user creation data
         user_data = {
             "email": "test@example.com",
@@ -59,7 +59,7 @@ class TestUserSchemas:
             "role_id": role_id,
             "is_active": True
         }
-        
+
         user_create = UserCreate(**user_data)
         assert user_create.email == "test@example.com"
         assert user_create.password == "SecurePass123!"
@@ -73,23 +73,23 @@ class TestUserSchemas:
             "email": "test@example.com",
             "role_id": role_id
         }
-        
+
         # Test password too short
         with pytest.raises(ValueError, match="Password must be at least 8 characters long"):
             UserCreate(**base_data, password="short")
-        
+
         # Test password without uppercase
         with pytest.raises(ValueError, match="Password must contain at least one uppercase letter"):
             UserCreate(**base_data, password="lowercase123!")
-        
+
         # Test password without lowercase
         with pytest.raises(ValueError, match="Password must contain at least one lowercase letter"):
             UserCreate(**base_data, password="UPPERCASE123!")
-        
+
         # Test password without digit
         with pytest.raises(ValueError, match="Password must contain at least one digit"):
             UserCreate(**base_data, password="NoNumbers!")
-        
+
         # Test password without special character
         with pytest.raises(ValueError, match="Password must contain at least one special character"):
             UserCreate(**base_data, password="NoSpecial123")
@@ -97,13 +97,13 @@ class TestUserSchemas:
     def test_user_update_schema(self):
         """Test UserUpdate schema."""
         role_id = uuid4()
-        
+
         # All fields optional
         user_update = UserUpdate()
         assert user_update.email is None
         assert user_update.is_active is None
         assert user_update.role_id is None
-        
+
         # With values
         user_update = UserUpdate(
             email="updated@example.com",
@@ -120,7 +120,7 @@ class TestUserSchemas:
         role_id = uuid4()
         created_by = uuid4()
         now = datetime.now(UTC)
-        
+
         user_data = {
             "id": user_id,
             "email": "test@example.com",
@@ -131,7 +131,7 @@ class TestUserSchemas:
             "created_at": now,
             "updated_at": now
         }
-        
+
         user_response = UserResponse(**user_data)
         assert user_response.id == user_id
         assert user_response.email == "test@example.com"

@@ -14,14 +14,17 @@ class User(BaseModel):
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
-    role_id = Column(UUID(as_uuid=True), ForeignKey("user_roles.id"), nullable=False)
+    role_id = Column(UUID(as_uuid=True), ForeignKey(
+        "user_roles.id"), nullable=False)
     password_changed = Column(Boolean, default=False, nullable=False)
-    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    created_by = Column(UUID(as_uuid=True),
+                        ForeignKey("users.id"), nullable=True)
 
     # Relationships
     role = relationship("UserRole", back_populates="users")
-    permissions = relationship("UserPermission", back_populates="user", cascade="all, delete-orphan")
-    
+    permissions = relationship(
+        "UserPermission", back_populates="user", cascade="all, delete-orphan")
+
     # Self-referential relationship for created_by
     creator = relationship("User", remote_side=[id], backref="created_users")
 
