@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str = "your-secret-key-here-change-in-production"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_HOURS: int = 24
+    JWT_REFRESH_EXPIRE_DAYS: int = 30  # Refresh token expires in 30 days
 
     # Password Hashing Settings
     BCRYPT_ROUNDS: int = 12

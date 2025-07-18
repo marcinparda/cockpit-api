@@ -90,9 +90,6 @@ class TestUserPermissionSystemIntegration:
 
     def test_user_service_functions_exist(self):
         """Test that user service functions exist."""
-        from src.services.user_service import check_user_permission, get_user_permissions
-
-        assert callable(check_user_permission)
         assert callable(get_user_permissions)
 
     def test_enums_work_with_permission_system(self):
@@ -126,10 +123,8 @@ class TestUserPermissionSystemIntegration:
         from src.auth.permissions import check_user_permissions
         from src.auth.permission_helpers import get_shared_permissions
         from src.auth.dependencies import require_user_permissions
-        from src.services.user_service import check_user_permission
 
         # All should be imported successfully
         assert check_user_permissions is not None
         assert get_shared_permissions is not None
         assert require_user_permissions is not None
-        assert check_user_permission is not None

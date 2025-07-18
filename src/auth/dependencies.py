@@ -9,7 +9,6 @@ from src.auth.enums.features import Features
 from src.auth.enums.roles import Roles
 from src.auth.permissions import check_user_permissions
 from src.auth.jwt_dependencies import get_current_active_user
-from src.services.user_service import check_user_permission
 
 
 async def require_admin_role(

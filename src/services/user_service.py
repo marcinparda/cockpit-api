@@ -151,47 +151,6 @@ async def change_user_password(
     return True
 
 
-async def check_user_permission(
-    db: AsyncSession,
-    user_id: UUID,
-    feature: str,
-    action: str
-) -> bool:
-    """
-    Check if user has specific permission.
-
-    Args:
-        db: Database session
-        user_id: User's UUID
-        feature: Feature name
-        action: Action name
-
-    Returns:
-        True if user has permission, False otherwise
-    """
-    # Get user with role
-    user = await get_user_with_role(db, user_id)
-    if not user or user.is_active is False:
-        return False
-
-    # Admin users have all permissions
-    if user.role and user.role.name == Roles.ADMIN.value:
-        return True
-
-    # Get user with permissions
-    user_with_permissions = await get_user_with_permissions(db, user_id)
-    if not user_with_permissions:
-        return False
-
-    # Check if user has the specific permission
-    for user_permission in user_with_permissions.permissions:
-        permission = user_permission.permission
-        if permission.feature.name == feature and permission.action.name == action:
-            return True
-
-    return False
-
-
 async def get_user_permissions(db: AsyncSession, user_id: UUID) -> Sequence[Permission]:
     """
     Get all permissions for a user.

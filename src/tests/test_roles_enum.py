@@ -47,9 +47,7 @@ class TestRolesEnum:
         # Test that the roles enum can be imported by permission system
         from src.auth.permissions import check_user_permissions
         from src.auth.dependencies import require_admin_role
-        from src.services.user_service import check_user_permission
 
         # If these imports work, the roles enum is properly integrated
         assert check_user_permissions is not None
         assert require_admin_role is not None
-        assert check_user_permission is not None

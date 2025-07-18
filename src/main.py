@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.api.v1.endpoints import expenses, categories, payment_methods, todo_items, todo_projects, shared, auth, users, roles
 from src.core.config import settings
+from src.middleware.rate_limit import RateLimitMiddleware
+from src.middleware.jwt_validation import JWTValidationMiddleware
 from typing import List
 
 app = FastAPI(title="Cockpit API", version="0.0.1",
@@ -17,6 +19,12 @@ app.add_middleware(
     allow_methods=settings.CORS_ALLOW_METHODS,
     allow_headers=settings.CORS_ALLOW_HEADERS,
 )
+
+# Add rate limiting middleware
+app.add_middleware(RateLimitMiddleware)
+
+# Add JWT validation middleware
+app.add_middleware(JWTValidationMiddleware)
 
 app.include_router(
     expenses.router, prefix="/api/v1/expenses", tags=["ai-budget/expenses"])
