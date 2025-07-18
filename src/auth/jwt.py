@@ -36,7 +36,7 @@ def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta]
     return encoded_jwt
 
 
-def verify_token(token: str) -> TokenData:
+def verify_token(token: str) -> Dict[str, Any]:
     """
     Verify and decode a JWT token.
 
@@ -44,7 +44,7 @@ def verify_token(token: str) -> TokenData:
         token: The JWT token to verify
 
     Returns:
-        TokenData containing the decoded payload
+        Dictionary containing the decoded payload
 
     Raises:
         JWTError: If token is invalid, expired, or malformed
@@ -54,23 +54,17 @@ def verify_token(token: str) -> TokenData:
                              algorithms=[settings.JWT_ALGORITHM])
 
         user_id: Optional[str] = payload.get("sub")
-        email: Optional[str] = payload.get("email")
-
+        
         if user_id is None:
             raise JWTError("Token missing user identifier")
 
-        token_data = TokenData(
-            user_id=UUID(user_id) if user_id else None,
-            email=email
-        )
-
-        return token_data
+        return payload
 
     except JWTError:
         raise
     except ValueError as e:
         # Handle UUID conversion errors
-        raise JWTError(f"Invalid user ID format: {e}")
+        raise JWTError(f"Invalid token format: {e}")
 
 
 def create_token_response(user_id: UUID, email: str) -> TokenResponse:

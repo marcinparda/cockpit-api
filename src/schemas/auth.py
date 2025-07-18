@@ -34,8 +34,25 @@ class LoginResponse(BaseModel):
     expires_in: int
     user_id: UUID
     email: str
-    role_name: str
+    is_active: bool
     password_changed: bool
+
+
+class PasswordChangeRequest(BaseModel):
+    """Schema for password change request."""
+    current_password: str
+    new_password: str
+    
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password(cls, v: str) -> str:
+        """Validate new password strength."""
+        from src.auth.password import validate_password_strength
+        
+        is_valid, errors = validate_password_strength(v)
+        if not is_valid:
+            raise ValueError(f"Password validation failed: {', '.join(errors)}")
+        return v
 
 
 class TokenPayload(BaseModel):
