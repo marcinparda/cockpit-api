@@ -192,8 +192,7 @@ def generate_temporary_password(length: int = 12) -> str:
         Randomly generated password
     """
     alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
-    password = ''.join(secrets.choice(alphabet) for _ in range(length))
-    return password
+    return ''.join(secrets.choice(alphabet) for _ in range(length))
 
 
 async def get_all_users(
