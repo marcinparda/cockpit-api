@@ -6,14 +6,14 @@ from src.middleware.rate_limit import RateLimitMiddleware
 from src.middleware.jwt_validation import JWTValidationMiddleware
 from typing import List
 
-app = FastAPI(title="Cockpit API", version="0.0.1",
+app = FastAPI(title="Cockpit API", version="0.1.0",
               docs_url="/api/docs")
 
 origins: List[str] = [str(origin) for origin in settings.CORS_ORIGINS] if isinstance(
     settings.CORS_ORIGINS, list) else [str(settings.CORS_ORIGINS)]
 
 app.add_middleware(
-    CORSMiddleware,
+    CORSMiddleware, 
     allow_origins=origins,
     allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
     allow_methods=settings.CORS_ALLOW_METHODS,
