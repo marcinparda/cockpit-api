@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_db
 from src.auth.jwt import verify_token
-from src.services.user_service import get_user_by_id
+from src.services.user_service import get_user_with_role
 from src.models.user import User
 
 
@@ -68,7 +68,7 @@ async def get_current_user(
         )
     
     # Get user from database
-    user = await get_user_by_id(db, user_id)
+    user = await get_user_with_role(db, user_id)
     
     if user is None:
         raise HTTPException(
