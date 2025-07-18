@@ -1,13 +1,18 @@
 """Rate limiting middleware for FastAPI applications."""
 
 import time
-from collections import defaultdict
-from typing import Dict, Optional, Tuple
-from fastapi import Request, Response, HTTPException, status
+from typing import Dict, Optional, Any
+from fastapi import Request, Response, status
 from starlette.middleware.base import BaseHTTPMiddleware
-import asyncio
-from datetime import datetime, timedelta
-from uuid import UUID
+
+# Import verify_token at module level to make it patchable in tests
+try:
+    from src.auth.jwt import verify_token
+except ImportError:
+    # Handle the case where jwt module is not available during testing
+    def verify_token(token: str) -> Dict[str, Any]:
+        """Placeholder function when jwt module is not available."""
+        return {}
 
 
 class RateLimitEntry:
@@ -236,8 +241,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
             token = auth_header.split(" ")[1]
 
-            # Import here to avoid circular imports
-            from src.auth.jwt import verify_token
+            # Use the module-level import
+            if verify_token is None:
+                return None
 
             payload = verify_token(token)
             return payload.get("sub")
