@@ -1,0 +1,77 @@
+"""Role management endpoints for admin operations."""
+
+from typing import List
+from uuid import UUID
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.core.database import get_db
+from src.schemas.user_role import UserRole as UserRoleSchema
+from src.schemas.permission import Permission as PermissionSchema
+from src.services.user_service import get_all_roles
+from src.auth.dependencies import require_admin_role
+from src.models.user import User
+
+router = APIRouter()
+
+
+@router.get("/", response_model=List[UserRoleSchema])
+async def list_all_roles(
+    admin_user: User = Depends(require_admin_role),
+    db: AsyncSession = Depends(get_db)
+) -> List[UserRoleSchema]:
+    """
+    List all available user roles (admin only).
+
+    **Returns:**
+    - List of all user roles in the system
+
+    **Role Types:**
+    - **Admin**: Full system access with all permissions
+    - **User**: Standard user access with assigned permissions  
+    - **TestUser**: Limited access for testing purposes
+
+    **Requires:**
+    - Admin role
+    - Valid JWT token
+
+    **Errors:**
+    - **401 Unauthorized**: Invalid or missing JWT token
+    - **403 Forbidden**: User is not admin
+    """
+    roles = await get_all_roles(db)
+    return [UserRoleSchema.model_validate(role) for role in roles]
+
+
+@router.get("/{role_id}/permissions", response_model=List[PermissionSchema])
+async def get_role_default_permissions(
+    role_id: UUID,
+    admin_user: User = Depends(require_admin_role),
+    db: AsyncSession = Depends(get_db)
+) -> List[PermissionSchema]:
+    """
+    Get default permissions for a specific role (admin only).
+
+    **Parameters:**
+    - **role_id**: UUID of the role
+
+    **Returns:**
+    - List of permissions typically assigned to this role
+
+    **Note:**
+    - Admin role users have all permissions by default (not stored in database)
+    - Regular users and TestUsers get specific permissions assigned individually
+    - This endpoint shows recommended permissions for the role type
+
+    **Requires:**
+    - Admin role
+    - Valid JWT token
+
+    **Errors:**
+    - **401 Unauthorized**: Invalid or missing JWT token
+    - **403 Forbidden**: User is not admin
+    - **404 Not Found**: Role not found
+    """
+    # For now, return empty list as permissions are assigned individually
+    # This could be extended to show recommended permissions per role
+    return []

@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.api.v1.endpoints import expenses, categories, payment_methods, todo_items, todo_projects, shared, auth
+from src.api.v1.endpoints import expenses, categories, payment_methods, todo_items, todo_projects, shared, auth, users, roles
 from src.core.config import settings
 from typing import List
 
@@ -32,6 +32,10 @@ app.include_router(
     shared.router, prefix="/api/v1/shared", tags=["shared"])
 app.include_router(
     auth.router, prefix="/api/v1/auth", tags=["shared/auth"])
+app.include_router(
+    users.router, prefix="/api/v1/users", tags=["shared/admin"])
+app.include_router(
+    roles.router, prefix="/api/v1/roles", tags=["shared/admin"])
 
 
 @app.get("/", tags=["root"])

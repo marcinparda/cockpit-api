@@ -2,12 +2,16 @@ from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import APIKeyHeader
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from uuid import UUID
 
 from src.core.database import get_db
 from src.models.api_key import APIKey
+from src.models.user import User
 from src.auth.enums.actions import Actions
 from src.auth.enums.features import Features
 from src.auth.permissions import check_api_key_permissions
+from src.auth.jwt_dependencies import get_current_active_user
+from src.services.user_service import check_user_permission
 
 api_key_header = APIKeyHeader(name="X-API-KEY", auto_error=False)
 
@@ -50,3 +54,69 @@ async def require_permissions(
         )
 
     return api_key
+
+
+async def require_admin_role(
+    current_user: User = Depends(get_current_active_user),
+) -> User:
+    """
+    Dependency to ensure user has admin role.
+    
+    Args:
+        current_user: Current authenticated user
+        
+    Returns:
+        User object if user has admin role
+        
+    Raises:
+        HTTPException: If user is not admin
+    """
+    if not current_user.role or current_user.role.name != "Admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin role required"
+        )
+    
+    return current_user
+
+
+async def require_user_permissions(
+    feature: Features,
+    action: Actions,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+) -> User:
+    """
+    Dependency to check if the user has the required permission.
+    
+    Args:
+        feature: Feature to check permission for
+        action: Action to check permission for
+        current_user: Current authenticated user
+        db: Database session
+        
+    Returns:
+        User object if user has permission
+        
+    Raises:
+        HTTPException: If user doesn't have permission
+    """
+    # Admin users have all permissions
+    if current_user.role and current_user.role.name == "Admin":
+        return current_user
+    
+    # Check specific permission for non-admin users
+    has_permission = await check_user_permission(
+        db, 
+        UUID(str(current_user.id)), 
+        feature.value, 
+        action.value
+    )
+    
+    if not has_permission:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"User does not have permission to {action.value} {feature.value}"
+        )
+    
+    return current_user

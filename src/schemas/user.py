@@ -14,14 +14,15 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     """Schema for creating a new user."""
-    password: str
+    password: Optional[str] = None
     role_id: UUID
-    created_by: Optional[UUID] = None
 
     @field_validator("password")
     @classmethod
-    def validate_password(cls, v: str) -> str:
-        """Validate password strength."""
+    def validate_password(cls, v: Optional[str]) -> Optional[str]:
+        """Validate password strength if provided."""
+        if v is None:
+            return v
         if len(v) < 8:
             raise ValueError("Password must be at least 8 characters long")
         if not any(c.isupper() for c in v):
@@ -104,10 +105,21 @@ class PasswordChangeRequest(BaseModel):
 
 
 class UserPermissionAssign(BaseModel):
-    """Schema for assigning permission to user."""
-    permission_id: UUID
+    """Schema for assigning permissions to user."""
+    permission_ids: List[UUID]
 
 
 class UserPermissionRevoke(BaseModel):
     """Schema for revoking permission from user."""
     permission_id: UUID
+
+
+class PasswordResetRequest(BaseModel):
+    """Schema for password reset request."""
+    new_password: Optional[str] = None
+
+
+class PasswordResetResponse(BaseModel):
+    """Schema for password reset response."""
+    message: str
+    new_password: str
