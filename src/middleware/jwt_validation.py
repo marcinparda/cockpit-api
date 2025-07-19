@@ -68,12 +68,17 @@ class JWTValidationMiddleware(BaseHTTPMiddleware):
                     # Update token last used timestamp
                     await TokenService.update_access_token_last_used(db, token_id)
 
-            except Exception as e:
-                # Log the error but don't block the request
-                # Let the endpoint handle token validation if needed
+            except DatabaseError as db_error:
+                # Log database-related errors but don't block the request
+                import logging
+                logging.getLogger(__name__).error(
+                    f"Database error during token validation: {str(db_error)}"
+                )
+            except JWTError as jwt_error:
+                # Log JWT-related errors but don't block the request
                 import logging
                 logging.getLogger(__name__).warning(
-                    f"Token validation error in middleware: {str(e)}"
+                    f"JWT error during token validation: {str(jwt_error)}"
                 )
 
         # Continue with request
