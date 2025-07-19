@@ -24,7 +24,7 @@ from src.models.user import User
 router = APIRouter()
 
 
-@router.get("/", response_model=List[UserWithRole])
+@router.get("/", response_model=List[UserWithRole], tags=["admin"])
 async def list_users(
     skip: int = Query(0, ge=0, description="Number of users to skip"),
     limit: int = Query(100, ge=1, le=1000,
@@ -37,7 +37,7 @@ async def list_users(
     return [UserWithRole.model_validate(user) for user in users]
 
 
-@router.post("/", response_model=UserWithRole, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=UserWithRole, status_code=status.HTTP_201_CREATED, tags=["admin"])
 async def create_new_user(
     user_data: UserCreate,
     admin_user: User = Depends(require_admin_role),
@@ -54,7 +54,7 @@ async def create_new_user(
     return UserWithRole.model_validate(user)
 
 
-@router.get("/{user_id}", response_model=UserWithPermissions)
+@router.get("/{user_id}", response_model=UserWithPermissions, tags=["admin"])
 async def get_user_details(
     user_id: UUID,
     admin_user: User = Depends(require_admin_role),
@@ -70,7 +70,7 @@ async def get_user_details(
     return UserWithPermissions.model_validate(user)
 
 
-@router.put("/{user_id}", response_model=UserWithRole)
+@router.put("/{user_id}", response_model=UserWithRole, tags=["admin"])
 async def update_user_info(
     user_id: UUID,
     user_data: UserUpdate,
@@ -88,7 +88,7 @@ async def update_user_info(
     return UserWithRole.model_validate(user)
 
 
-@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["admin"])
 async def delete_user_account(
     user_id: UUID,
     admin_user: User = Depends(require_admin_role),
@@ -103,7 +103,7 @@ async def delete_user_account(
         )
 
 
-@router.put("/{user_id}/role", response_model=UserWithRole)
+@router.put("/{user_id}/role", response_model=UserWithRole, tags=["admin"])
 async def change_user_role(
     user_id: UUID,
     role_id: UUID,
@@ -115,7 +115,7 @@ async def change_user_role(
     return UserWithRole.model_validate(user)
 
 
-@router.post("/{user_id}/permissions", response_model=UserPermissionAssignResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/{user_id}/permissions", response_model=UserPermissionAssignResponse, status_code=status.HTTP_201_CREATED, tags=["admin"])
 async def assign_permissions_to_user(
     user_id: UUID,
     permission_data: UserPermissionAssign,
@@ -132,7 +132,7 @@ async def assign_permissions_to_user(
     )
 
 
-@router.delete("/{user_id}/permissions/{permission_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{user_id}/permissions/{permission_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["admin"])
 async def revoke_permission_from_user(
     user_id: UUID,
     permission_id: UUID,
@@ -143,7 +143,7 @@ async def revoke_permission_from_user(
     await revoke_user_permission(db, user_id, permission_id)
 
 
-@router.post("/{user_id}/reset-password", response_model=PasswordResetResponse)
+@router.post("/{user_id}/reset-password", response_model=PasswordResetResponse, tags=["admin"])
 async def reset_user_password_endpoint(
     user_id: UUID,
     reset_data: Optional[PasswordResetRequest] = None,
@@ -162,7 +162,7 @@ async def reset_user_password_endpoint(
     )
 
 
-@router.get("/{user_id}/permissions", response_model=List[PermissionSchema])
+@router.get("/{user_id}/permissions", response_model=List[PermissionSchema], tags=["admin"])
 async def get_user_permissions_endpoint(
     user_id: UUID,
     admin_user: User = Depends(require_admin_role),

@@ -41,8 +41,8 @@ async def get_current_user_with_token(
         )
 
     try:
-        # Verify and decode JWT token
-        payload = verify_token(credentials.credentials)
+        # Verify and decode JWT token with database validation
+        payload = await verify_token(credentials.credentials, db)
         user_id_str = payload.get("sub")
 
         if user_id_str is None:
@@ -112,8 +112,8 @@ async def get_current_user(
         )
 
     try:
-        # Verify and decode JWT token
-        payload = verify_token(credentials.credentials)
+        # Verify and decode JWT token with database validation
+        payload = await verify_token(credentials.credentials, db)
         user_id_str = payload.get("sub")
 
         if user_id_str is None:

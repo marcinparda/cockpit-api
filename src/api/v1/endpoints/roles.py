@@ -15,7 +15,7 @@ from src.models.user import User
 router = APIRouter()
 
 
-@router.get("/", response_model=List[UserRoleSchema])
+@router.get("/", response_model=List[UserRoleSchema], tags=["admin"])
 async def list_all_roles(
     admin_user: User = Depends(require_admin_role),
     db: AsyncSession = Depends(get_db)
@@ -25,7 +25,7 @@ async def list_all_roles(
     return [UserRoleSchema.model_validate(role) for role in roles]
 
 
-@router.get("/{role_id}/permissions", response_model=List[PermissionSchema])
+@router.get("/{role_id}/permissions", response_model=List[PermissionSchema], tags=["admin"])
 async def get_role_default_permissions(
     role_id: UUID,
     admin_user: User = Depends(require_admin_role),

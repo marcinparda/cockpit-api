@@ -4,13 +4,14 @@ import time
 from typing import Dict, Optional, Any
 from fastapi import Request, Response, status
 from starlette.middleware.base import BaseHTTPMiddleware
+from sqlalchemy.ext.asyncio import AsyncSession
 
 # Import verify_token at module level to make it patchable in tests
 try:
     from src.auth.jwt import verify_token
 except ImportError:
     # Handle the case where jwt module is not available during testing
-    def verify_token(token: str) -> Dict[str, Any]:
+    async def verify_token(token: str, db: Optional[AsyncSession] = None) -> Dict[str, Any]:
         """Placeholder function when jwt module is not available."""
         return {}
 
@@ -60,6 +61,7 @@ class RateLimitStore:
 
     def get_or_create(self, key: str, window_seconds: int, max_requests: int) -> RateLimitEntry:
         """Get or create rate limit entry for key."""
+        # Always create the entry if it doesn't exist, don't just check
         if key not in self.store:
             self.store[key] = RateLimitEntry(window_seconds, max_requests)
 
@@ -68,6 +70,10 @@ class RateLimitStore:
         if current_time - self.last_cleanup > self.cleanup_interval:
             self._cleanup()
             self.last_cleanup = current_time
+
+        # Ensure the key still exists after cleanup
+        if key not in self.store:
+            self.store[key] = RateLimitEntry(window_seconds, max_requests)
 
         return self.store[key]
 
@@ -133,7 +139,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         """Process request with rate limiting."""
         # Skip rate limiting for health checks and documentation
-        if request.url.path in ["/health", "/", "/api/docs", "/openapi.json"]:
+        path = request.url.path
+        if path in ["/health", "/health/", "/", "/api/docs", "/openapi.json"]:
             return await call_next(request)
 
         # Get rate limit rule for this endpoint
@@ -241,11 +248,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
             token = auth_header.split(" ")[1]
 
-            # Use the module-level import
+            # Use the module-level import (now async)
             if verify_token is None:
                 return None
 
-            payload = verify_token(token)
+            payload = await verify_token(token)
             return payload.get("sub")
         except Exception:
             return None

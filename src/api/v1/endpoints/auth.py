@@ -1,22 +1,27 @@
 """Authentication endpoints for user login and password management."""
 
 from uuid import UUID
+from typing import Dict, Any
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_db
 from src.schemas.auth import (
     LoginRequest, LoginResponse, PasswordChangeRequest, PasswordChangeResponse,
-    RefreshTokenRequest, RefreshTokenResponse, LogoutRequest, LogoutResponse,
+    RefreshTokenRequest, RefreshTokenResponse,
     UserInfoResponse
 )
 from src.services.auth_service import (
-    login_user, refresh_user_tokens, logout_user
+    login_user, refresh_user_tokens
 )
 from src.services.user_service import change_user_password
-from src.auth.jwt_dependencies import get_current_active_user
-from src.auth.jwt_dependencies import get_current_user_with_token
+from src.auth.jwt_dependencies import get_current_active_user, get_current_user
+from src.auth.dependencies import require_admin_role
+from src.auth.jwt import invalidate_token
 from src.models.user import User
+from src.services.task_service import TokenCleanupService
+from src.core.config import settings
 
 router = APIRouter()
 
@@ -103,7 +108,7 @@ async def refresh_tokens(
 ) -> RefreshTokenResponse:
     """Refresh access token using refresh token."""
     try:
-        refresh_response = await refresh_user_tokens(refresh_request.refresh_token)
+        refresh_response = await refresh_user_tokens(refresh_request.refresh_token, db)
         return refresh_response
 
     except HTTPException:
@@ -118,26 +123,27 @@ async def refresh_tokens(
         )
 
 
-@router.post("/logout", response_model=LogoutResponse)
+@router.post("/logout")
 async def logout(
     request: Request,
-    logout_request: LogoutRequest = LogoutRequest(),
-    user_token: tuple[User, str] = Depends(get_current_user_with_token)
+    db: AsyncSession = Depends(get_db)
 ):
-    """Logout user by invalidating tokens."""
+    """Logout the user by invalidating their tokens."""
     try:
-        current_user, access_token = user_token
+        # Get the access token from the authorization header
+        access_token = request.headers.get(
+            "authorization", "").replace("Bearer ", "")
 
-        # Logout user with both tokens
-        success = await logout_user(access_token, logout_request.refresh_token)
-
-        if success:
-            return {"message": "Logged out successfully"}
-        else:
+        if not access_token:
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Logout failed"
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Access token is required for logout"
             )
+
+        # Invalidate the access token
+        await invalidate_token(access_token, db)
+
+        return {"detail": "Successfully logged out"}
 
     except HTTPException:
         # Re-raise HTTP exceptions as-is
@@ -148,4 +154,107 @@ async def logout(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Logout service temporarily unavailable"
+        )
+
+
+@router.get("/tokens/statistics", response_model=Dict[str, Any], tags=["admin"])
+async def token_statistics(
+    admin_user: User = Depends(require_admin_role)
+):
+    """
+    Get current token statistics for monitoring (admin only).
+
+    Returns detailed statistics about:
+    - Active tokens
+    - Expired tokens  
+    - Revoked tokens
+    - Total counts
+    """
+    try:
+        stats_result = await TokenCleanupService.get_cleanup_statistics()
+
+        if not stats_result["success"]:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to get token statistics: {stats_result.get('error', 'Unknown error')}"
+            )
+
+        return stats_result["statistics"]
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get token statistics: {str(e)}"
+        )
+
+
+@router.post("/cleanup/manual", response_model=Dict[str, Any], tags=["admin"])
+async def trigger_manual_cleanup(
+    admin_user: User = Depends(require_admin_role)
+):
+    """
+    Trigger a manual token cleanup operation (admin only).
+
+    This endpoint allows administrators to manually trigger
+    the cleanup process outside of the scheduled runs.
+
+    Note: This should be used sparingly and primarily for
+    maintenance or emergency cleanup scenarios.
+    """
+    try:
+        from src.tasks.token_cleanup import manual_token_cleanup
+
+        cleanup_result = await manual_token_cleanup(
+            cleanup_expired=True,
+            cleanup_revoked=True,
+            retention_days=settings.TOKEN_CLEANUP_RETENTION_DAYS,
+            dry_run=False
+        )
+
+        if not cleanup_result["success"]:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Manual cleanup failed: {cleanup_result.get('error', 'Unknown error')}"
+            )
+
+        return cleanup_result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to execute manual cleanup: {str(e)}"
+        )
+
+
+@router.post("/cleanup/dry-run", response_model=Dict[str, Any], tags=["admin"])
+async def dry_run_cleanup(
+    admin_user: User = Depends(require_admin_role)
+):
+    """
+    Perform a dry run of the token cleanup process (admin only).
+
+    This endpoint simulates the cleanup process without
+    actually deleting any tokens, providing information
+    about what would be cleaned up.
+    """
+    try:
+        from src.tasks.token_cleanup import manual_token_cleanup
+
+        dry_run_result = await manual_token_cleanup(
+            cleanup_expired=True,
+            cleanup_revoked=True,
+            retention_days=settings.TOKEN_CLEANUP_RETENTION_DAYS,
+            dry_run=True
+        )
+
+        return dry_run_result
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to execute cleanup dry run: {str(e)}"
         )
