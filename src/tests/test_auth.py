@@ -97,7 +97,7 @@ def test_password_change_request_validation():
     assert "password" in error_details.lower()
 
 
-def test_jwt_utilities():
+async def test_jwt_utilities():
     """Test JWT utility functions."""
     from src.auth.jwt import create_access_token, verify_token, create_token_response
     from uuid import uuid4
@@ -110,8 +110,8 @@ def test_jwt_utilities():
     assert isinstance(token, str)
     assert len(token) > 0
 
-    # Test token verification
-    decoded = verify_token(token)
+    # Test token verification (without database session - basic JWT verification only)
+    decoded = await verify_token(token)
     assert decoded["sub"] == str(user_id)
     assert decoded["email"] == test_data["email"]
 

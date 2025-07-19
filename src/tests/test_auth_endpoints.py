@@ -257,7 +257,7 @@ class TestAuthenticationIntegration:
         )
         assert pwd_change.new_password == "ValidNew123!"
 
-    def test_authentication_utilities_work(self):
+    async def test_authentication_utilities_work(self):
         """Test that authentication utilities can be imported and used."""
         from src.auth.jwt import create_access_token, verify_token
         from src.auth.password import hash_password, verify_password, validate_password_strength
@@ -265,7 +265,7 @@ class TestAuthenticationIntegration:
         # Test JWT utilities
         test_data = {"sub": str(uuid4()), "email": "test@example.com"}
         token = create_access_token(test_data)
-        decoded = verify_token(token)
+        decoded = await verify_token(token)
         assert decoded["sub"] == test_data["sub"]
         assert decoded["email"] == test_data["email"]
 
