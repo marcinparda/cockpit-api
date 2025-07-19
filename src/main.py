@@ -2,36 +2,42 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import asyncio
+import logging
 from typing import List
 
-from src.api.v1.endpoints import expenses, categories, payment_methods, todo_items, todo_projects, shared, auth, users, roles
+from src.api.v1.endpoints import expenses, categories, payment_methods, todo_items, todo_projects, shared, auth, users, roles, health
 from src.core.config import settings
 from src.middleware.rate_limit import RateLimitMiddleware
 from src.middleware.jwt_validation import JWTValidationMiddleware
-from src.services.cleanup_service import TokenCleanupService
+from src.core.scheduler import task_scheduler
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan management."""
+    """Manage application lifespan events."""
     # Startup
-    cleanup_service = TokenCleanupService()
-    cleanup_task = None
-
-    if settings.ENABLE_TOKEN_TRACKING:
-        # Start the token cleanup task
-        cleanup_task = asyncio.create_task(
-            cleanup_service.start_periodic_cleanup())
+    logger.info("Starting up FastAPI application")
+    try:
+        await task_scheduler.start()
+        logger.info("Application startup completed")
+    except Exception as e:
+        logger.error(f"Failed to start application: {str(e)}", exc_info=True)
+        raise
 
     yield
 
     # Shutdown
-    if cleanup_task and not cleanup_task.done():
-        cleanup_task.cancel()
-        try:
-            await cleanup_task
-        except asyncio.CancelledError:
-            pass
+    logger.info("Shutting down FastAPI application")
+    try:
+        await task_scheduler.stop()
+        logger.info("Application shutdown completed")
+    except Exception as e:
+        logger.error(
+            f"Error during application shutdown: {str(e)}", exc_info=True)
 
 
 app = FastAPI(
@@ -65,27 +71,24 @@ app.include_router(categories.router,
 app.include_router(
     payment_methods.router, prefix="/api/v1/payment_methods", tags=["ai-budget/payment_methods"])
 app.include_router(
-    todo_items.router, prefix="/api/v1/todo/items", tags=["todo/todo_items"])
+    todo_items.router, prefix="/api/v1/todo/items", tags=["todo/items"])
 app.include_router(
-    todo_projects.router, prefix="/api/v1/todo/projects", tags=["todo/todo_projects"])
+    todo_projects.router, prefix="/api/v1/todo/projects", tags=["todo/projects"])
 app.include_router(
     shared.router, prefix="/api/v1/shared", tags=["shared"])
 app.include_router(
     auth.router, prefix="/api/v1/auth", tags=["shared/auth"])
 app.include_router(
-    users.router, prefix="/api/v1/users", tags=["shared/admin"])
+    users.router, prefix="/api/v1/users", tags=["shared/users"])
 app.include_router(
-    roles.router, prefix="/api/v1/roles", tags=["shared/admin"])
+    roles.router, prefix="/api/v1/roles", tags=["shared/roles"])
+app.include_router(
+    health.router, prefix="/health", tags=["health"])
 
 
 @app.get("/", tags=["root"])
 async def read_root():
     return {"message": "Welcome to the Cockpit API!"}
-
-
-@app.get("/health", tags=["health"])
-async def health_check():
-    return {"status": "healthy"}
 
 if __name__ == "__main__":
     import uvicorn

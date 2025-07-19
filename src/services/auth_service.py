@@ -87,8 +87,8 @@ async def login_user(db: AsyncSession, email: str, password: str) -> LoginRespon
             detail="Incorrect email or password"
         )
 
-    # Create token pair (access + refresh)
-    token_response = await create_user_refresh_token(user)
+    # Create token pair (access + refresh) with database tracking
+    token_response = await create_user_refresh_token(user, db)
 
     # Create complete login response
     return LoginResponse(
@@ -104,30 +104,33 @@ async def login_user(db: AsyncSession, email: str, password: str) -> LoginRespon
     )
 
 
-async def create_user_refresh_token(user: User) -> RefreshTokenResponse:
+async def create_user_refresh_token(user: User, db: Optional[AsyncSession] = None) -> RefreshTokenResponse:
     """
-    Create JWT token pair (access + refresh) for authenticated user.
+    Create JWT token pair (access + refresh) for authenticated user with database tracking.
 
     Args:
         user: Authenticated user object
+        db: Optional database session for token storage
 
     Returns:
         RefreshTokenResponse with access token, refresh token and metadata
     """
     from uuid import UUID
+    from src.auth.jwt import create_refresh_token_response_with_db
 
     user_id = UUID(str(user.id))
     email = str(user.email)
 
-    return create_refresh_token_response(user_id, email)
+    return await create_refresh_token_response_with_db(user_id, email, db)
 
 
-async def refresh_user_tokens(refresh_token: str) -> RefreshTokenResponse:
+async def refresh_user_tokens(refresh_token: str, db: Optional[AsyncSession] = None) -> RefreshTokenResponse:
     """
     Refresh user access token using refresh token.
 
     Args:
         refresh_token: Valid refresh token
+        db: Optional database session for token operations
 
     Returns:
         RefreshTokenResponse with new access token and refresh token
@@ -137,10 +140,10 @@ async def refresh_user_tokens(refresh_token: str) -> RefreshTokenResponse:
     """
     try:
         new_access_token, new_refresh_token = await refresh_access_token(
-            refresh_token)
+            refresh_token, db)
 
         # Extract user info from new access token for response
-        payload = await verify_token(new_access_token)
+        payload = await verify_token(new_access_token, db)
 
         # Create response with new tokens
         from src.core.config import settings
@@ -160,25 +163,26 @@ async def refresh_user_tokens(refresh_token: str) -> RefreshTokenResponse:
         )
 
 
-async def logout_user(access_token: str, refresh_token: Optional[str] = None) -> bool:
+async def logout_user(access_token: str, refresh_token: Optional[str] = None, db: Optional[AsyncSession] = None) -> bool:
     """
     Logout user by invalidating tokens.
 
     Args:
         access_token: User's access token
         refresh_token: Optional refresh token to invalidate
+        db: Optional database session for token operations
 
     Returns:
         True if logout successful, False otherwise
     """
     try:
         # Invalidate access token
-        access_invalidated = await invalidate_token(access_token)
+        access_invalidated = await invalidate_token(access_token, db)
 
         # Invalidate refresh token if provided
         refresh_invalidated = True
         if refresh_token:
-            refresh_invalidated = await invalidate_token(refresh_token)
+            refresh_invalidated = await invalidate_token(refresh_token, db)
 
         return access_invalidated and refresh_invalidated
 

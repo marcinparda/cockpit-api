@@ -34,12 +34,10 @@ class TestTokenIntegration:
         assert "exp" in result
 
     def test_token_settings_exist(self):
-        """Test that new token management settings exist."""
-        assert hasattr(settings, 'ENABLE_TOKEN_TRACKING')
+        """Test that token management settings exist."""
         assert hasattr(settings, 'TOKEN_CLEANUP_INTERVAL_HOURS')
         assert hasattr(settings, 'TOKEN_CLEANUP_RETENTION_DAYS')
 
         # Verify default values
-        assert settings.ENABLE_TOKEN_TRACKING == True
         assert settings.TOKEN_CLEANUP_INTERVAL_HOURS == 24
         assert settings.TOKEN_CLEANUP_RETENTION_DAYS == 7

@@ -101,8 +101,8 @@ async def verify_token(token: str, db: Optional[AsyncSession] = None) -> Dict[st
         if user_id is None:
             raise JWTError("Token missing user identifier")
 
-        # Check if token is revoked in database (if database session provided and token tracking enabled)
-        if db and jti and settings.ENABLE_TOKEN_TRACKING:
+        # Check if token is revoked in database (if database session provided)
+        if db and jti:
             from src.services.token_service import TokenService
 
             token_type = payload.get("token_type", "access")
@@ -147,7 +147,7 @@ async def invalidate_token(token: str, db: Optional[AsyncSession] = None) -> boo
         if not jti:
             return False
 
-        if db and settings.ENABLE_TOKEN_TRACKING:
+        if db:
             from src.services.token_service import TokenService
 
             token_type = payload.get("token_type", "access")
@@ -156,7 +156,7 @@ async def invalidate_token(token: str, db: Optional[AsyncSession] = None) -> boo
             else:
                 return await TokenService.revoke_access_token(db, jti)
 
-        return True  # Fallback to success if no database tracking
+        return True  # Fallback to success if no database session
     except JWTError:
         return False
 
@@ -273,8 +273,8 @@ async def create_refresh_token_response_with_db(
         expires_delta=refresh_token_expires
     )
 
-    # Store tokens in database if tracking is enabled
-    if db and settings.ENABLE_TOKEN_TRACKING:
+    # Store tokens in database if database session provided
+    if db:
         from src.services.token_service import TokenService
 
         # Extract JTIs and expiration times

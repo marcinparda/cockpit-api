@@ -21,6 +21,10 @@ class TokenService:
         expires_at: datetime
     ) -> AccessToken:
         """Create a new access token record."""
+        # Convert timezone-aware datetime to naive for database storage
+        if expires_at.tzinfo is not None:
+            expires_at = expires_at.replace(tzinfo=None)
+
         token = AccessToken(
             jti=jti,
             user_id=user_id,
@@ -40,6 +44,10 @@ class TokenService:
         expires_at: datetime
     ) -> RefreshToken:
         """Create a new refresh token record."""
+        # Convert timezone-aware datetime to naive for database storage
+        if expires_at.tzinfo is not None:
+            expires_at = expires_at.replace(tzinfo=None)
+
         token = RefreshToken(
             jti=jti,
             user_id=user_id,
@@ -71,12 +79,14 @@ class TokenService:
     async def is_access_token_valid(db: AsyncSession, jti: str) -> bool:
         """Check if an access token is valid (exists, not revoked, not expired)."""
         now = datetime.now(timezone.utc)
+        # Convert to naive datetime for database comparison (database stores naive datetimes)
+        now_naive = now.replace(tzinfo=None)
         result = await db.execute(
             select(AccessToken).where(
                 and_(
                     AccessToken.jti == jti,
                     AccessToken.is_revoked == False,
-                    AccessToken.expires_at > now
+                    AccessToken.expires_at > now_naive
                 )
             )
         )
@@ -86,12 +96,14 @@ class TokenService:
     async def is_refresh_token_valid(db: AsyncSession, jti: str) -> bool:
         """Check if a refresh token is valid (exists, not revoked, not expired)."""
         now = datetime.now(timezone.utc)
+        # Convert to naive datetime for database comparison (database stores naive datetimes)
+        now_naive = now.replace(tzinfo=None)
         result = await db.execute(
             select(RefreshToken).where(
                 and_(
                     RefreshToken.jti == jti,
                     RefreshToken.is_revoked == False,
-                    RefreshToken.expires_at > now
+                    RefreshToken.expires_at > now_naive
                 )
             )
         )
@@ -131,7 +143,9 @@ class TokenService:
         )
         token = result.scalar_one_or_none()
         if token:
-            token.last_used_at = datetime.now(timezone.utc)  # type: ignore
+            # Convert timezone-aware datetime to naive for database storage
+            now = datetime.now(timezone.utc)
+            token.last_used_at = now.replace(tzinfo=None)  # type: ignore
             await db.commit()
             return True
         return False
@@ -144,7 +158,9 @@ class TokenService:
         )
         token = result.scalar_one_or_none()
         if token:
-            token.last_used_at = datetime.now(timezone.utc)  # type: ignore
+            # Convert timezone-aware datetime to naive for database storage
+            now = datetime.now(timezone.utc)
+            token.last_used_at = now.replace(tzinfo=None)  # type: ignore
             await db.commit()
             return True
         return False
@@ -192,6 +208,8 @@ class TokenService:
     ) -> tuple[List[AccessToken], List[RefreshToken]]:
         """Get active tokens for a user."""
         now = datetime.now(timezone.utc)
+        # Convert to naive datetime for database comparison (database stores naive datetimes)
+        now_naive = now.replace(tzinfo=None)
 
         access_result = await db.execute(
             select(AccessToken)
@@ -199,7 +217,7 @@ class TokenService:
                 and_(
                     AccessToken.user_id == user_id,
                     AccessToken.is_revoked == False,
-                    AccessToken.expires_at > now
+                    AccessToken.expires_at > now_naive
                 )
             )
             .order_by(AccessToken.created_at.desc())
@@ -212,7 +230,7 @@ class TokenService:
                 and_(
                     RefreshToken.user_id == user_id,
                     RefreshToken.is_revoked == False,
-                    RefreshToken.expires_at > now
+                    RefreshToken.expires_at > now_naive
                 )
             )
             .order_by(RefreshToken.created_at.desc())
@@ -225,15 +243,17 @@ class TokenService:
     async def cleanup_expired_tokens(db: AsyncSession) -> dict:
         """Clean up expired tokens from the database."""
         now = datetime.now(timezone.utc)
+        # Convert to naive datetime for database comparison (database stores naive datetimes)
+        now_naive = now.replace(tzinfo=None)
 
         # Delete expired access tokens
         access_delete_result = await db.execute(
-            delete(AccessToken).where(AccessToken.expires_at <= now)
+            delete(AccessToken).where(AccessToken.expires_at <= now_naive)
         )
 
         # Delete expired refresh tokens
         refresh_delete_result = await db.execute(
-            delete(RefreshToken).where(RefreshToken.expires_at <= now)
+            delete(RefreshToken).where(RefreshToken.expires_at <= now_naive)
         )
 
         await db.commit()
@@ -255,13 +275,15 @@ class TokenService:
 
         cutoff_date = datetime.now(timezone.utc) - \
             timedelta(days=retention_days)
+        # Convert to naive datetime for database comparison (database stores naive datetimes)
+        cutoff_date_naive = cutoff_date.replace(tzinfo=None)
 
         # Delete old revoked access tokens
         access_delete_result = await db.execute(
             delete(AccessToken).where(
                 and_(
                     AccessToken.is_revoked == True,
-                    AccessToken.updated_at <= cutoff_date
+                    AccessToken.updated_at <= cutoff_date_naive
                 )
             )
         )
@@ -271,7 +293,7 @@ class TokenService:
             delete(RefreshToken).where(
                 and_(
                     RefreshToken.is_revoked == True,
-                    RefreshToken.updated_at <= cutoff_date
+                    RefreshToken.updated_at <= cutoff_date_naive
                 )
             )
         )
@@ -290,6 +312,8 @@ class TokenService:
     async def get_token_statistics(db: AsyncSession) -> dict:
         """Get token usage statistics."""
         now = datetime.now(timezone.utc)
+        # Convert to naive datetime for database comparison (database stores naive datetimes)
+        now_naive = now.replace(tzinfo=None)
 
         # Access token stats
         access_total = await db.execute(select(func.count(AccessToken.id)))
@@ -297,7 +321,7 @@ class TokenService:
             select(func.count(AccessToken.id)).where(
                 and_(
                     AccessToken.is_revoked == False,
-                    AccessToken.expires_at > now
+                    AccessToken.expires_at > now_naive
                 )
             )
         )
@@ -309,7 +333,7 @@ class TokenService:
             select(func.count(AccessToken.id)).where(
                 and_(
                     AccessToken.is_revoked == False,
-                    AccessToken.expires_at <= now
+                    AccessToken.expires_at <= now_naive
                 )
             )
         )
@@ -320,7 +344,7 @@ class TokenService:
             select(func.count(RefreshToken.id)).where(
                 and_(
                     RefreshToken.is_revoked == False,
-                    RefreshToken.expires_at > now
+                    RefreshToken.expires_at > now_naive
                 )
             )
         )
@@ -332,7 +356,7 @@ class TokenService:
             select(func.count(RefreshToken.id)).where(
                 and_(
                     RefreshToken.is_revoked == False,
-                    RefreshToken.expires_at <= now
+                    RefreshToken.expires_at <= now_naive
                 )
             )
         )
