@@ -105,7 +105,6 @@ async def get_current_user_info(
 @router.post("/refresh", response_model=SimpleRefreshResponse)
 async def refresh_tokens(
     response: Response,
-    refresh_request: Optional[RefreshTokenRequest] = Body(None),
     refresh_token: Optional[str] = Cookie(None),
     db: AsyncSession = Depends(get_db)
 ) -> SimpleRefreshResponse:
@@ -117,9 +116,6 @@ async def refresh_tokens(
         if refresh_token:
             # Cookie-based refresh (preferred)
             token_to_refresh = refresh_token
-        elif refresh_request and refresh_request.refresh_token:
-            # JSON body refresh (backward compatibility)
-            token_to_refresh = refresh_request.refresh_token
 
         if not token_to_refresh:
             raise HTTPException(
