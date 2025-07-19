@@ -17,6 +17,11 @@ class Settings(BaseSettings):
     JWT_EXPIRE_HOURS: int = 24
     JWT_REFRESH_EXPIRE_DAYS: int = 30  # Refresh token expires in 30 days
 
+    # Token Management Settings
+    TOKEN_CLEANUP_INTERVAL_HOURS: int = 24
+    TOKEN_CLEANUP_RETENTION_DAYS: int = 7
+    ENABLE_TOKEN_TRACKING: bool = False
+
     # Password Hashing Settings
     BCRYPT_ROUNDS: int = 12
 

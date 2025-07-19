@@ -136,13 +136,11 @@ async def refresh_user_tokens(refresh_token: str) -> RefreshTokenResponse:
         HTTPException: If refresh token is invalid
     """
     try:
-        new_access_token, new_refresh_token = refresh_access_token(
+        new_access_token, new_refresh_token = await refresh_access_token(
             refresh_token)
 
         # Extract user info from new access token for response
-        payload = verify_token(new_access_token)
-        user_id = UUID(payload.get("sub"))
-        email = payload.get("email")
+        payload = await verify_token(new_access_token)
 
         # Create response with new tokens
         from src.core.config import settings
@@ -175,12 +173,12 @@ async def logout_user(access_token: str, refresh_token: Optional[str] = None) ->
     """
     try:
         # Invalidate access token
-        access_invalidated = invalidate_token(access_token)
+        access_invalidated = await invalidate_token(access_token)
 
         # Invalidate refresh token if provided
         refresh_invalidated = True
         if refresh_token:
-            refresh_invalidated = invalidate_token(refresh_token)
+            refresh_invalidated = await invalidate_token(refresh_token)
 
         return access_invalidated and refresh_invalidated
 

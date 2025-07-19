@@ -7,15 +7,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.database import get_db
 from src.schemas.auth import (
     LoginRequest, LoginResponse, PasswordChangeRequest, PasswordChangeResponse,
-    RefreshTokenRequest, RefreshTokenResponse, LogoutRequest, LogoutResponse,
+    RefreshTokenRequest, RefreshTokenResponse,
     UserInfoResponse
 )
 from src.services.auth_service import (
-    login_user, refresh_user_tokens, logout_user
+    login_user, refresh_user_tokens
 )
 from src.services.user_service import change_user_password
-from src.auth.jwt_dependencies import get_current_active_user
-from src.auth.jwt_dependencies import get_current_user_with_token
+from src.auth.jwt_dependencies import get_current_active_user, get_current_user
+from src.auth.jwt import invalidate_token
 from src.models.user import User
 
 router = APIRouter()
@@ -118,26 +118,26 @@ async def refresh_tokens(
         )
 
 
-@router.post("/logout", response_model=LogoutResponse)
+@router.post("/logout")
 async def logout(
     request: Request,
-    logout_request: LogoutRequest = LogoutRequest(),
-    user_token: tuple[User, str] = Depends(get_current_user_with_token)
 ):
-    """Logout user by invalidating tokens."""
+    """Logout the user by invalidating their tokens."""
     try:
-        current_user, access_token = user_token
+        # Get the access token from the authorization header
+        access_token = request.headers.get(
+            "authorization", "").replace("Bearer ", "")
 
-        # Logout user with both tokens
-        success = await logout_user(access_token, logout_request.refresh_token)
-
-        if success:
-            return {"message": "Logged out successfully"}
-        else:
+        if not access_token:
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Logout failed"
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Access token is required for logout"
             )
+
+        # Invalidate the access token
+        await invalidate_token(access_token)
+
+        return {"detail": "Successfully logged out"}
 
     except HTTPException:
         # Re-raise HTTP exceptions as-is

@@ -1,19 +1,51 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+import asyncio
+from typing import List
+
 from src.api.v1.endpoints import expenses, categories, payment_methods, todo_items, todo_projects, shared, auth, users, roles
 from src.core.config import settings
 from src.middleware.rate_limit import RateLimitMiddleware
 from src.middleware.jwt_validation import JWTValidationMiddleware
-from typing import List
+from src.services.cleanup_service import TokenCleanupService
 
-app = FastAPI(title="Cockpit API", version="0.1.0",
-              docs_url="/api/docs")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan management."""
+    # Startup
+    cleanup_service = TokenCleanupService()
+    cleanup_task = None
+
+    if settings.ENABLE_TOKEN_TRACKING:
+        # Start the token cleanup task
+        cleanup_task = asyncio.create_task(
+            cleanup_service.start_periodic_cleanup())
+
+    yield
+
+    # Shutdown
+    if cleanup_task and not cleanup_task.done():
+        cleanup_task.cancel()
+        try:
+            await cleanup_task
+        except asyncio.CancelledError:
+            pass
+
+
+app = FastAPI(
+    title="Cockpit API",
+    version="0.1.0",
+    docs_url="/api/docs",
+    lifespan=lifespan
+)
 
 origins: List[str] = [str(origin) for origin in settings.CORS_ORIGINS] if isinstance(
     settings.CORS_ORIGINS, list) else [str(settings.CORS_ORIGINS)]
 
 app.add_middleware(
-    CORSMiddleware, 
+    CORSMiddleware,
     allow_origins=origins,
     allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
     allow_methods=settings.CORS_ALLOW_METHODS,
