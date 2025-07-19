@@ -1,9 +1,9 @@
 """Authentication endpoints for user login and password management."""
 
 from uuid import UUID
-from typing import Dict, Any
+from typing import Dict, Any, cast, Literal, Optional
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, Cookie, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_db
@@ -16,7 +16,7 @@ from src.services.auth_service import (
     login_user, refresh_user_tokens
 )
 from src.services.user_service import change_user_password
-from src.auth.jwt_dependencies import get_current_active_user, get_current_user
+from src.auth.cookie_dependencies import get_current_active_user_flexible
 from src.auth.dependencies import require_admin_role
 from src.auth.jwt import invalidate_token
 from src.models.user import User
@@ -29,6 +29,7 @@ router = APIRouter()
 @router.post("/login", response_model=LoginResponse)
 async def login(
     login_request: LoginRequest,
+    response: Response,
     db: AsyncSession = Depends(get_db)
 ) -> LoginResponse:
     """Authenticate user with email and password."""
@@ -38,6 +39,37 @@ async def login(
             email=login_request.email,
             password=login_request.password
         )
+
+        # Set httpOnly cookies for browser clients
+        # Environment-specific cookie settings
+        is_production = settings.ENVIRONMENT == "production"
+        cookie_domain = settings.COOKIE_DOMAIN if is_production else None
+        cookie_secure = settings.COOKIE_SECURE if is_production else False
+        cookie_samesite = cast(
+            Literal["strict", "lax", "none"], settings.COOKIE_SAMESITE)
+
+        # Set access token cookie
+        response.set_cookie(
+            key="access_token",
+            value=login_response.access_token,
+            max_age=settings.ACCESS_TOKEN_COOKIE_MAX_AGE,
+            httponly=settings.COOKIE_HTTPONLY,
+            secure=cookie_secure,
+            samesite=cookie_samesite,
+            domain=cookie_domain
+        )
+
+        # Set refresh token cookie
+        response.set_cookie(
+            key="refresh_token",
+            value=login_response.refresh_token,
+            max_age=settings.REFRESH_TOKEN_COOKIE_MAX_AGE,
+            httponly=settings.COOKIE_HTTPONLY,
+            secure=cookie_secure,
+            samesite=cookie_samesite,
+            domain=cookie_domain
+        )
+
         return login_response
 
     except HTTPException:
@@ -55,7 +87,7 @@ async def login(
 @router.post("/change-password", response_model=PasswordChangeResponse)
 async def change_password(
     password_request: PasswordChangeRequest,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_active_user_flexible),
     db: AsyncSession = Depends(get_db)
 ) -> PasswordChangeResponse:
     """Change current user's password."""
@@ -89,7 +121,7 @@ async def change_password(
 
 @router.get("/me", response_model=UserInfoResponse)
 async def get_current_user_info(
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user_flexible)
 ):
     """Get current authenticated user information."""
     return {
@@ -103,12 +135,62 @@ async def get_current_user_info(
 
 @router.post("/refresh", response_model=RefreshTokenResponse)
 async def refresh_tokens(
-    refresh_request: RefreshTokenRequest,
+    response: Response,
+    refresh_request: Optional[RefreshTokenRequest] = Body(None),
+    refresh_token: Optional[str] = Cookie(None),
     db: AsyncSession = Depends(get_db)
 ) -> RefreshTokenResponse:
-    """Refresh access token using refresh token."""
+    """Refresh access token using refresh token from cookie or request body."""
     try:
-        refresh_response = await refresh_user_tokens(refresh_request.refresh_token, db)
+        # Get refresh token from cookie or request body
+        token_to_refresh = None
+
+        if refresh_token:
+            # Cookie-based refresh (preferred)
+            token_to_refresh = refresh_token
+        elif refresh_request and refresh_request.refresh_token:
+            # JSON body refresh (backward compatibility)
+            token_to_refresh = refresh_request.refresh_token
+
+        if not token_to_refresh:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Refresh token required in cookie or request body"
+            )
+
+        refresh_response = await refresh_user_tokens(token_to_refresh, db)
+
+        # Set new cookies if response object available and token came from cookie
+        if refresh_token:
+            # Environment-specific cookie settings
+            is_production = settings.ENVIRONMENT == "production"
+            cookie_domain = settings.COOKIE_DOMAIN if is_production else None
+            cookie_secure = settings.COOKIE_SECURE if is_production else False
+            cookie_samesite = cast(
+                Literal["strict", "lax", "none"], settings.COOKIE_SAMESITE)
+
+            # Set new access token cookie
+            response.set_cookie(
+                key="access_token",
+                value=refresh_response.access_token,
+                max_age=settings.ACCESS_TOKEN_COOKIE_MAX_AGE,
+                httponly=settings.COOKIE_HTTPONLY,
+                secure=cookie_secure,
+                samesite=cookie_samesite,
+                domain=cookie_domain
+            )
+
+            # Set new refresh token cookie
+            response.set_cookie(
+                key="refresh_token",
+                value=refresh_response.refresh_token,
+                max_age=settings.REFRESH_TOKEN_COOKIE_MAX_AGE,
+                httponly=settings.COOKIE_HTTPONLY,
+                secure=cookie_secure,
+                samesite=cookie_samesite,
+                domain=cookie_domain
+            )
+
         return refresh_response
 
     except HTTPException:
@@ -126,13 +208,23 @@ async def refresh_tokens(
 @router.post("/logout")
 async def logout(
     request: Request,
+    response: Response,
+    # Cookie tokens
+    access_token_cookie: Optional[str] = Cookie(None, alias="access_token"),
+    refresh_token_cookie: Optional[str] = Cookie(None, alias="refresh_token"),
     db: AsyncSession = Depends(get_db)
 ):
-    """Logout the user by invalidating their tokens."""
+    """Logout the user by invalidating their tokens and clearing cookies."""
     try:
-        # Get the access token from the authorization header
-        access_token = request.headers.get(
-            "authorization", "").replace("Bearer ", "")
+        # Get the access token from cookie or authorization header
+        access_token = access_token_cookie
+        refresh_token = refresh_token_cookie
+
+        # If no cookie tokens, try Bearer token
+        if not access_token:
+            auth_header = request.headers.get("authorization", "")
+            if auth_header.startswith("Bearer "):
+                access_token = auth_header.replace("Bearer ", "")
 
         if not access_token:
             raise HTTPException(
@@ -142,6 +234,39 @@ async def logout(
 
         # Invalidate the access token
         await invalidate_token(access_token, db)
+
+        # Invalidate refresh token if available
+        if refresh_token:
+            await invalidate_token(refresh_token, db)
+
+        # Clear httpOnly cookies
+        # Environment-specific cookie settings
+        is_production = settings.ENVIRONMENT == "production"
+        cookie_domain = settings.COOKIE_DOMAIN if is_production else None
+        cookie_samesite = cast(
+            Literal["strict", "lax", "none"], settings.COOKIE_SAMESITE)
+
+        # Clear access token cookie
+        response.set_cookie(
+            key="access_token",
+            value="",
+            max_age=0,
+            httponly=settings.COOKIE_HTTPONLY,
+            secure=settings.COOKIE_SECURE if is_production else False,
+            samesite=cookie_samesite,
+            domain=cookie_domain
+        )
+
+        # Clear refresh token cookie
+        response.set_cookie(
+            key="refresh_token",
+            value="",
+            max_age=0,
+            httponly=settings.COOKIE_HTTPONLY,
+            secure=settings.COOKIE_SECURE if is_production else False,
+            samesite=cookie_samesite,
+            domain=cookie_domain
+        )
 
         return {"detail": "Successfully logged out"}
 
