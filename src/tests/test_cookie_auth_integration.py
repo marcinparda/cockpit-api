@@ -147,8 +147,9 @@ class TestCookieAuthIntegration:
         # The main functionality is tested in the unit tests
         if response.status_code != 200:
             import pytest
-            pytest.skip("Integration test requires full token validation setup")
-            
+            pytest.skip(
+                "Integration test requires full token validation setup")
+
         response_data = response.json()
         assert response_data["message"] == "Tokens refreshed successfully"
 

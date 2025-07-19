@@ -2,7 +2,10 @@ from typing import Optional
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Response
+from typing import cast, Literal
+from src.core.config import settings
+
 
 from src.models.user import User
 from src.auth.password import verify_password
@@ -63,7 +66,7 @@ async def create_user_token(user: User) -> TokenResponse:
     return create_token_response(user_id, email)
 
 
-async def login_user(db: AsyncSession, email: str, password: str) -> LoginResponse:
+async def login_user(db: AsyncSession, email: str, password: str, response: Response) -> LoginResponse:
     """
     Complete login flow for user authentication with refresh token.
 
@@ -71,9 +74,10 @@ async def login_user(db: AsyncSession, email: str, password: str) -> LoginRespon
         db: Database session
         email: User's email address
         password: Plain text password
+        response: FastAPI Response object for setting cookies (optional)
 
     Returns:
-        LoginResponse with access token, refresh token and user details
+        LoginResponse with success message
 
     Raises:
         HTTPException: If authentication fails
@@ -90,18 +94,34 @@ async def login_user(db: AsyncSession, email: str, password: str) -> LoginRespon
     # Create token pair (access + refresh) with database tracking
     token_response = await create_user_refresh_token(user, db)
 
-    # Create complete login response
-    return LoginResponse(
-        access_token=token_response.access_token,
-        refresh_token=token_response.refresh_token,
-        token_type=token_response.token_type,
-        expires_in=token_response.expires_in,
-        refresh_expires_in=token_response.refresh_expires_in,
-        user_id=UUID(str(user.id)),
-        email=str(user.email),
-        is_active=bool(user.is_active),
-        password_changed=bool(user.password_changed)
+    # Environment-specific cookie settings
+    is_production = settings.ENVIRONMENT == "production"
+    cookie_domain = settings.COOKIE_DOMAIN if is_production else None
+    cookie_secure = settings.COOKIE_SECURE if is_production else False
+    cookie_samesite = cast(
+        Literal["strict", "lax", "none"], settings.COOKIE_SAMESITE)
+
+    response.set_cookie(
+        key="access_token",
+        value=token_response.access_token,
+        max_age=settings.ACCESS_TOKEN_COOKIE_MAX_AGE,
+        httponly=settings.COOKIE_HTTPONLY,
+        secure=cookie_secure,
+        samesite=cookie_samesite,
+        domain=cookie_domain
     )
+
+    response.set_cookie(
+        key="refresh_token",
+        value=token_response.refresh_token,
+        max_age=settings.REFRESH_TOKEN_COOKIE_MAX_AGE,
+        httponly=settings.COOKIE_HTTPONLY,
+        secure=cookie_secure,
+        samesite=cookie_samesite,
+        domain=cookie_domain
+    )
+
+    return LoginResponse(message="Successfully logged in")
 
 
 async def create_user_refresh_token(user: User, db: Optional[AsyncSession] = None) -> RefreshTokenResponse:

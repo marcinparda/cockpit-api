@@ -9,8 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.database import get_db
 from src.schemas.auth import (
     LoginRequest, LoginResponse, PasswordChangeRequest, PasswordChangeResponse,
-    RefreshTokenRequest, RefreshTokenResponse, SimpleLoginResponse, SimpleRefreshResponse,
-    UserInfoResponse
+    RefreshTokenRequest, RefreshTokenResponse, SimpleRefreshResponse,
+    UserInfoResponse, LogoutResponse, LogoutRequest
 )
 from src.services.auth_service import (
     login_user, refresh_user_tokens
@@ -26,51 +26,20 @@ from src.core.config import settings
 router = APIRouter()
 
 
-@router.post("/login", response_model=SimpleLoginResponse)
+@router.post("/login", response_model=LoginResponse)
 async def login(
     login_request: LoginRequest,
     response: Response,
     db: AsyncSession = Depends(get_db)
-) -> SimpleLoginResponse:
+) -> LoginResponse:
     """Authenticate user with email and password."""
     try:
-        login_response = await login_user(
+        return await login_user(
             db=db,
             email=login_request.email,
-            password=login_request.password
+            password=login_request.password,
+            response=response
         )
-
-        # Set httpOnly cookies for browser clients
-        # Environment-specific cookie settings
-        is_production = settings.ENVIRONMENT == "production"
-        cookie_domain = settings.COOKIE_DOMAIN if is_production else None
-        cookie_secure = settings.COOKIE_SECURE if is_production else False
-        cookie_samesite = cast(
-            Literal["strict", "lax", "none"], settings.COOKIE_SAMESITE)
-
-        # Set access token cookie
-        response.set_cookie(
-            key="access_token",
-            value=login_response.access_token,
-            max_age=settings.ACCESS_TOKEN_COOKIE_MAX_AGE,
-            httponly=settings.COOKIE_HTTPONLY,
-            secure=cookie_secure,
-            samesite=cookie_samesite,
-            domain=cookie_domain
-        )
-
-        # Set refresh token cookie
-        response.set_cookie(
-            key="refresh_token",
-            value=login_response.refresh_token,
-            max_age=settings.REFRESH_TOKEN_COOKIE_MAX_AGE,
-            httponly=settings.COOKIE_HTTPONLY,
-            secure=cookie_secure,
-            samesite=cookie_samesite,
-            domain=cookie_domain
-        )
-
-        return SimpleLoginResponse(message="Successfully logged in")
 
     except HTTPException:
         # Re-raise HTTP exceptions as-is
@@ -80,7 +49,7 @@ async def login(
         # TODO: Add proper logging
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Authentication service temporarily unavailable"
+            detail="Login service temporarily unavailable"
         )
 
 

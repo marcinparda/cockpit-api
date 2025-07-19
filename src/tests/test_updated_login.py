@@ -38,15 +38,7 @@ async def test_login_user_returns_refresh_token():
 
             # Verify response structure
             assert isinstance(response, LoginResponse)
-            assert response.access_token == "access_token_123"
-            assert response.refresh_token == "refresh_token_456"
-            assert response.token_type == "bearer"
-            assert response.expires_in == 86400
-            assert response.refresh_expires_in == 2592000
-            assert response.user_id == mock_user.id
-            assert response.email == "test@example.com"
-            assert response.is_active is True
-            assert response.password_changed is True
+            assert response.message == "Successfully logged in"
 
 
 if __name__ == "__main__":
