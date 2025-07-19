@@ -11,7 +11,8 @@ from src.models.user import User
 from src.auth.password import verify_password
 from src.auth.jwt import (
     create_token_response,
-    refresh_access_token, invalidate_token, verify_token
+    refresh_access_token, invalidate_token, verify_token,
+    create_refresh_token_response
 )
 from src.schemas.auth import LoginResponse, TokenResponse, RefreshTokenResponse
 
@@ -66,7 +67,7 @@ async def create_user_token(user: User) -> TokenResponse:
     return create_token_response(user_id, email)
 
 
-async def login_user(db: AsyncSession, email: str, password: str, response: Response) -> LoginResponse:
+async def login_user(db: AsyncSession, email: str, password: str, response: Optional[Response] = None) -> LoginResponse:
     """
     Complete login flow for user authentication with refresh token.
 
@@ -92,56 +93,40 @@ async def login_user(db: AsyncSession, email: str, password: str, response: Resp
         )
 
     # Create token pair (access + refresh) with database tracking
-    token_response = await create_user_refresh_token(user, db)
-
-    # Environment-specific cookie settings
-    is_production = settings.ENVIRONMENT == "production"
-    cookie_domain = settings.COOKIE_DOMAIN if is_production else None
-    cookie_secure = settings.COOKIE_SECURE if is_production else False
-    cookie_samesite = cast(
-        Literal["strict", "lax", "none"], settings.COOKIE_SAMESITE)
-
-    response.set_cookie(
-        key="access_token",
-        value=token_response.access_token,
-        max_age=settings.ACCESS_TOKEN_COOKIE_MAX_AGE,
-        httponly=settings.COOKIE_HTTPONLY,
-        secure=cookie_secure,
-        samesite=cookie_samesite,
-        domain=cookie_domain
-    )
-
-    response.set_cookie(
-        key="refresh_token",
-        value=token_response.refresh_token,
-        max_age=settings.REFRESH_TOKEN_COOKIE_MAX_AGE,
-        httponly=settings.COOKIE_HTTPONLY,
-        secure=cookie_secure,
-        samesite=cookie_samesite,
-        domain=cookie_domain
-    )
-
-    return LoginResponse(message="Successfully logged in")
-
-
-async def create_user_refresh_token(user: User, db: Optional[AsyncSession] = None) -> RefreshTokenResponse:
-    """
-    Create JWT token pair (access + refresh) for authenticated user with database tracking.
-
-    Args:
-        user: Authenticated user object
-        db: Optional database session for token storage
-
-    Returns:
-        RefreshTokenResponse with access token, refresh token and metadata
-    """
-    from uuid import UUID
-    from src.auth.jwt import create_refresh_token_response
-
     user_id = UUID(str(user.id))
     email = str(user.email)
+    token_response = await create_refresh_token_response(user_id, email, db)
 
-    return await create_refresh_token_response(user_id, email, db)
+    # Set httpOnly cookies if response object is provided
+    if response:
+        # Environment-specific cookie settings
+        is_production = settings.ENVIRONMENT == "production"
+        cookie_domain = settings.COOKIE_DOMAIN if is_production else None
+        cookie_secure = settings.COOKIE_SECURE if is_production else False
+        cookie_samesite = cast(
+            Literal["strict", "lax", "none"], settings.COOKIE_SAMESITE)
+
+        response.set_cookie(
+            key="access_token",
+            value=token_response.access_token,
+            max_age=settings.ACCESS_TOKEN_COOKIE_MAX_AGE,
+            httponly=settings.COOKIE_HTTPONLY,
+            secure=cookie_secure,
+            samesite=cookie_samesite,
+            domain=cookie_domain
+        )
+
+        response.set_cookie(
+            key="refresh_token",
+            value=token_response.refresh_token,
+            max_age=settings.REFRESH_TOKEN_COOKIE_MAX_AGE,
+            httponly=settings.COOKIE_HTTPONLY,
+            secure=cookie_secure,
+            samesite=cookie_samesite,
+            domain=cookie_domain
+        )
+
+    return LoginResponse(message="Successfully logged in")
 
 
 async def refresh_user_tokens(refresh_token: str, db: Optional[AsyncSession] = None) -> RefreshTokenResponse:

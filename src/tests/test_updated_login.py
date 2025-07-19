@@ -21,9 +21,9 @@ async def test_login_user_returns_refresh_token():
     # Mock database session
     mock_db = AsyncMock()
 
-    # Mock authenticate_user and create_user_refresh_token
+    # Mock authenticate_user and create_refresh_token_response
     with patch("src.services.auth_service.authenticate_user") as mock_auth:
-        with patch("src.services.auth_service.create_user_refresh_token") as mock_create_tokens:
+        with patch("src.services.auth_service.create_refresh_token_response") as mock_create_tokens:
             mock_auth.return_value = mock_user
             mock_create_tokens.return_value = AsyncMock(
                 access_token="access_token_123",
@@ -33,7 +33,7 @@ async def test_login_user_returns_refresh_token():
                 refresh_expires_in=2592000
             )
 
-            # Call login_user
+            # Call login_user without response parameter (won't set cookies)
             response = await login_user(mock_db, "test@example.com", "password123")
 
             # Verify response structure

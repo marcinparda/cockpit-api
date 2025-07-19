@@ -10,7 +10,7 @@ from src.core.database import get_db
 from src.schemas.auth import (
     LoginRequest, LoginResponse, PasswordChangeRequest, PasswordChangeResponse,
     RefreshTokenRequest, RefreshTokenResponse, SimpleRefreshResponse,
-    UserInfoResponse, LogoutResponse, LogoutRequest
+    UserInfoResponse
 )
 from src.services.auth_service import (
     login_user, refresh_user_tokens

@@ -16,7 +16,7 @@ class TestCookieAuthIntegration:
         self.client = TestClient(app)
 
     @patch("src.services.auth_service.authenticate_user")
-    @patch("src.services.auth_service.create_user_refresh_token")
+    @patch("src.services.auth_service.create_refresh_token_response")
     def test_login_sets_cookies(self, mock_create_tokens, mock_authenticate):
         """Test that login endpoint sets httpOnly cookies."""
         # Mock user and authentication
