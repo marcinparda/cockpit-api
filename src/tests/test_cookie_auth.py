@@ -5,7 +5,7 @@ from uuid import uuid4
 from unittest.mock import AsyncMock, patch
 
 from src.core.config import settings
-from src.auth.cookie_dependencies import get_current_user_flexible
+from src.auth.jwt_dependencies import get_current_user
 
 
 class TestCookieAuthentication:
@@ -39,16 +39,17 @@ class TestCookieAuthentication:
         mock_user.is_active = True
 
         # Mock verify_token and get_user_with_role
-        with patch("src.auth.cookie_dependencies.verify_token") as mock_verify:
-            with patch("src.auth.cookie_dependencies.get_user_with_role") as mock_get_user:
+        with patch("src.auth.jwt_dependencies.verify_token") as mock_verify:
+            with patch("src.auth.jwt_dependencies.get_user_with_role") as mock_get_user:
                 mock_verify.return_value = {"sub": str(
                     mock_user.id), "email": mock_user.email}
                 mock_get_user.return_value = mock_user
 
                 # Test with cookie authentication
-                user = await get_current_user_flexible(
+                user = await get_current_user(
                     access_token="cookie_token_123",
                     authorization=None,
+                    credentials=None,
                     db=mock_db
                 )
 
@@ -68,16 +69,17 @@ class TestCookieAuthentication:
         mock_user.is_active = True
 
         # Mock verify_token and get_user_with_role
-        with patch("src.auth.cookie_dependencies.verify_token") as mock_verify:
-            with patch("src.auth.cookie_dependencies.get_user_with_role") as mock_get_user:
+        with patch("src.auth.jwt_dependencies.verify_token") as mock_verify:
+            with patch("src.auth.jwt_dependencies.get_user_with_role") as mock_get_user:
                 mock_verify.return_value = {"sub": str(
                     mock_user.id), "email": mock_user.email}
                 mock_get_user.return_value = mock_user
 
                 # Test with Bearer token authentication
-                user = await get_current_user_flexible(
+                user = await get_current_user(
                     access_token=None,
                     authorization="Bearer bearer_token_123",
+                    credentials=None,
                     db=mock_db
                 )
 
@@ -95,9 +97,10 @@ class TestCookieAuthentication:
 
         # Test with no authentication
         with pytest.raises(HTTPException) as exc_info:
-            await get_current_user_flexible(
+            await get_current_user(
                 access_token=None,
                 authorization=None,
+                credentials=None,
                 db=mock_db
             )
 
@@ -115,16 +118,17 @@ class TestCookieAuthentication:
         mock_user.is_active = True
 
         # Mock verify_token and get_user_with_role
-        with patch("src.auth.cookie_dependencies.verify_token") as mock_verify:
-            with patch("src.auth.cookie_dependencies.get_user_with_role") as mock_get_user:
+        with patch("src.auth.jwt_dependencies.verify_token") as mock_verify:
+            with patch("src.auth.jwt_dependencies.get_user_with_role") as mock_get_user:
                 mock_verify.return_value = {"sub": str(
                     mock_user.id), "email": mock_user.email}
                 mock_get_user.return_value = mock_user
 
                 # Test with both cookie and Bearer token - should prefer cookie
-                user = await get_current_user_flexible(
+                user = await get_current_user(
                     access_token="cookie_token_123",
                     authorization="Bearer bearer_token_456",
+                    credentials=None,
                     db=mock_db
                 )
 

@@ -7,7 +7,7 @@ from fastapi import HTTPException, status
 from src.models.user import User
 from src.auth.password import verify_password
 from src.auth.jwt import (
-    create_token_response, create_refresh_token_response,
+    create_token_response,
     refresh_access_token, invalidate_token, verify_token
 )
 from src.schemas.auth import LoginResponse, TokenResponse, RefreshTokenResponse
@@ -116,12 +116,12 @@ async def create_user_refresh_token(user: User, db: Optional[AsyncSession] = Non
         RefreshTokenResponse with access token, refresh token and metadata
     """
     from uuid import UUID
-    from src.auth.jwt import create_refresh_token_response_with_db
+    from src.auth.jwt import create_refresh_token_response
 
     user_id = UUID(str(user.id))
     email = str(user.email)
 
-    return await create_refresh_token_response_with_db(user_id, email, db)
+    return await create_refresh_token_response(user_id, email, db)
 
 
 async def refresh_user_tokens(refresh_token: str, db: Optional[AsyncSession] = None) -> RefreshTokenResponse:

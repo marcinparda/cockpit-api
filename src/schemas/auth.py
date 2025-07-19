@@ -103,3 +103,13 @@ class UserInfoResponse(BaseModel):
 class LogoutResponse(BaseModel):
     """Response model for logout endpoint."""
     message: str
+
+
+class SimpleLoginResponse(BaseModel):
+    """Simple response model for login endpoint."""
+    message: str
+
+
+class SimpleRefreshResponse(BaseModel):
+    """Simple response model for refresh endpoint."""
+    message: str

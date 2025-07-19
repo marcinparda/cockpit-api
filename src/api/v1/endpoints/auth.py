@@ -9,14 +9,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.database import get_db
 from src.schemas.auth import (
     LoginRequest, LoginResponse, PasswordChangeRequest, PasswordChangeResponse,
-    RefreshTokenRequest, RefreshTokenResponse,
+    RefreshTokenRequest, RefreshTokenResponse, SimpleLoginResponse, SimpleRefreshResponse,
     UserInfoResponse
 )
 from src.services.auth_service import (
     login_user, refresh_user_tokens
 )
 from src.services.user_service import change_user_password
-from src.auth.cookie_dependencies import get_current_active_user_flexible
+from src.auth.jwt_dependencies import get_current_active_user, get_current_user_with_token
 from src.auth.dependencies import require_admin_role
 from src.auth.jwt import invalidate_token
 from src.models.user import User
@@ -26,12 +26,12 @@ from src.core.config import settings
 router = APIRouter()
 
 
-@router.post("/login", response_model=LoginResponse)
+@router.post("/login", response_model=SimpleLoginResponse)
 async def login(
     login_request: LoginRequest,
     response: Response,
     db: AsyncSession = Depends(get_db)
-) -> LoginResponse:
+) -> SimpleLoginResponse:
     """Authenticate user with email and password."""
     try:
         login_response = await login_user(
@@ -70,7 +70,7 @@ async def login(
             domain=cookie_domain
         )
 
-        return login_response
+        return SimpleLoginResponse(message="Successfully logged in")
 
     except HTTPException:
         # Re-raise HTTP exceptions as-is
@@ -87,7 +87,7 @@ async def login(
 @router.post("/change-password", response_model=PasswordChangeResponse)
 async def change_password(
     password_request: PasswordChangeRequest,
-    current_user: User = Depends(get_current_active_user_flexible),
+    current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ) -> PasswordChangeResponse:
     """Change current user's password."""
@@ -121,7 +121,7 @@ async def change_password(
 
 @router.get("/me", response_model=UserInfoResponse)
 async def get_current_user_info(
-    current_user: User = Depends(get_current_active_user_flexible)
+    current_user: User = Depends(get_current_active_user)
 ):
     """Get current authenticated user information."""
     return {
@@ -133,13 +133,13 @@ async def get_current_user_info(
     }
 
 
-@router.post("/refresh", response_model=RefreshTokenResponse)
+@router.post("/refresh", response_model=SimpleRefreshResponse)
 async def refresh_tokens(
     response: Response,
     refresh_request: Optional[RefreshTokenRequest] = Body(None),
     refresh_token: Optional[str] = Cookie(None),
     db: AsyncSession = Depends(get_db)
-) -> RefreshTokenResponse:
+) -> SimpleRefreshResponse:
     """Refresh access token using refresh token from cookie or request body."""
     try:
         # Get refresh token from cookie or request body
@@ -191,7 +191,7 @@ async def refresh_tokens(
                 domain=cookie_domain
             )
 
-        return refresh_response
+        return SimpleRefreshResponse(message="Tokens refreshed successfully")
 
     except HTTPException:
         # Re-raise HTTP exceptions as-is
