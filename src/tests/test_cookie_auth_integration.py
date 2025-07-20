@@ -1,24 +1,60 @@
 """Integration tests for cookie-based authentication endpoints."""
 
 import pytest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, patch, MagicMock
 from fastapi.testclient import TestClient
+from fastapi import FastAPI
 from uuid import uuid4
 
 from src.main import app
+from src.api.v1.endpoints import auth
+from src.middleware.jwt_validation import JWTValidationMiddleware
+from fastapi.middleware.cors import CORSMiddleware
+from src.core.config import settings
+import pytest
+
+
+def create_test_app():
+    """Create a test app without rate limiting middleware."""
+    test_app = FastAPI(
+        title="Test Cockpit API",
+        version="0.1.0",
+    )
+    
+    # Add CORS middleware
+    origins = [str(origin) for origin in settings.CORS_ORIGINS] if isinstance(
+        settings.CORS_ORIGINS, list) else [str(settings.CORS_ORIGINS)]
+    
+    test_app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
+        allow_methods=settings.CORS_ALLOW_METHODS,
+        allow_headers=settings.CORS_ALLOW_HEADERS,
+    )
+    
+    # Add JWT validation middleware but skip rate limiting
+    test_app.add_middleware(JWTValidationMiddleware)
+    
+    # Include only auth router for these tests
+    test_app.include_router(
+        auth.router, prefix="/api/v1/auth", tags=["shared/auth"])
+    
+    return test_app
 
 
 class TestCookieAuthIntegration:
     """Integration tests for cookie authentication endpoints."""
 
     def setup_method(self):
-        """Set up test client."""
-        self.client = TestClient(app)
+        """Set up test client with app without rate limiting."""
+        self.test_app = create_test_app()
+        self.client = TestClient(self.test_app)
 
     @patch("src.services.auth_service.authenticate_user")
     @patch("src.services.auth_service.create_refresh_token_response")
     def test_login_sets_cookies(self, mock_create_tokens, mock_authenticate):
-        """Test that login endpoint sets httpOnly cookies."""
+        """Test that login endpoint sets httpOnly cookies."""        
         # Mock user and authentication
         mock_user = AsyncMock()
         mock_user.id = uuid4()
@@ -60,7 +96,7 @@ class TestCookieAuthIntegration:
         # but we can verify the values are set
 
     def test_login_invalid_credentials(self):
-        """Test login with invalid credentials."""
+        """Test login with invalid credentials."""        
         with patch("src.services.auth_service.authenticate_user") as mock_auth:
             mock_auth.return_value = None
 
@@ -146,7 +182,6 @@ class TestCookieAuthIntegration:
         # For now, skip this test since it requires complex integration setup
         # The main functionality is tested in the unit tests
         if response.status_code != 200:
-            import pytest
             pytest.skip(
                 "Integration test requires full token validation setup")
 
