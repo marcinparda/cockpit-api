@@ -11,3 +11,4 @@ jobs:
   deploy:
     needs: test
     uses: ./.github/workflows/deploy-raspberry-pi.yml
+    secrets: inherit
