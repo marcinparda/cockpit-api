@@ -14,15 +14,19 @@
 ## Python
 
 - Use Python type hints for all function signatures.
-- Organize endpoints using `APIRouter`.
-- Validate request/response models with Pydantic.
-- Write async endpoints where appropriate.
-- Use pytest for testing API endpoints.
 - Remove unused imports, especially from `src.core.database` and `src.core.config`.
 - When creating a models remember to use `BaseModel` from `src.models.base`/`.base`.
 - Do not put anything in `__init_.py` files, even documentation, if there is no obligatory need to do so
 - When importing modules, use absolute imports from the `src` directory to maintain consistency and clarity.
 - When importing a modules try to use imports at the top of the file, not in the middle of the code or functions unless absolutely necessary.
+
+## FastAPI
+
+- Organize endpoints using `APIRouter`.
+- Validate request/response models with Pydantic.
+- Write async endpoints where appropriate.
+- Use pytest for testing API endpoints.
+- Endpoints should have not trailing slashes in their paths.
 
 ## Documentation
 
