@@ -44,26 +44,9 @@ def test_login_response_schema():
     from src.schemas.auth import LoginResponse
 
     # Valid login response
-    user_id = uuid4()
-    response = LoginResponse(
-        access_token="test_token",
-        refresh_token="test_refresh_token",
-        token_type="bearer",
-        expires_in=3600,
-        refresh_expires_in=604800,
-        user_id=user_id,
-        email="test@example.com",
-        is_active=True,
-        password_changed=True
-    )
+    response = LoginResponse(message="Successfully logged in")
 
-    assert response.access_token == "test_token"
-    assert response.token_type == "bearer"
-    assert response.expires_in == 3600
-    assert response.user_id == user_id
-    assert response.email == "test@example.com"
-    assert response.is_active is True
-    assert response.password_changed is True
+    assert response.message == "Successfully logged in"
 
 
 def test_password_change_request_schema():

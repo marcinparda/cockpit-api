@@ -160,8 +160,8 @@ class TestAuthEndpointsWithHttpx:
         response = client.get("/api/v1/auth/me")
         assert response.status_code == 401  # Unauthorized
         data = response.json()
-        assert "authorization" in data["detail"].lower(
-        ) or "missing" in data["detail"].lower()
+        assert "authorization" in data["detail"].lower() or "missing" in data["detail"].lower(
+        ) or "authentication required" in data["detail"].lower()
 
     def test_me_endpoint_invalid_token(self, client):
         """Test /me endpoint with invalid JWT token."""

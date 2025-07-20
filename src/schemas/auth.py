@@ -28,16 +28,8 @@ class LoginRequest(BaseModel):
 
 
 class LoginResponse(BaseModel):
-    """Schema for login response."""
-    access_token: str
-    refresh_token: str
-    token_type: str = "bearer"
-    expires_in: int
-    refresh_expires_in: int
-    user_id: UUID
-    email: str
-    is_active: bool
-    password_changed: bool
+    """Response model for login endpoint."""
+    message: str
 
 
 class PasswordChangeRequest(BaseModel):
@@ -102,4 +94,9 @@ class UserInfoResponse(BaseModel):
 
 class LogoutResponse(BaseModel):
     """Response model for logout endpoint."""
+    message: str
+
+
+class SimpleRefreshResponse(BaseModel):
+    """Simple response model for refresh endpoint."""
     message: str

@@ -4,6 +4,8 @@ from typing import Optional
 from fastapi import Request, HTTPException, status
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
+from sqlalchemy.exc import SQLAlchemyError as DatabaseError
+from jose import JWTError
 
 from src.auth.jwt import extract_token_id
 from src.services.token_service import TokenService
@@ -39,17 +41,20 @@ class JWTValidationMiddleware(BaseHTTPMiddleware):
         if request.method == "OPTIONS":
             return await call_next(request)
 
-        # Get authorization header
+        # Get token from Authorization header or cookies
+        token = None
+
+        # Try Authorization header first
         auth_header = request.headers.get("Authorization")
-        if not auth_header:
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.split(" ")[1]
+        else:
+            # Try cookie if no Bearer token
+            token = request.cookies.get("access_token")
+
+        if not token:
             # Let the endpoint handle missing auth if needed
             return await call_next(request)
-
-        if not auth_header.startswith("Bearer "):
-            # Let the endpoint handle invalid auth format if needed
-            return await call_next(request)
-
-        token = auth_header.split(" ")[1]
 
         # Validate token using database
         token_id = extract_token_id(token)

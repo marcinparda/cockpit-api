@@ -206,41 +206,7 @@ def create_token_response(user_id: UUID, email: str) -> TokenResponse:
     )
 
 
-def create_refresh_token_response(user_id: UUID, email: str) -> RefreshTokenResponse:
-    """
-    Create a complete refresh token response for login.
-
-    Args:
-        user_id: The user's UUID
-        email: The user's email address
-
-    Returns:
-        RefreshTokenResponse containing access token, refresh token and metadata
-    """
-    access_token_expires = timedelta(hours=settings.JWT_EXPIRE_HOURS)
-    refresh_token_expires = timedelta(days=settings.JWT_REFRESH_EXPIRE_DAYS)
-
-    access_token = create_access_token(
-        data={"sub": str(user_id), "email": email},
-        expires_delta=access_token_expires
-    )
-
-    refresh_token = create_refresh_token(
-        data={"sub": str(user_id), "email": email},
-        expires_delta=refresh_token_expires
-    )
-
-    return RefreshTokenResponse(
-        access_token=access_token,
-        refresh_token=refresh_token,
-        token_type="bearer",
-        expires_in=settings.JWT_EXPIRE_HOURS * 3600,  # Convert hours to seconds
-        refresh_expires_in=settings.JWT_REFRESH_EXPIRE_DAYS *
-        24 * 3600  # Convert days to seconds
-    )
-
-
-async def create_refresh_token_response_with_db(
+async def create_refresh_token_response(
     user_id: UUID,
     email: str,
     db: Optional[AsyncSession] = None
@@ -350,7 +316,7 @@ async def refresh_access_token(refresh_token: str, db: Optional[AsyncSession] = 
             await invalidate_token(refresh_token, db)
 
         # Create new tokens
-        response = await create_refresh_token_response_with_db(UUID(user_id), email, db)
+        response = await create_refresh_token_response(UUID(user_id), email, db)
         return response.access_token, response.refresh_token
 
     except JWTError:
