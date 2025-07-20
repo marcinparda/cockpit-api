@@ -21,7 +21,7 @@ from src.auth.permission_helpers import get_todo_items_permissions
 router = APIRouter()
 
 
-@router.get("/", response_model=List[TodoItemSchema])
+@router.get("", response_model=List[TodoItemSchema])
 async def get_todo_items(
     db: AsyncSession = Depends(get_db),
     skip: int = 0,
@@ -49,7 +49,7 @@ async def get_todo_items(
     return result.scalars().all()
 
 
-@router.post("/", response_model=TodoItemSchema, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=TodoItemSchema, status_code=status.HTTP_201_CREATED)
 async def create_todo_item(
     *,
     db: AsyncSession = Depends(get_db),

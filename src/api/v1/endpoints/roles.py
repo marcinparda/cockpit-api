@@ -15,7 +15,7 @@ from src.models.user import User
 router = APIRouter()
 
 
-@router.get("/", response_model=List[UserRoleSchema], tags=["admin"])
+@router.get("", response_model=List[UserRoleSchema], tags=["admin"])
 async def list_all_roles(
     admin_user: User = Depends(require_admin_role),
     db: AsyncSession = Depends(get_db)

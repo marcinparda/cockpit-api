@@ -11,7 +11,7 @@ from src.auth.permission_helpers import get_payment_methods_permissions
 router = APIRouter()
 
 
-@router.get("/", response_model=list[PaymentMethod])
+@router.get("", response_model=list[PaymentMethod])
 async def list_payment_methods(
     db: AsyncSession = Depends(get_db),
     _: None = Depends(get_payment_methods_permissions(Actions.READ))
@@ -20,7 +20,7 @@ async def list_payment_methods(
     return result.scalars().all()
 
 
-@router.post("/", response_model=PaymentMethod, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=PaymentMethod, status_code=status.HTTP_201_CREATED)
 async def create_payment_method(
     payment_method: PaymentMethodCreate,
     db: AsyncSession = Depends(get_db),

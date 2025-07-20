@@ -10,7 +10,7 @@ from src.auth.permission_helpers import get_categories_permissions
 router = APIRouter()
 
 
-@router.get("/", response_model=list[Category])
+@router.get("", response_model=list[Category])
 async def list_categories(
     db: AsyncSession = Depends(get_db),
     _: None = Depends(get_categories_permissions(Actions.READ))
@@ -19,7 +19,7 @@ async def list_categories(
     return result.scalars().all()
 
 
-@router.post("/", response_model=Category)
+@router.post("", response_model=Category)
 async def create_category(
     category: CategoryCreate,
     db: AsyncSession = Depends(get_db),

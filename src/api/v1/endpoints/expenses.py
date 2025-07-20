@@ -10,7 +10,7 @@ from src.auth.permission_helpers import get_expenses_permissions
 router = APIRouter()
 
 
-@router.get("/", response_model=list[Expense])
+@router.get("", response_model=list[Expense])
 async def list_expenses(
     db: AsyncSession = Depends(get_db),
     _: None = Depends(get_expenses_permissions(Actions.READ))
@@ -19,7 +19,7 @@ async def list_expenses(
     return result.scalars().all()
 
 
-@router.post("/", response_model=Expense)
+@router.post("", response_model=Expense)
 async def create_expense(
     expense: ExpenseCreate,
     db: AsyncSession = Depends(get_db),

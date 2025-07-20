@@ -24,7 +24,7 @@ from src.models.user import User
 router = APIRouter()
 
 
-@router.get("/", response_model=List[UserWithRole], tags=["admin"])
+@router.get("", response_model=List[UserWithRole], tags=["admin"])
 async def list_users(
     skip: int = Query(0, ge=0, description="Number of users to skip"),
     limit: int = Query(100, ge=1, le=1000,
@@ -37,7 +37,7 @@ async def list_users(
     return [UserWithRole.model_validate(user) for user in users]
 
 
-@router.post("/", response_model=UserWithRole, status_code=status.HTTP_201_CREATED, tags=["admin"])
+@router.post("", response_model=UserWithRole, status_code=status.HTTP_201_CREATED, tags=["admin"])
 async def create_new_user(
     user_data: UserCreate,
     admin_user: User = Depends(require_admin_role),

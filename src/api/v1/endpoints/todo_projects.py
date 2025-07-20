@@ -13,7 +13,7 @@ from src.auth.permission_helpers import get_categories_permissions
 router = APIRouter()
 
 
-@router.get("/", response_model=list[TodoProject])
+@router.get("", response_model=list[TodoProject])
 async def list_todo_projects(
     db: AsyncSession = Depends(get_db),
     _: None = Depends(get_categories_permissions(Actions.READ))
@@ -22,7 +22,7 @@ async def list_todo_projects(
     return result.scalars().all()
 
 
-@router.post("/", response_model=TodoProject, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=TodoProject, status_code=status.HTTP_201_CREATED)
 async def create_todo_project(
     todo_project: TodoProjectCreate,
     db: AsyncSession = Depends(get_db),
