@@ -88,7 +88,7 @@ else:
 # CORS settings from environment
 CORS_ORIGINS_STR = getenv(
     "CORS_ORIGINS",
-    "http://localhost:3000,http://localhost:4200,http://localhost:8000,https://*.parda.me"
+    "http://localhost:*"
 )
 CORS_ORIGINS = CORS_ORIGINS_STR.split(",")
 
