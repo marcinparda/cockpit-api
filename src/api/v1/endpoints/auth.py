@@ -29,8 +29,9 @@ from src.core.config import settings
 
 router = APIRouter()
 
+
 @router.get("/me/permissions", response_model=List[PermissionSchema])
-async def get_current_user_permissions(
+async def get_current_user_permission(
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -38,20 +39,19 @@ async def get_current_user_permissions(
     user = await get_user_with_permissions(db, UUID(str(current_user.id)))
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    # user.permissions is a list of UserPermission objects, each with .permission
     return [up.permission for up in user.permissions if up.permission]
 
 
-@router.get("/me/roles", response_model=UserRoleSchema)
-async def get_current_user_role(
+@router.get("/me/roles", response_model=List[str])
+async def get_current_user_roles(
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Get current user's role."""
+    """Get current user's roles as a list of role names (strings)."""
     user = await get_user_with_role(db, UUID(str(current_user.id)))
     if not user or not user.role:
         raise HTTPException(status_code=404, detail="User or role not found")
-    return user.role
+    return [user.role.name]
 
 
 @router.post("/login", response_model=LoginResponse)
