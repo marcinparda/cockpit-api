@@ -15,15 +15,43 @@ from src.schemas.auth import (
 from src.services.auth_service import (
     login_user, refresh_user_tokens
 )
-from src.services.user_service import change_user_password
-from src.auth.jwt_dependencies import get_current_active_user, get_current_user_with_token
+from src.services.user_service import change_user_password, get_user_with_permissions, get_user_with_role
+from src.schemas.permission import Permission as PermissionSchema
+from src.schemas.user_role import UserRole as UserRoleSchema
+from typing import List
+from src.auth.jwt_dependencies import get_current_active_user
 from src.auth.dependencies import require_admin_role
 from src.auth.jwt import invalidate_token
 from src.models.user import User
 from src.services.task_service import TokenCleanupService
 from src.core.config import settings
 
+
 router = APIRouter()
+
+@router.get("/me/permissions", response_model=List[PermissionSchema])
+async def get_current_user_permissions(
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get current user's permissions."""
+    user = await get_user_with_permissions(db, UUID(str(current_user.id)))
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    # user.permissions is a list of UserPermission objects, each with .permission
+    return [up.permission for up in user.permissions if up.permission]
+
+
+@router.get("/me/roles", response_model=UserRoleSchema)
+async def get_current_user_role(
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get current user's role."""
+    user = await get_user_with_role(db, UUID(str(current_user.id)))
+    if not user or not user.role:
+        raise HTTPException(status_code=404, detail="User or role not found")
+    return user.role
 
 
 @router.post("/login", response_model=LoginResponse)
