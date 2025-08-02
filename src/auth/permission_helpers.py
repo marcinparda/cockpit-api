@@ -1,7 +1,9 @@
+
 from fastapi import Depends
-from functools import partial
 
 from src.auth.dependencies import require_user_permissions
+from src.auth.jwt_dependencies import get_current_active_user
+from src.core.database import get_db
 from src.auth.enums.actions import Actions
 from src.auth.enums.features import Features
 
@@ -17,7 +19,12 @@ def get_feature_permissions(feature: Features, action: Actions):
     Returns:
         FastAPI dependency that requires user permission
     """
-    return partial(require_user_permissions, feature, action)
+    async def dependency(
+        current_user=Depends(get_current_active_user),
+        db=Depends(get_db)
+    ):
+        return await require_user_permissions(feature, action, current_user, db)
+    return dependency
 
 
 def get_expenses_permissions(action: Actions):
