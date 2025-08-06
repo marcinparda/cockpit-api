@@ -28,6 +28,10 @@ class User(BaseModel):
         "AccessToken", back_populates="user", cascade="all, delete-orphan")
     refresh_tokens = relationship(
         "RefreshToken", back_populates="user", cascade="all, delete-orphan")
+    todo_projects = relationship(
+        "TodoProject", back_populates="owner", cascade="all, delete-orphan")
+    todo_collaborations = relationship(
+        "TodoProjectCollaborator", back_populates="user", cascade="all, delete-orphan")
 
     # Self-referential relationship for created_by
     creator = relationship("User", remote_side=[id], backref="created_users")

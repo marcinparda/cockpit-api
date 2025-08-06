@@ -13,5 +13,6 @@ class TodoItem(BaseModel):
     is_closed = Column(Boolean, default=False)
     completed_at = Column(DateTime(timezone=True), nullable=True)
     shops = Column(String(255), nullable=True)
-    project_id = Column(Integer, ForeignKey("todo_projects.id", ondelete="SET NULL"), nullable=True)
+    project_id = Column(Integer, ForeignKey(
+        "todo_projects.id", ondelete="CASCADE"), nullable=False)
     project = relationship("TodoProject", back_populates="items")
