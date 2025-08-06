@@ -292,6 +292,22 @@ async def create_user(
     await db.commit()
     await db.refresh(new_user)
 
+    # Create a General project for the new user
+    from src.models.todo_project import TodoProject
+    from datetime import datetime
+
+    now = datetime.utcnow()
+    general_project = TodoProject(
+        name="General",
+        description="Default project for todo items",
+        owner_id=new_user.id,
+        is_general=True,
+        created_at=now,
+        updated_at=now
+    )
+    db.add(general_project)
+    await db.commit()
+
     # Load role relationship
     await db.refresh(new_user, ["role"])
 
