@@ -349,8 +349,8 @@ async def delete_todo_item(
     _: None = Depends(get_todo_items_permissions(Actions.DELETE))
 ) -> Any:
     """Delete a todo item if the user has access to its project."""
-    # First, get the item
-    db_item = await db.get(TodoItem, item_id)
+    # First, get the item with project eagerly loaded
+    db_item = await db.get(TodoItem, item_id, options=[selectinload(TodoItem.project)])
     if not db_item:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -369,8 +369,31 @@ async def delete_todo_item(
                 detail="Access to this item is forbidden"
             )
 
-    # Delete the item
-    item_copy = TodoItemSchema.model_validate(db_item)
+    # Manually convert item to dict to avoid async relationship issues after deletion
+    project_dict = None
+    if db_item.project:
+        project_dict = {
+            "id": db_item.project.id,
+            "name": db_item.project.name,
+            "created_at": db_item.project.created_at,
+            "updated_at": db_item.project.updated_at,
+            "owner_id": str(db_item.project.owner_id),
+            "is_general": db_item.project.is_general
+        }
+
+    item_dict = {
+        "id": db_item.id,
+        "name": db_item.name,
+        "description": db_item.description,
+        "is_closed": db_item.is_closed,
+        "shops": db_item.shops,
+        "project_id": db_item.project_id,
+        "created_at": db_item.created_at,
+        "updated_at": db_item.updated_at,
+        "completed_at": db_item.completed_at,
+        "project": project_dict
+    }
+
     await db.delete(db_item)
     await db.commit()
-    return item_copy
+    return item_dict

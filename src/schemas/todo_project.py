@@ -16,19 +16,12 @@ class TodoProjectUpdate(TodoProjectBase):
     pass
 
 
-class TodoProjectCollaboratorBase(BaseModel):
-    user_id: UUID
+class TodoProjectCollaboratorResponse(BaseModel):
+    email: str
 
 
-class TodoProjectCollaboratorCreate(TodoProjectCollaboratorBase):
-    pass
-
-
-class TodoProjectCollaboratorResponse(TodoProjectCollaboratorBase):
-    project_id: int
-    created_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
+class TodoProjectCollaboratorCreate(BaseModel):
+    id: str
 
 
 class TodoProjectInDBBase(TodoProjectBase):
@@ -42,11 +35,8 @@ class TodoProjectInDBBase(TodoProjectBase):
 
 
 class TodoProject(TodoProjectInDBBase):
-    # Set a default empty list instead of trying to load the relationship
-    collaborators: List[TodoProjectCollaboratorResponse] = Field(
-        default_factory=list)
+    collaborators: List[str] = Field(default_factory=list)
 
-    # This serializer ensures we always return a list even if the field is None
     @field_serializer('collaborators')
-    def serialize_collaborators(self, collaborators: Optional[List[TodoProjectCollaboratorResponse]]) -> List[TodoProjectCollaboratorResponse]:
+    def serialize_collaborators(self, collaborators: Optional[List[str]]) -> List[str]:
         return collaborators or []
