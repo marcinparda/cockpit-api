@@ -63,6 +63,15 @@ class User(UserInDBBase):
     pass
 
 
+class SimpleUserResponse(BaseModel):
+    """Schema for user ID and email."""
+    id: UUID
+    email: EmailStr
+
+    class Config:
+        orm_mode = True
+
+
 class UserInDB(UserInDBBase):
     """Internal user schema with password hash."""
     password_hash: str

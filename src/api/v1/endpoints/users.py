@@ -5,17 +5,18 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.auth.jwt_dependencies import get_current_active_user
 from src.core.database import get_db
 from src.schemas.user import (
     UserCreate, UserUpdate, UserWithRole, UserWithPermissions,
-    UserPermissionAssign, UserPermissionRevoke, PasswordResetRequest,
-    PasswordResetResponse, UserPermissionAssignResponse
+    UserPermissionAssign, PasswordResetRequest,
+    PasswordResetResponse, UserPermissionAssignResponse, SimpleUserResponse
 )
 from src.schemas.permission import Permission as PermissionSchema
 from src.services.user_service import (
     get_all_users, create_user, get_user_by_id, update_user, delete_user,
     assign_user_role, assign_user_permissions, revoke_user_permission,
-    reset_user_password, get_user_with_role, get_user_with_permissions,
+    reset_user_password, get_user_with_permissions,
     get_user_permissions
 )
 from src.auth.dependencies import require_admin_role
@@ -24,17 +25,17 @@ from src.models.user import User
 router = APIRouter()
 
 
-@router.get("", response_model=List[UserWithRole], tags=["admin"])
+@router.get("", response_model=List[SimpleUserResponse])
 async def list_users(
     skip: int = Query(0, ge=0, description="Number of users to skip"),
     limit: int = Query(100, ge=1, le=1000,
                        description="Maximum number of users to return"),
-    admin_user: User = Depends(require_admin_role),
+    _current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
-) -> List[UserWithRole]:
-    """List all users with their roles (admin only)."""
+) -> List[SimpleUserResponse]:
+    """List all users with their roles."""
     users = await get_all_users(db, skip=skip, limit=limit)
-    return [UserWithRole.model_validate(user) for user in users]
+    return [SimpleUserResponse.model_validate(user, from_attributes=True) for user in users]
 
 
 @router.post("", response_model=UserWithRole, status_code=status.HTTP_201_CREATED, tags=["admin"])
