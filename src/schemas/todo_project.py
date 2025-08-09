@@ -18,10 +18,11 @@ class TodoProjectUpdate(TodoProjectBase):
 
 class TodoProjectCollaboratorResponse(BaseModel):
     email: str
+    id: UUID
 
 
 class TodoProjectCollaboratorCreate(BaseModel):
-    id: str
+    id: UUID
 
 
 class TodoProjectInDBBase(TodoProjectBase):

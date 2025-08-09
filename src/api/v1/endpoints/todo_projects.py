@@ -326,7 +326,7 @@ async def add_collaborator(
     await db.commit()
     await db.refresh(db_collaborator)
 
-    return TodoProjectCollaboratorResponse(email=str(user_obj.email))
+    return TodoProjectCollaboratorResponse(email=str(user_obj.email), id=UUID(str(user_obj.id)))
 
 
 @router.get("/{todo_project_id}/collaborators", response_model=list[TodoProjectCollaboratorResponse])
@@ -359,7 +359,8 @@ async def list_collaborators(
         user = await db.get(User, collab.user_id)
         if user:
             collaborator_responses.append(
-                TodoProjectCollaboratorResponse(email=str(user.email))
+                TodoProjectCollaboratorResponse(
+                    email=str(user.email), id=UUID(str(user.id)))
             )
     return collaborator_responses
 
