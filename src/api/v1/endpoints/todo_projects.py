@@ -74,12 +74,21 @@ async def list_todo_projects(
             if user:
                 emails.append(user.email)
 
+        result = await db.execute(
+            select(User.email).where(User.id == project.owner_id)
+        )
+        owner_email = result.scalar_one_or_none()
+        owner = {
+            "id": project.owner_id,
+            "email": owner_email
+        }
+
         project_dict = {
             "id": project.id,
             "name": project.name,
             "created_at": project.created_at,
             "updated_at": project.updated_at,
-            "owner_id": project.owner_id,
+            "owner": owner,
             "is_general": project.is_general,
             "collaborators": emails
         }
@@ -157,12 +166,22 @@ async def get_todo_project(
         if user:
             emails.append(user.email)
 
+    # Fetch owner email manually
+    result = await db.execute(
+        select(User.email).where(User.id == todo_project.owner_id)
+    )
+    owner_email = result.scalar_one_or_none()
+    owner = {
+        "id": todo_project.owner_id,
+        "email": owner_email
+    }
+
     project_dict = {
         "id": todo_project.id,
         "name": todo_project.name,
         "created_at": todo_project.created_at,
         "updated_at": todo_project.updated_at,
-        "owner_id": todo_project.owner_id,
+        "owner": owner,
         "is_general": todo_project.is_general,
         "collaborators": emails
     }
