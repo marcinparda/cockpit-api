@@ -17,7 +17,13 @@ from src.schemas.todo_project import (
 from src.auth.enums.actions import Actions
 from src.auth.permission_helpers import get_categories_permissions
 from src.auth.jwt_dependencies import get_current_active_user
-from src.services.todo_access_service import user_can_access_project, is_general_project
+from src.services.todo_access_service import user_can_access_project, is_general_project, user_is_project_owner
+from src.services.todo_project import (
+    validate_collaborators_batch,
+    create_collaborators,
+    build_collaborator_responses_from_users,
+    list_project_collaborators,
+)
 
 router = APIRouter()
 
@@ -262,17 +268,16 @@ async def delete_todo_project(
 
 # Collaborator Management Endpoints
 
-@router.post("/{todo_project_id}/collaborators", response_model=TodoProjectCollaboratorResponse, status_code=status.HTTP_201_CREATED)
-async def add_collaborator(
-    collaborator_data: TodoProjectCollaboratorCreate,
+@router.post("/{todo_project_id}/collaborators", response_model=list[TodoProjectCollaboratorResponse], status_code=status.HTTP_201_CREATED)
+async def add_collaborators(
+    collaborators: list[TodoProjectCollaboratorCreate],
     todo_project_id: Annotated[int, Path(...)],
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
     _: None = Depends(get_categories_permissions(Actions.UPDATE))
 ):
-    """Add a collaborator to a todo project."""
+    """Add a list of collaborators to a todo project atomically."""
     # Check ownership
-    from src.services.todo_access_service import user_is_project_owner
     is_owner = await user_is_project_owner(
         db, todo_project_id, UUID(str(current_user.id))
     )
@@ -287,46 +292,30 @@ async def add_collaborator(
     if not project:
         raise HTTPException(status_code=404, detail="Todo project not found")
 
-    user = await db.execute(select(User).where(User.id == collaborator_data.id))
-    user_obj = user.scalars().first()
-    if not user_obj:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    if user_obj.id == project.owner_id:
+    if not collaborators:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User is already the project owner"
+            detail="No collaborators provided"
         )
 
-    result = await db.execute(
-        select(TodoProjectCollaborator).where(
-            and_(
-                TodoProjectCollaborator.project_id == todo_project_id,
-                TodoProjectCollaborator.user_id == user_obj.id
-            )
-        )
-    )
-    existing = result.scalars().first()
+    collaborator_ids = [c.id for c in collaborators]
 
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User is already a collaborator on this project"
-        )
-
-    now = datetime.now()
-    db_collaborator = TodoProjectCollaborator(
+    unique_ids, errors, users_found = await validate_collaborators_batch(
+        db=db,
         project_id=todo_project_id,
-        user_id=user_obj.id,
-        created_at=now,
-        updated_at=now
+        user_ids=collaborator_ids,
+        owner_id=UUID(str(project.owner_id)),
     )
 
-    db.add(db_collaborator)
-    await db.commit()
-    await db.refresh(db_collaborator)
+    if any(errors.values()):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": "One or more collaborators are invalid", **errors},
+        )
 
-    return TodoProjectCollaboratorResponse(email=str(user_obj.email), id=UUID(str(user_obj.id)))
+    await create_collaborators(db=db, project_id=todo_project_id, user_ids=unique_ids)
+
+    return build_collaborator_responses_from_users(users_found, unique_ids)
 
 
 @router.get("/{todo_project_id}/collaborators", response_model=list[TodoProjectCollaboratorResponse])
@@ -348,21 +337,7 @@ async def list_collaborators(
             detail="Access to this project is forbidden"
         )
 
-    result = await db.execute(
-        select(TodoProjectCollaborator).where(
-            TodoProjectCollaborator.project_id == todo_project_id
-        )
-    )
-    collaborators = result.scalars().all()
-    collaborator_responses = []
-    for collab in collaborators:
-        user = await db.get(User, collab.user_id)
-        if user:
-            collaborator_responses.append(
-                TodoProjectCollaboratorResponse(
-                    email=str(user.email), id=UUID(str(user.id)))
-            )
-    return collaborator_responses
+    return await list_project_collaborators(db, todo_project_id)
 
 
 @router.delete("/{todo_project_id}/collaborators/{user_id}", status_code=204)
