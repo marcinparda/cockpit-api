@@ -117,12 +117,17 @@ async def create_todo_project(
     await db.commit()
     await db.refresh(db_todo_project)
 
+    owner = {
+        "id": db_todo_project.owner_id,
+        "email": current_user.email,
+    }
+
     project_dict = {
         "id": db_todo_project.id,
         "name": db_todo_project.name,
         "created_at": db_todo_project.created_at,
         "updated_at": db_todo_project.updated_at,
-        "owner_id": db_todo_project.owner_id,
+        "owner": owner,
         "is_general": db_todo_project.is_general,
         "collaborators": []
     }
@@ -160,12 +165,6 @@ async def get_todo_project(
     )
     collaborators = result.scalars().all()
 
-    emails = []
-    for collab in collaborators:
-        user = await db.get(User, collab.user_id)
-        if user:
-            emails.append(user.email)
-
     # Fetch owner email manually
     result = await db.execute(
         select(User.email).where(User.id == todo_project.owner_id)
@@ -175,6 +174,12 @@ async def get_todo_project(
         "id": todo_project.owner_id,
         "email": owner_email
     }
+
+    emails = []
+    for collab in collaborators:
+        user = await db.get(User, collab.user_id)
+        if user:
+            emails.append(user.email)
 
     project_dict = {
         "id": todo_project.id,
@@ -238,12 +243,22 @@ async def update_todo_project(
         if user:
             emails.append(user.email)
 
+    # Build owner object to match schema
+    result = await db.execute(
+        select(User.email).where(User.id == todo_project.owner_id)
+    )
+    owner_email = result.scalar_one_or_none()
+    owner = {
+        "id": todo_project.owner_id,
+        "email": owner_email,
+    }
+
     project_dict = {
         "id": todo_project.id,
         "name": todo_project.name,
         "created_at": todo_project.created_at,
         "updated_at": todo_project.updated_at,
-        "owner_id": todo_project.owner_id,
+        "owner": owner,
         "is_general": todo_project.is_general,
         "collaborators": emails
     }
