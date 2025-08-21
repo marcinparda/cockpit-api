@@ -35,7 +35,8 @@ def upgrade() -> None:
 
     # Load current features from DB
     try:
-        rows = connection.execute(sa.text("SELECT id, name FROM features")).fetchall()
+        rows = connection.execute(
+            sa.text("SELECT id, name FROM features")).fetchall()
     except sa_exc.ProgrammingError:
         # features table does not exist in some environments
         print("features table not present, skipping features sync")
@@ -45,35 +46,55 @@ def upgrade() -> None:
     enum_features = [f.value for f in Features]
 
     to_add = [f for f in enum_features if f not in db_features]
-    to_remove = [name for name in db_features.keys() if name not in enum_features]
+    to_remove = [name for name in db_features.keys()
+                 if name not in enum_features]
 
     # 1. Remove features not present in enum (and cascade-clean associated permissions)
+    def table_exists(table_name: str) -> bool:
+        result = connection.execute(
+            sa.text(
+                "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = :t)"
+            ),
+            {"t": table_name}
+        ).fetchone()
+        return bool(result[0]) if result is not None else False
+
     for name in to_remove:
         feature_id = db_features[name]
-        try:
-            # delete api_key_permissions referencing permissions for this feature
+
+        # delete api_key_permissions referencing permissions for this feature
+        if table_exists('api_key_permissions') and table_exists('permissions'):
             connection.execute(sa.text(
                 "DELETE FROM api_key_permissions WHERE permission_id IN (SELECT id FROM permissions WHERE feature_id = :feature_id)"
             ), {"feature_id": feature_id})
+        else:
+            print("api_key_permissions or permissions table not present, skipping api_key_permissions cleanup for feature: ", name)
 
-            # delete user_permissions referencing permissions for this feature
+        # delete user_permissions referencing permissions for this feature
+        if table_exists('user_permissions') and table_exists('permissions'):
             connection.execute(sa.text(
                 "DELETE FROM user_permissions WHERE permission_id IN (SELECT id FROM permissions WHERE feature_id = :feature_id)"
             ), {"feature_id": feature_id})
+        else:
+            print("user_permissions or permissions table not present, skipping user_permissions cleanup for feature: ", name)
 
-            # delete permissions for this feature
+        # delete permissions for this feature
+        if table_exists('permissions'):
             connection.execute(sa.text(
                 "DELETE FROM permissions WHERE feature_id = :feature_id"
             ), {"feature_id": feature_id})
+        else:
+            print(
+                "permissions table not present, skipping permissions deletion for feature: ", name)
 
-            # delete feature
+        # delete feature
+        if table_exists('features'):
             connection.execute(sa.text(
                 "DELETE FROM features WHERE id = :feature_id"
             ), {"feature_id": feature_id})
-
             print(f"Removed feature '{name}' and related permissions")
-        except sa_exc.ProgrammingError:
-            print(f"One of related tables for feature removal is missing, skipping removal of '{name}'")
+        else:
+            print(f"features table not present, skipping removal of '{name}'")
 
     # 2. Insert new features from enum
     if to_add:
