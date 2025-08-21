@@ -38,10 +38,12 @@ def upgrade() -> None:
 
     # Basic table existence checks to allow this migration to run in different
     # environments where some tables may not yet be present.
-    required_tables = ['users', 'user_roles', 'permissions', 'user_permissions']
+    required_tables = ['users', 'user_roles',
+                       'permissions', 'user_permissions']
     for t in required_tables:
         if not _table_exists(connection, t):
-            print(f"Table '{t}' not present, skipping admin permission assignment.")
+            print(
+                f"Table '{t}' not present, skipping admin permission assignment.")
             return
 
     # Get all admin users
@@ -81,7 +83,8 @@ def upgrade() -> None:
         user_id = admin_user[0]
 
         existing_permissions_query = "SELECT permission_id FROM user_permissions WHERE user_id = :user_id"
-        existing_result = connection.execute(sa.text(existing_permissions_query), {"user_id": user_id})
+        existing_result = connection.execute(
+            sa.text(existing_permissions_query), {"user_id": user_id})
         existing = set()
         if existing_result is not None:
             existing = {row[0] for row in existing_result.fetchall()}
@@ -107,7 +110,8 @@ def upgrade() -> None:
             )
             assigned += 1
 
-    print(f"Assigned {assigned} permissions to {len(admin_users)} admin users.")
+    print(
+        f"Assigned {assigned} permissions to {len(admin_users)} admin users.")
 
 
 def downgrade() -> None:
@@ -137,9 +141,11 @@ def downgrade() -> None:
     for admin_user in admin_users:
         user_id = admin_user[0]
         delete_query = "DELETE FROM user_permissions WHERE user_id = :user_id"
-        result = connection.execute(sa.text(delete_query), {"user_id": user_id})
+        result = connection.execute(
+            sa.text(delete_query), {"user_id": user_id})
         try:
             rowcount = result.rowcount
         except Exception:
             rowcount = None
-        print(f"Removed {rowcount if rowcount is not None else 'unknown'} permissions from admin user: {admin_user[1]}")
+        print(
+            f"Removed {rowcount if rowcount is not None else 'unknown'} permissions from admin user: {admin_user[1]}")
