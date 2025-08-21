@@ -26,3 +26,4 @@ var/
 .installed.cfg
 *.egg
 .ai
+backups/
