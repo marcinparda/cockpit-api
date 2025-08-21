@@ -8,3 +8,5 @@ class Features(str, Enum):
     PAYMENT_METHODS = "payment_methods"
     TODO_ITEMS = "todo_items"
     SHARED = "shared"
+    ROLES = "roles"
+    USERS = "users"
