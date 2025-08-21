@@ -51,6 +51,9 @@ def upgrade() -> None:
             text("SELECT id FROM actions WHERE name = :name"),
             {"name": action.value}
         )
+        # When running in Alembic offline/static SQL generation, execute() may return None.
+        if result is None:
+            continue
         action_row = result.fetchone()
         if action_row:
             action_ids[action.value] = action_row[0]
@@ -79,20 +82,29 @@ def upgrade() -> None:
     admin_keys_result = connection.execute(
         text("SELECT id FROM api_keys WHERE is_active = true")
     )
+    if admin_keys_result is None:
+        admin_keys = []
+    else:
+        admin_keys = admin_keys_result
 
-    for api_key_row in admin_keys_result:
+    for api_key_row in admin_keys:
         api_key_id = api_key_row[0]
         for permission_id in permission_ids:
             # Check if permission already exists to avoid duplicates
-            existing = connection.execute(
+            existing_result = connection.execute(
                 text("""
                 SELECT 1 FROM api_key_permissions 
                 WHERE api_key_id = :api_key_id AND permission_id = :permission_id
                 """),
                 {"api_key_id": api_key_id, "permission_id": permission_id}
-            ).fetchone()
+            )
 
-            if not existing:
+            exists = False
+            if existing_result is not None:
+                existing = existing_result.fetchone()
+                exists = bool(existing)
+
+            if not exists:
                 connection.execute(
                     text("""
                     INSERT INTO api_key_permissions (api_key_id, permission_id, created_at, updated_at)
@@ -115,7 +127,9 @@ def downgrade() -> None:
     result = connection.execute(
         text("SELECT id FROM features WHERE name = 'utils'")
     )
-    feature_row = result.fetchone()
+    feature_row = None
+    if result is not None:
+        feature_row = result.fetchone()
 
     if feature_row:
         utils_feature_id = feature_row[0]
