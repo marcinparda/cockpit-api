@@ -19,6 +19,7 @@
 - you can run tests with `poetry run pytest` instead of `docker compose -f docker-compose.dev.yml run --rm cockpit_api pytest`
 - If they are warnings in tests, address them before committing, you can do it as a last step before creating summary
 - There is no need to restart docker API container after changes, it configured to refresh automatically on code changes.
+- When creating new features remember to add them in features table in database with alembic migration, also update permissions table with new feature pairing with actions
 
 ## Python
 
