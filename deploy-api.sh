@@ -13,7 +13,6 @@ REGISTRY="ghcr.io"
 OWNER="marcinparda"
 REPO="cockpit-api"
 IMAGE_NAME="${REGISTRY}/${OWNER}/${REPO}"
-COMPOSE_FILE="docker-compose.prod.yml"
 
 echo -e "${GREEN}🚀 Starting Cockpit API deployment...${NC}"
 
@@ -43,101 +42,85 @@ for var in "${required_vars[@]}"; do
 done
 echo -e "${GREEN}✅ All environment variables are set${NC}"
 
-# Create .env file with all required variables
-echo -e "${YELLOW}📝 Creating .env file...${NC}"
-cat > .env << EOF
-DB_USER='${DB_USER}'
-DB_PASSWORD='${DB_PASSWORD}'
-DB_HOST='${DB_HOST}'
-DB_NAME='${DB_NAME}'
-DB_PORT='${DB_PORT}'
-CORS_ORIGINS='${CORS_ORIGINS}'
-JWT_SECRET_KEY='${JWT_SECRET_KEY}'
-JWT_ALGORITHM='${JWT_ALGORITHM}'
-JWT_EXPIRE_HOURS='${JWT_EXPIRE_HOURS}'
-BCRYPT_ROUNDS='${BCRYPT_ROUNDS}'
-COOKIE_DOMAIN='${COOKIE_DOMAIN}'
-COOKIE_SECURE=True
-ENVIRONMENT=production
-EOF
-echo -e "${GREEN}✅ .env file created${NC}"
+# All environment variables are passed directly to containers - no .env file needed
+echo -e "${YELLOW}📝 Environment variables will be passed directly to containers${NC}"
 
 # Login to GitHub Container Registry
 echo -e "${YELLOW}🔐 Logging into GitHub Container Registry...${NC}"
 echo "${GITHUB_TOKEN}" | docker login ${REGISTRY} -u ${GITHUB_ACTOR} --password-stdin
 echo -e "${GREEN}✅ Successfully logged in to GHCR${NC}"
 
-# Stop existing containers
+# Stop existing containers by name (no compose file needed)
 echo -e "${YELLOW}🛑 Stopping existing containers...${NC}"
-docker compose -f ${COMPOSE_FILE} down || true
-echo -e "${GREEN}✅ Containers stopped${NC}"
+docker stop cockpit_api_prod cockpit_db_prod 2>/dev/null || echo "No existing containers to stop"
+docker rm cockpit_api_prod cockpit_db_prod 2>/dev/null || echo "No existing containers to remove"
 
 # Remove old images to save space
 echo -e "${YELLOW}🧹 Cleaning up old images...${NC}"
 docker image prune -f || true
 
-# Create updated docker-compose.prod.yml that uses GHCR image
-echo -e "${YELLOW}📝 Updating Docker Compose configuration for GHCR...${NC}"
-cp ${COMPOSE_FILE} ${COMPOSE_FILE}.backup
+# Create Docker network if it doesn't exist
+echo -e "${YELLOW}🌐 Creating Docker network...${NC}"
+docker network create cockpit_network_prod 2>/dev/null || echo "Network already exists"
 
-# Update the compose file to use the GHCR image instead of building locally
-cat > ${COMPOSE_FILE} << 'EOF'
-services:
-  cockpit_db:
-    image: postgres:15-alpine
-    container_name: cockpit_db_prod
-    env_file:
-      - .env
-    environment:
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=${DB_NAME}
-    volumes:
-      - cockpit_postgres_data_prod:/var/lib/postgresql/data
-    networks:
-      - cockpit_network_prod
-    restart: always
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER} -d ${DB_NAME}']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  cockpit_api:
-    image: ghcr.io/marcinparda/cockpit-api:latest
-    container_name: cockpit_api_prod
-    env_file:
-      - .env
-    environment:
-      - DB_HOST=cockpit_db
-    ports:
-      - '8000:8000'
-    depends_on:
-      cockpit_db:
-        condition: service_healthy
-    networks:
-      - cockpit_network_prod
-    restart: always
-
-networks:
-  cockpit_network_prod:
-    driver: bridge
-
-volumes:
-  cockpit_postgres_data_prod:
-EOF
-
-echo -e "${GREEN}✅ Docker Compose configuration updated${NC}"
+# Create volume if it doesn't exist
+echo -e "${YELLOW}💾 Creating Docker volume...${NC}"
+docker volume create cockpit_postgres_data_prod 2>/dev/null || echo "Volume already exists"
 
 # Pull the latest image
 echo -e "${YELLOW}📥 Pulling latest image from GHCR...${NC}"
 docker pull ${IMAGE_NAME}:latest
 echo -e "${GREEN}✅ Latest image pulled${NC}"
 
-# Start the services
-echo -e "${YELLOW}🚀 Starting services...${NC}"
-docker compose -f ${COMPOSE_FILE} up -d
-echo -e "${GREEN}✅ Services started${NC}"
+# Start PostgreSQL container
+echo -e "${YELLOW}🗄️ Starting PostgreSQL container...${NC}"
+docker run -d \
+  --name cockpit_db_prod \
+  --network cockpit_network_prod \
+  --restart always \
+  -e POSTGRES_USER="${DB_USER}" \
+  -e POSTGRES_PASSWORD="${DB_PASSWORD}" \
+  -e POSTGRES_DB="${DB_NAME}" \
+  -v cockpit_postgres_data_prod:/var/lib/postgresql/data \
+  --health-cmd="pg_isready -U ${DB_USER} -d ${DB_NAME}" \
+  --health-interval=10s \
+  --health-timeout=5s \
+  --health-retries=5 \
+  postgres:15-alpine
+
+echo -e "${GREEN}✅ PostgreSQL container started${NC}"
+
+# Wait for database to be ready
+echo -e "${YELLOW}⏳ Waiting for database to be ready...${NC}"
+while ! docker exec cockpit_db_prod pg_isready -U "${DB_USER}" -d "${DB_NAME}" >/dev/null 2>&1; do
+  echo -e "${YELLOW}⏳ Database not ready yet, waiting...${NC}"
+  sleep 2
+done
+echo -e "${GREEN}✅ Database is ready${NC}"
+
+# Start API container
+echo -e "${YELLOW}🚀 Starting API container...${NC}"
+docker run -d \
+  --name cockpit_api_prod \
+  --network cockpit_network_prod \
+  --restart always \
+  -p 8000:8000 \
+  -e DB_USER="${DB_USER}" \
+  -e DB_PASSWORD="${DB_PASSWORD}" \
+  -e DB_HOST="cockpit_db_prod" \
+  -e DB_NAME="${DB_NAME}" \
+  -e DB_PORT="${DB_PORT}" \
+  -e CORS_ORIGINS="${CORS_ORIGINS}" \
+  -e JWT_SECRET_KEY="${JWT_SECRET_KEY}" \
+  -e JWT_ALGORITHM="${JWT_ALGORITHM}" \
+  -e JWT_EXPIRE_HOURS="${JWT_EXPIRE_HOURS}" \
+  -e BCRYPT_ROUNDS="${BCRYPT_ROUNDS}" \
+  -e COOKIE_DOMAIN="${COOKIE_DOMAIN}" \
+  -e COOKIE_SECURE=True \
+  -e ENVIRONMENT=production \
+  ${IMAGE_NAME}:latest
+
+echo -e "${GREEN}✅ API container started${NC}"
 
 # Wait a moment for services to start
 echo -e "${YELLOW}⏳ Waiting for services to start...${NC}"
@@ -145,7 +128,7 @@ sleep 10
 
 # Basic health check
 echo -e "${YELLOW}🏥 Performing health check...${NC}"
-if docker compose -f ${COMPOSE_FILE} ps | grep -q "Up"; then
+if docker ps | grep -E "(cockpit_api_prod|cockpit_db_prod)" | grep -q "Up"; then
     echo -e "${GREEN}✅ Health check passed - containers are running${NC}"
     
     # Try to connect to the API
@@ -157,9 +140,11 @@ if docker compose -f ${COMPOSE_FILE} ps | grep -q "Up"; then
 else
     echo -e "${RED}❌ Health check failed - containers may not be running properly${NC}"
     echo -e "${YELLOW}📋 Container status:${NC}"
-    docker compose -f ${COMPOSE_FILE} ps
-    echo -e "${YELLOW}📋 Recent logs:${NC}"
-    docker compose -f ${COMPOSE_FILE} logs --tail=20
+    docker ps -a | grep -E "(cockpit_api_prod|cockpit_db_prod)"
+    echo -e "${YELLOW}📋 Recent API logs:${NC}"
+    docker logs --tail=20 cockpit_api_prod 2>/dev/null || echo "No API logs available"
+    echo -e "${YELLOW}📋 Recent DB logs:${NC}"
+    docker logs --tail=20 cockpit_db_prod 2>/dev/null || echo "No DB logs available"
     exit 1
 fi
 
