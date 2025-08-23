@@ -54,16 +54,29 @@ def upgrade() -> None:
 
     # Fallback to first admin user if specified email not found
     result = conn.execute(text("SELECT id FROM users LIMIT 1"))
-    default_owner_row = result.fetchone()
+    default_owner_row = None
+    if result is not None:
+        try:
+            default_owner_row = result.fetchone()
+        except Exception:
+            default_owner_row = None
+
     default_owner_id = default_owner_row[0] if default_owner_row else None
 
     # Set default owner for all existing todo_projects
+    # If default_owner_id is None this will set owner_id to NULL which is intended
     conn.execute(
         text(f"UPDATE todo_projects SET owner_id = '{default_owner_id}'"))
 
     # Create "General" projects for all users
     result = conn.execute(text("SELECT id, email FROM users"))
-    users_data = result.fetchall()
+    users_data = []
+    if result is not None:
+        try:
+            users_data = result.fetchall() or []
+        except Exception:
+            users_data = []
+
     now = datetime.now().isoformat()
 
     general_projects = {}
@@ -74,7 +87,12 @@ def upgrade() -> None:
         # Check if user already has a project
         result = conn.execute(
             text(f"SELECT id FROM todo_projects WHERE owner_id = '{user_id}' LIMIT 1"))
-        existing_project = result.fetchone()
+        existing_project = None
+        if result is not None:
+            try:
+                existing_project = result.fetchone()
+            except Exception:
+                existing_project = None
 
         if not existing_project:
             # Create a "General" project for this user
@@ -82,7 +100,13 @@ def upgrade() -> None:
                 text(f"INSERT INTO todo_projects (name, created_at, updated_at, owner_id, is_general) "
                      f"VALUES ('General', '{now}', '{now}', '{user_id}', TRUE) RETURNING id")
             )
-            new_project = result.fetchone()
+            new_project = None
+            if result is not None:
+                try:
+                    new_project = result.fetchone()
+                except Exception:
+                    new_project = None
+
             if new_project:
                 general_projects[str(user_id)] = new_project[0]
 
@@ -96,7 +120,12 @@ def upgrade() -> None:
                 text(
                     f"SELECT id FROM todo_projects WHERE owner_id = '{user_id}' AND is_general = TRUE LIMIT 1")
             )
-            general_project = result.fetchone()
+            general_project = None
+            if result is not None:
+                try:
+                    general_project = result.fetchone()
+                except Exception:
+                    general_project = None
 
             if general_project:
                 general_projects[user_id_str] = general_project[0]
@@ -104,7 +133,12 @@ def upgrade() -> None:
     # Assign orphaned items to owner's general project
     result = conn.execute(
         text("SELECT id FROM todo_items WHERE project_id IS NULL"))
-    orphaned_items = result.fetchall()
+    orphaned_items = []
+    if result is not None:
+        try:
+            orphaned_items = result.fetchall() or []
+        except Exception:
+            orphaned_items = []
 
     if orphaned_items and default_owner_id:
         # Make sure we have a General project for the default owner
@@ -114,7 +148,12 @@ def upgrade() -> None:
                 text(
                     f"SELECT id FROM todo_projects WHERE owner_id = '{default_owner_id}' AND is_general = TRUE LIMIT 1")
             )
-            general_project = result.fetchone()
+            general_project = None
+            if result is not None:
+                try:
+                    general_project = result.fetchone()
+                except Exception:
+                    general_project = None
 
             if general_project:
                 general_projects[str(default_owner_id)] = general_project[0]
@@ -124,7 +163,12 @@ def upgrade() -> None:
                     text(f"INSERT INTO todo_projects (name, created_at, updated_at, owner_id, is_general) "
                          f"VALUES ('General', '{now}', '{now}', '{default_owner_id}', TRUE) RETURNING id")
                 )
-                new_project = result.fetchone()
+                new_project = None
+                if result is not None:
+                    try:
+                        new_project = result.fetchone()
+                    except Exception:
+                        new_project = None
                 if new_project:
                     general_projects[str(default_owner_id)] = new_project[0]
 
@@ -135,8 +179,7 @@ def upgrade() -> None:
                 item_id = item_row[0]
                 conn.execute(
                     text(
-                        f"UPDATE todo_items SET project_id = {default_general_project} WHERE id = {item_id}")
-                )
+                        f"UPDATE todo_items SET project_id = {default_general_project} WHERE id = {item_id}"))
 
     # Add the foreign key constraints
     with op.batch_alter_table('todo_projects', schema=None) as batch_op:

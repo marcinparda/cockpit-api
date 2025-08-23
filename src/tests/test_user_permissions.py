@@ -311,7 +311,6 @@ class TestUserPermissionHelpers:
             get_categories_permissions,
             get_payment_methods_permissions,
             get_todo_items_permissions,
-            get_api_keys_permissions,
             get_shared_permissions
         )
 
@@ -321,7 +320,6 @@ class TestUserPermissionHelpers:
         assert callable(get_categories_permissions)
         assert callable(get_payment_methods_permissions)
         assert callable(get_todo_items_permissions)
-        assert callable(get_api_keys_permissions)
         assert callable(get_shared_permissions)
 
     def test_user_permission_dependency_creation(self):

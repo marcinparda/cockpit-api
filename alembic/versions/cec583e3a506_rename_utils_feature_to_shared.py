@@ -19,12 +19,32 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    """Rename utils feature to shared."""
-    # Update the feature name from 'utils' to 'shared'
-    op.execute("UPDATE features SET name = 'shared' WHERE name = 'utils'")
+    """Rename utils feature to shared safely."""
+    # Update the feature name from 'utils' to 'shared' only if 'shared' does not already exist
+    op.execute("""
+    DO $$
+    BEGIN
+      IF EXISTS(SELECT 1 FROM features WHERE name = 'utils') THEN
+        IF NOT EXISTS(SELECT 1 FROM features WHERE name = 'shared') THEN
+          UPDATE features SET name = 'shared' WHERE name = 'utils';
+        END IF;
+      END IF;
+    END
+    $$;
+    """)
 
 
 def downgrade() -> None:
-    """Revert shared feature name back to utils."""
-    # Revert the feature name from 'shared' back to 'utils'
-    op.execute("UPDATE features SET name = 'utils' WHERE name = 'shared'")
+    """Revert shared feature name back to utils if appropriate."""
+    # Revert the feature name from 'shared' back to 'utils' only if 'utils' does not already exist
+    op.execute("""
+    DO $$
+    BEGIN
+      IF EXISTS(SELECT 1 FROM features WHERE name = 'shared') THEN
+        IF NOT EXISTS(SELECT 1 FROM features WHERE name = 'utils') THEN
+          UPDATE features SET name = 'utils' WHERE name = 'shared';
+        END IF;
+      END IF;
+    END
+    $$;
+    """)

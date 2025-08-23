@@ -6,6 +6,7 @@ from .feature import Feature
 from .action import Action
 from .todo_item import TodoItem
 from .todo_project import TodoProject
+from .todo_project_collaborator import TodoProjectCollaborator
 from .user_role import UserRole
 from .user import User
 from .user_permission import UserPermission
@@ -13,4 +14,4 @@ from .access_token import AccessToken
 from .refresh_token import RefreshToken
 
 __all__ = ["Category", "Expense", "PaymentMethod", "Permission", "Feature", "Action", "TodoItem", "TodoProject",
-           "UserRole", "User", "UserPermission", "AccessToken", "RefreshToken"]
+           "TodoProjectCollaborator", "UserRole", "User", "UserPermission", "AccessToken", "RefreshToken"]

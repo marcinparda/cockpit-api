@@ -32,7 +32,11 @@ def upgrade() -> None:
         JOIN user_roles ur ON u.role_id = ur.id
         WHERE ur.name = 'Admin'
     """
-    admin_users = connection.execute(sa.text(admin_users_query)).fetchall()
+    admin_users_result = connection.execute(sa.text(admin_users_query))
+    if admin_users_result is None:
+        print("No admin users result available (offline SQL generation). Skipping.")
+        return
+    admin_users = admin_users_result.fetchall()
 
     if not admin_users:
         print("No admin users found. Skipping permission assignment.")
@@ -40,7 +44,11 @@ def upgrade() -> None:
 
     # Get all permissions
     permissions_query = "SELECT id FROM permissions"
-    permissions = connection.execute(sa.text(permissions_query)).fetchall()
+    permissions_result = connection.execute(sa.text(permissions_query))
+    if permissions_result is None:
+        print("No permissions result available (offline SQL generation). Skipping.")
+        return
+    permissions = permissions_result.fetchall()
 
     if not permissions:
         print("No permissions found. Skipping permission assignment.")
@@ -60,10 +68,13 @@ def upgrade() -> None:
             FROM user_permissions 
             WHERE user_id = :user_id
         """
-        existing_permissions = connection.execute(
+        existing_permissions_result = connection.execute(
             sa.text(existing_permissions_query),
             {'user_id': user_id}
-        ).fetchall()
+        )
+        existing_permissions = []
+        if existing_permissions_result is not None:
+            existing_permissions = existing_permissions_result.fetchall()
 
         existing_permission_ids = {perm[0] for perm in existing_permissions}
 
