@@ -1,12 +1,17 @@
-name: Test & Deploy to Raspberry Pi
+name: Test & Deploy to Raspberry Pi (Legacy)
 
 on:
-  push:
-    branches: [master]
+  workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: 'Force deployment using legacy workflow'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   test:
-    uses: ./.github/workflows/poetry-test.yml
+    uses: ./.github/workflows/checks.yml
 
   deploy:
     needs: test
