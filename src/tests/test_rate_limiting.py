@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
 
 from src.main import app
-from src.middleware.rate_limit import RateLimitMiddleware, RateLimitStore, RateLimitEntry
+from src.common.middleware.rate_limit import RateLimitMiddleware, RateLimitStore, RateLimitEntry
 
 
 class TestRateLimitEntry:
@@ -146,7 +146,7 @@ class TestRateLimitMiddleware:
         ip = middleware._get_client_ip(request)
         assert ip == "192.168.1.3"
 
-    @patch("src.middleware.rate_limit.verify_token")
+    @patch("src.common.middleware.rate_limit.verify_token")
     def test_rate_limit_middleware_extract_user_id(self, mock_verify_token):
         """Test user ID extraction from JWT token."""
         middleware = RateLimitMiddleware(app)

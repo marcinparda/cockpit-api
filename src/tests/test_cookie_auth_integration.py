@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from src.main import app
 from src.api.v1.endpoints import auth
-from src.middleware.jwt_validation import JWTValidationMiddleware
+from src.common.middleware.jwt_validation import JWTValidationMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from src.core.config import settings
 import pytest

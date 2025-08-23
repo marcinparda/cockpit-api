@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
 
 from src.main import app
-from src.middleware.rate_limit import RateLimitMiddleware
+from src.common.middleware.rate_limit import RateLimitMiddleware
 
 
 class TestRateLimitingPerformance:

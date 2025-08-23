@@ -7,8 +7,8 @@ from typing import List
 
 from src.api.v1.endpoints import expenses, categories, payment_methods, todo_items, todo_projects, auth, users, roles, health
 from src.core.config import settings
-from src.middleware.rate_limit import RateLimitMiddleware
-from src.middleware.jwt_validation import JWTValidationMiddleware
+from src.common.middleware.rate_limit import RateLimitMiddleware
+from src.common.middleware.jwt_validation import JWTValidationMiddleware
 from src.core.scheduler import task_scheduler
 
 # Configure logging
