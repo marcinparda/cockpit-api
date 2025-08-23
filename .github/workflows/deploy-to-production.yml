@@ -38,9 +38,14 @@ jobs:
           chmod 600 ~/.ssh/config
         shell: bash
 
+      - name: Copy deploy script to server
+        run: |
+          scp -o StrictHostKeyChecking=no deploy-api.sh ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }}:~/deploy-api.sh
+          ssh -o StrictHostKeyChecking=no ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }} "chmod +x ~/deploy-api.sh"
+
       - name: Deploy to Production
         run: |
-          ssh -vvv -o StrictHostKeyChecking=no ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }} "\
+          ssh -o StrictHostKeyChecking=no ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }} "\
           export GITHUB_TOKEN='${{ secrets.GITHUB_TOKEN }}' && \
           export GITHUB_ACTOR='${{ github.actor }}' && \
           export DB_USER='${{ secrets.DB_USER }}' && \
@@ -56,9 +61,7 @@ jobs:
           export COOKIE_DOMAIN='${{ secrets.COOKIE_DOMAIN }}' && \
           export COOKIE_SECURE=True && \
           export ENVIRONMENT=production && \
-          cd ~/cockpit-api && \
-          git pull && \
-          ./deploy.sh"
+          ./deploy-api.sh"
         shell: bash
 
       - name: Generate deployment summary

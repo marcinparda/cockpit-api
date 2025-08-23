@@ -81,7 +81,7 @@ The deployment system is designed to:
 - Environment variables passed securely through GitHub Secrets
 - SSH key-based authentication
 
-## Deployment Script (`deploy.sh`)
+## Deployment Script (`deploy-api.sh`)
 
 The deployment script handles the actual application deployment on the Raspberry Pi:
 
@@ -163,7 +163,7 @@ git pull origin master
 export GITHUB_TOKEN="your-token"
 export GITHUB_ACTOR="your-username"
 # ... set other required variables ...
-./deploy.sh
+./deploy-api.sh
 ```
 
 ### Rollback Procedure:
