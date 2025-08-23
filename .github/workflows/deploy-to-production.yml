@@ -1,0 +1,73 @@
+name: Deploy to Production
+
+on:
+  workflow_run:
+    workflows: ["Deploy"]
+    types:
+      - completed
+    branches: [master]
+
+jobs:
+  deploy-to-production:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Cloudflared
+        run: |
+          sudo mkdir -p --mode=0755 /usr/share/keyrings
+          curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | sudo tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
+          echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared jammy main' | sudo tee /etc/apt/sources.list.d/cloudflared.list
+          sudo apt-get update && sudo apt-get install cloudflared
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.RASPBERRY_PI_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+          cat <<EOF > ~/.ssh/config
+          Host ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }}
+            User ${{ secrets.RASPBERRY_PI_USERNAME }}
+            IdentityFile ~/.ssh/id_ed25519
+            ProxyCommand cloudflared access ssh --hostname %h
+          EOF
+          chmod 600 ~/.ssh/config
+        shell: bash
+
+      - name: Deploy to Production
+        run: |
+          ssh -vvv -o StrictHostKeyChecking=no ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }} "\
+          export GITHUB_TOKEN='${{ secrets.GITHUB_TOKEN }}' && \
+          export GITHUB_ACTOR='${{ github.actor }}' && \
+          export DB_USER='${{ secrets.DB_USER }}' && \
+          export DB_PASSWORD='${{ secrets.DB_PASSWORD }}' && \
+          export DB_HOST='${{ secrets.DB_HOST }}' && \
+          export DB_NAME='${{ secrets.DB_NAME }}' && \
+          export DB_PORT='${{ secrets.DB_PORT }}' && \
+          export CORS_ORIGINS='${{ secrets.CORS_ORIGINS }}' && \
+          export JWT_SECRET_KEY='${{ secrets.JWT_SECRET_KEY }}' && \
+          export JWT_ALGORITHM='${{ secrets.JWT_ALGORITHM }}' && \
+          export JWT_EXPIRE_HOURS='${{ secrets.JWT_EXPIRE_HOURS }}' && \
+          export BCRYPT_ROUNDS='${{ secrets.BCRYPT_ROUNDS }}' && \
+          export COOKIE_DOMAIN='${{ secrets.COOKIE_DOMAIN }}' && \
+          export COOKIE_SECURE=True && \
+          export ENVIRONMENT=production && \
+          cd ~/cockpit-api && \
+          git pull && \
+          ./deploy.sh"
+        shell: bash
+
+      - name: Generate deployment summary
+        run: |
+          echo "## Production Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ✅ Successfully deployed to Raspberry Pi" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployed at:** \`$(date -u)\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The application has been successfully deployed to production using the latest Docker image from GHCR." >> $GITHUB_STEP_SUMMARY
