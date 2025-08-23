@@ -62,8 +62,10 @@ def upgrade() -> None:
         return [row[0] for row in res.fetchall()]
 
     # Load features and actions
-    features_rows = connection.execute(sa.text("SELECT id, name FROM features")).fetchall()
-    actions_rows = connection.execute(sa.text("SELECT id, name FROM actions")).fetchall()
+    features_rows = connection.execute(
+        sa.text("SELECT id, name FROM features")).fetchall()
+    actions_rows = connection.execute(
+        sa.text("SELECT id, name FROM actions")).fetchall()
 
     if not features_rows or not actions_rows:
         print("No features or actions present, skipping.")
@@ -73,7 +75,8 @@ def upgrade() -> None:
     actions = {row[1]: row[0] for row in actions_rows}  # name -> id
 
     # Ensure permissions exist for needed (feature, action) pairs and collect permission ids
-    permission_ids_for_feature_action: dict = {}  # (feature_name, action_name) -> permission_id
+    # (feature_name, action_name) -> permission_id
+    permission_ids_for_feature_action: dict = {}
 
     for fname, fid in features.items():
         for aname, aid in actions.items():
@@ -96,12 +99,14 @@ def upgrade() -> None:
                     sa.text(
                         "INSERT INTO permissions (id, feature_id, action_id, created_at, updated_at) VALUES (:id, :fid, :aid, :created_at, :updated_at)"
                     ),
-                    {"id": pid, "fid": fid, "aid": aid, "created_at": now, "updated_at": now},
+                    {"id": pid, "fid": fid, "aid": aid,
+                        "created_at": now, "updated_at": now},
                 )
                 permission_ids_for_feature_action[key] = pid
             except Exception as e:
                 # If insertion fails (e.g., concurrent creation), try to re-select
-                print(f"Warning: could not insert permission for {fname}/{aname}: {e}")
+                print(
+                    f"Warning: could not insert permission for {fname}/{aname}: {e}")
                 retry = connection.execute(
                     sa.text(
                         "SELECT id FROM permissions WHERE feature_id = :fid AND action_id = :aid LIMIT 1"
@@ -122,10 +127,12 @@ def upgrade() -> None:
         if fname in ('roles', 'users'):
             # For 'roles' and 'users' features: User role gets only read
             if (fname, read_action) in permission_ids_for_feature_action:
-                user_permission_ids.append(permission_ids_for_feature_action[(fname, read_action)])
+                user_permission_ids.append(
+                    permission_ids_for_feature_action[(fname, read_action)])
             # TestUser also gets read
             if (fname, read_action) in permission_ids_for_feature_action:
-                testuser_permission_ids.append(permission_ids_for_feature_action[(fname, read_action)])
+                testuser_permission_ids.append(
+                    permission_ids_for_feature_action[(fname, read_action)])
         else:
             # For other features: User gets all actions, TestUser gets only read
             for aname in privileged_actions:
@@ -150,9 +157,11 @@ def upgrade() -> None:
         for uid in user_ids:
             # fetch existing permission ids for user
             existing_rows = connection.execute(
-                sa.text("SELECT permission_id FROM user_permissions WHERE user_id = :uid"), {"uid": uid}
+                sa.text("SELECT permission_id FROM user_permissions WHERE user_id = :uid"), {
+                    "uid": uid}
             ).fetchall()
-            existing = {r[0] for r in existing_rows} if existing_rows else set()
+            existing = {r[0]
+                        for r in existing_rows} if existing_rows else set()
             for pid in permission_ids:
                 if pid in existing:
                     continue
@@ -162,12 +171,14 @@ def upgrade() -> None:
                         sa.text(
                             "INSERT INTO user_permissions (id, user_id, permission_id, created_at, updated_at) VALUES (:id, :user_id, :permission_id, :created_at, :updated_at)"
                         ),
-                        {"id": str(uuid4()), "user_id": uid, "permission_id": pid, "created_at": now, "updated_at": now},
+                        {"id": str(uuid4()), "user_id": uid, "permission_id": pid,
+                         "created_at": now, "updated_at": now},
                     )
                     assigned_count += 1
                 except Exception as e:
                     # ignore unique constraint errors if inserted concurrently
-                    print(f"Warning: could not assign permission {pid} to user {uid}: {e}")
+                    print(
+                        f"Warning: could not assign permission {pid} to user {uid}: {e}")
 
     user_ids = get_role_users('User')
     testuser_ids = get_role_users('TestUser')
@@ -175,7 +186,8 @@ def upgrade() -> None:
     assign_permissions_to_users(user_ids, user_permission_ids)
     assign_permissions_to_users(testuser_ids, testuser_permission_ids)
 
-    print(f"Assigned {assigned_count} user_permissions to {len(user_ids)} Users and {len(testuser_ids)} TestUsers.")
+    print(
+        f"Assigned {assigned_count} user_permissions to {len(user_ids)} Users and {len(testuser_ids)} TestUsers.")
 
 
 def downgrade() -> None:
@@ -192,8 +204,10 @@ def downgrade() -> None:
         return
 
     # Load features and actions
-    features_rows = connection.execute(sa.text("SELECT id, name FROM features")).fetchall()
-    actions_rows = connection.execute(sa.text("SELECT id, name FROM actions")).fetchall()
+    features_rows = connection.execute(
+        sa.text("SELECT id, name FROM features")).fetchall()
+    actions_rows = connection.execute(
+        sa.text("SELECT id, name FROM actions")).fetchall()
 
     if not features_rows or not actions_rows:
         print('No features or actions present, nothing to do.')
@@ -210,13 +224,15 @@ def downgrade() -> None:
                 # only read for both
                 aid = actions.get('read')
                 if aid:
-                    row = connection.execute(sa.text("SELECT id FROM permissions WHERE feature_id = :f AND action_id = :a LIMIT 1"), {"f": fid, "a": aid}).fetchone()
+                    row = connection.execute(sa.text("SELECT id FROM permissions WHERE feature_id = :f AND action_id = :a LIMIT 1"), {
+                                             "f": fid, "a": aid}).fetchone()
                     if row:
                         mapping['user'].add(row[0])
                         mapping['testuser'].add(row[0])
             else:
                 for aname, aid in actions.items():
-                    row = connection.execute(sa.text("SELECT id FROM permissions WHERE feature_id = :f AND action_id = :a LIMIT 1"), {"f": fid, "a": aid}).fetchone()
+                    row = connection.execute(sa.text("SELECT id FROM permissions WHERE feature_id = :f AND action_id = :a LIMIT 1"), {
+                                             "f": fid, "a": aid}).fetchone()
                     if row:
                         mapping['user'].add(row[0])
                         if aname == 'read':
@@ -230,11 +246,13 @@ def downgrade() -> None:
         if not permission_ids:
             return
         # get users with role
-        users = connection.execute(sa.text("SELECT u.id FROM users u JOIN user_roles ur ON u.role_id = ur.id WHERE ur.name = :name"), {"name": role_name}).fetchall()
+        users = connection.execute(sa.text("SELECT u.id FROM users u JOIN user_roles ur ON u.role_id = ur.id WHERE ur.name = :name"), {
+                                   "name": role_name}).fetchall()
         user_ids = [r[0] for r in users]
         for uid in user_ids:
             for pid in permission_ids:
-                connection.execute(sa.text("DELETE FROM user_permissions WHERE user_id = :u AND permission_id = :p"), {"u": uid, "p": pid})
+                connection.execute(sa.text(
+                    "DELETE FROM user_permissions WHERE user_id = :u AND permission_id = :p"), {"u": uid, "p": pid})
 
     delete_for_role('User', mapping['user'])
     delete_for_role('TestUser', mapping['testuser'])
