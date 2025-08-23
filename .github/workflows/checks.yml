@@ -4,6 +4,7 @@ on:
   workflow_call:
   pull_request:
     branches: [master]
+    types: [opened, synchronize, reopened]
 
 jobs:
   checks:
