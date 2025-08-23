@@ -310,8 +310,7 @@ class TestUserPermissionHelpers:
             get_expenses_permissions,
             get_categories_permissions,
             get_payment_methods_permissions,
-            get_todo_items_permissions,
-            get_shared_permissions
+            get_todo_items_permissions
         )
 
         # Test that helpers are callable
@@ -320,7 +319,6 @@ class TestUserPermissionHelpers:
         assert callable(get_categories_permissions)
         assert callable(get_payment_methods_permissions)
         assert callable(get_todo_items_permissions)
-        assert callable(get_shared_permissions)
 
     def test_user_permission_dependency_creation(self):
         """Test that user permission dependencies can be created."""

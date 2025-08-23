@@ -47,6 +47,3 @@ def get_todo_items_permissions(action: Actions):
     return get_feature_permissions(Features.TODO_ITEMS, action)
 
 
-def get_shared_permissions(action: Actions):
-    """User-based shared permissions dependency."""
-    return get_feature_permissions(Features.SHARED, action)
