@@ -7,8 +7,7 @@ from src.auth.permission_helpers import (
     get_expenses_permissions,
     get_categories_permissions,
     get_payment_methods_permissions,
-    get_todo_items_permissions,
-    get_shared_permissions
+    get_todo_items_permissions
 )
 from src.auth.dependencies import require_user_permissions, require_admin_role
 from src.auth.enums.features import Features
@@ -30,7 +29,6 @@ class TestUserPermissionSystemIntegration:
         assert callable(get_categories_permissions)
         assert callable(get_payment_methods_permissions)
         assert callable(get_todo_items_permissions)
-        assert callable(get_shared_permissions)
 
         # Test dependencies
         assert callable(require_user_permissions)
@@ -42,13 +40,11 @@ class TestUserPermissionSystemIntegration:
         expenses_create_dep = get_expenses_permissions(Actions.CREATE)
         expenses_read_dep = get_expenses_permissions(Actions.READ)
         categories_update_dep = get_categories_permissions(Actions.UPDATE)
-        shared_delete_dep = get_shared_permissions(Actions.DELETE)
 
         # All should be callable
         assert callable(expenses_create_dep)
         assert callable(expenses_read_dep)
         assert callable(categories_update_dep)
-        assert callable(shared_delete_dep)
 
     def test_user_permission_helpers_use_correct_features(self):
         """Test that permission helpers use the correct feature enums."""
@@ -62,7 +58,6 @@ class TestUserPermissionSystemIntegration:
         assert callable(get_categories_permissions(Actions.CREATE))
         assert callable(get_payment_methods_permissions(Actions.UPDATE))
         assert callable(get_todo_items_permissions(Actions.DELETE))
-        assert callable(get_shared_permissions(Actions.READ))
 
     def test_permission_system_architecture(self):
         """Test that the permission system has proper architecture."""
@@ -97,7 +92,6 @@ class TestUserPermissionSystemIntegration:
             Features.CATEGORIES,
             Features.PAYMENT_METHODS,
             Features.TODO_ITEMS,
-            Features.SHARED
         ]
 
         actions = [
@@ -117,10 +111,8 @@ class TestUserPermissionSystemIntegration:
         """Test that all permission system imports work correctly."""
         # Test imports from different modules
         from src.auth.permissions import check_user_permissions
-        from src.auth.permission_helpers import get_shared_permissions
         from src.auth.dependencies import require_user_permissions
 
         # All should be imported successfully
         assert check_user_permissions is not None
-        assert get_shared_permissions is not None
         assert require_user_permissions is not None

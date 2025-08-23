@@ -247,7 +247,6 @@ Endpoints are organized by feature domains:
 - `/api/v1/expenses` - Expense tracking
 - `/api/v1/categories` - Category management
 - `/api/v1/payment_methods` - Payment method management
-- `/api/v1/shared` - Shared utilities (OCR, file upload)
 - `/health` - Health check endpoints
 
 ### Authentication Flow
@@ -317,4 +316,4 @@ Development database connection:
 - `src/tests/` - Test suite
 - `alembic/versions/` - Database migration files
 
-The API supports intelligent OCR processing, expense tracking, and collaborative todo management while maintaining strict access controls and audit trails through the comprehensive permissions system.
+The API supports expense tracking and collaborative todo management while maintaining strict access controls and audit trails through the comprehensive permissions system.
