@@ -74,6 +74,169 @@ Admin users automatically have all permissions. Regular users must have explicit
 - **Relationships**: Proper SQLAlchemy relationships with cascade delete where appropriate
 - **Async Operations**: Fully async database operations using SQLAlchemy's async engine
 
+## Database Schema
+
+The PostgreSQL database consists of 15 main tables organized into logical domains:
+
+### Authentication & Authorization Tables
+
+#### `users`
+Primary user table with role-based access control:
+- `id` (UUID, PK) - Unique user identifier
+- `email` (VARCHAR, UNIQUE) - User login email
+- `password_hash` (VARCHAR) - Bcrypt hashed password
+- `is_active` (BOOLEAN, DEFAULT true) - Account status
+- `role_id` (UUID, FK -> user_roles.id) - User's role
+- `password_changed` (BOOLEAN, DEFAULT false) - Password change flag
+- `created_by` (UUID, FK -> users.id, NULL) - User who created this account
+- `created_at`, `updated_at` (TIMESTAMP) - Audit timestamps
+
+#### `user_roles`
+Role definitions for RBAC system:
+- `id` (UUID, PK) - Role identifier  
+- `name` (VARCHAR, UNIQUE) - Role name (e.g., 'ADMIN', 'USER')
+- `description` (VARCHAR, NULL) - Role description
+- `created_at`, `updated_at` (TIMESTAMP) - Audit timestamps
+
+#### `features`
+Available system features for permission control:
+- `id` (UUID, PK) - Feature identifier
+- `name` (VARCHAR, UNIQUE) - Feature name (e.g., 'TODO', 'EXPENSES')
+- `created_at`, `updated_at` (TIMESTAMP) - Audit timestamps
+
+#### `actions`
+Available actions for permission control:
+- `id` (UUID, PK) - Action identifier
+- `name` (VARCHAR, UNIQUE) - Action name (e.g., 'READ', 'CREATE', 'DELETE')
+- `created_at`, `updated_at` (TIMESTAMP) - Audit timestamps
+
+#### `permissions`
+Feature-Action permission combinations:
+- `id` (UUID, PK) - Permission identifier
+- `feature_id` (UUID, FK -> features.id) - Related feature
+- `action_id` (UUID, FK -> actions.id) - Related action
+- `created_at`, `updated_at` (TIMESTAMP) - Audit timestamps
+
+#### `user_permissions`
+User-specific permission assignments:
+- `id` (UUID, PK) - Assignment identifier
+- `user_id` (UUID, FK -> users.id) - User receiving permission
+- `permission_id` (UUID, FK -> permissions.id) - Granted permission
+- `created_at`, `updated_at` (TIMESTAMP) - Audit timestamps
+- UNIQUE constraint on (user_id, permission_id)
+
+### Token Management Tables
+
+#### `access_tokens`
+JWT access token tracking:
+- `id` (UUID, PK) - Token identifier
+- `jti` (VARCHAR) - JWT ID claim
+- `user_id` (UUID, FK -> users.id) - Token owner
+- `expires_at` (TIMESTAMP) - Token expiration
+- `is_revoked` (BOOLEAN) - Revocation status
+- `last_used_at` (TIMESTAMP, NULL) - Last usage tracking
+- `created_at`, `updated_at` (TIMESTAMP) - Audit timestamps
+
+#### `refresh_tokens`
+JWT refresh token tracking:
+- `id` (UUID, PK) - Token identifier
+- `jti` (VARCHAR) - JWT ID claim
+- `user_id` (UUID, FK -> users.id) - Token owner
+- `expires_at` (TIMESTAMP) - Token expiration
+- `is_revoked` (BOOLEAN) - Revocation status
+- `last_used_at` (TIMESTAMP, NULL) - Last usage tracking
+- `created_at`, `updated_at` (TIMESTAMP) - Audit timestamps
+
+### Todo Management Tables
+
+#### `todo_projects`
+Project containers for todo items:
+- `id` (INTEGER, PK, SERIAL) - Project identifier
+- `name` (VARCHAR) - Project name
+- `owner_id` (UUID, FK -> users.id) - Project owner
+- `is_general` (BOOLEAN, DEFAULT false) - General project flag
+- `created_at`, `updated_at` (TIMESTAMP) - Audit timestamps
+
+#### `todo_items`
+Individual todo tasks:
+- `id` (INTEGER, PK, SERIAL) - Item identifier
+- `name` (VARCHAR) - Task name
+- `description` (TEXT, NULL) - Detailed description
+- `is_closed` (BOOLEAN, NULL) - Completion status
+- `completed_at` (TIMESTAMP WITH TIME ZONE, NULL) - Completion time
+- `shops` (VARCHAR, NULL) - Shopping-related data
+- `project_id` (INTEGER, FK -> todo_projects.id) - Parent project
+- `created_at`, `updated_at` (TIMESTAMP) - Audit timestamps
+
+#### `todo_project_collaborators`
+Project collaboration permissions:
+- `project_id` (INTEGER, FK -> todo_projects.id, PK) - Project reference
+- `user_id` (UUID, FK -> users.id, PK) - Collaborator user
+- `created_at`, `updated_at` (TIMESTAMP, DEFAULT now()) - Audit timestamps
+- Composite primary key on (project_id, user_id)
+
+### Expense Tracking Tables
+
+#### `categories`
+Hierarchical expense categories:
+- `id` (INTEGER, PK, SERIAL) - Category identifier
+- `name` (VARCHAR) - Category name
+- `parent_id` (INTEGER, FK -> categories.id, NULL) - Parent category (self-reference)
+- `created_at`, `updated_at` (TIMESTAMP) - Audit timestamps
+
+#### `payment_methods`
+Available payment methods:
+- `id` (INTEGER, PK, SERIAL) - Payment method identifier
+- `name` (VARCHAR, UNIQUE) - Method name
+- `created_at`, `updated_at` (TIMESTAMP) - Audit timestamps
+
+#### `expenses`
+Individual expense records:
+- `id` (INTEGER, PK, SERIAL) - Expense identifier
+- `amount` (NUMERIC) - Expense amount
+- `date` (DATE) - Expense date
+- `description` (VARCHAR, NULL) - Expense description
+- `category_id` (INTEGER, FK -> categories.id) - Expense category
+- `payment_method_id` (INTEGER, FK -> payment_methods.id) - Payment method used
+- `created_at`, `updated_at` (TIMESTAMP) - Audit timestamps
+
+### Database Relationships Summary
+
+**User Management:**
+- users.role_id -> user_roles.id
+- users.created_by -> users.id (self-reference)
+- user_permissions.user_id -> users.id
+- user_permissions.permission_id -> permissions.id
+
+**Permission System:**
+- permissions.feature_id -> features.id  
+- permissions.action_id -> actions.id
+
+**Token Management:**
+- access_tokens.user_id -> users.id
+- refresh_tokens.user_id -> users.id
+
+**Todo System:**
+- todo_projects.owner_id -> users.id
+- todo_items.project_id -> todo_projects.id
+- todo_project_collaborators.project_id -> todo_projects.id
+- todo_project_collaborators.user_id -> users.id
+
+**Expense System:**
+- categories.parent_id -> categories.id (self-reference)
+- expenses.category_id -> categories.id
+- expenses.payment_method_id -> payment_methods.id
+
+### Key Design Patterns
+
+1. **UUID Primary Keys**: Core entities (users, roles, permissions, tokens) use UUIDs
+2. **Serial Integer Keys**: Domain entities (todos, expenses, categories) use auto-incrementing integers
+3. **Audit Timestamps**: All tables have created_at/updated_at for change tracking
+4. **Soft Relationships**: Foreign keys maintain referential integrity
+5. **Hierarchical Data**: Categories support parent-child relationships
+6. **Many-to-Many**: User permissions and project collaborators use junction tables
+7. **Self-References**: Users can create other users; categories can have parent categories
+
 ### API Organization
 Endpoints are organized by feature domains:
 - `/api/v1/auth` - Authentication and token management
@@ -109,6 +272,7 @@ When adding new features:
 3. Create migration: `alembic revision --autogenerate -m "add_new_feature"`
 4. Update permissions by adding feature-action pairs to the permissions migration
 5. Apply migration: `alembic upgrade head`
+6. **Update CLAUDE.md**: After any database schema changes, update the "Database Schema" section in this file to reflect new tables, columns, or relationships
 
 ### Permission-Protected Endpoints
 All business endpoints should use permission checks:
