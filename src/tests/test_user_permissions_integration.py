@@ -1,17 +1,17 @@
 """Simple integration test for user permission system."""
 
 import pytest
-from src.auth.permissions import check_user_permissions, get_user_permissions
-from src.auth.permission_helpers import (
+from src.app.auth.permissions import check_user_permissions, get_user_permissions
+from src.app.auth.permission_helpers import (
     get_feature_permissions,
     get_expenses_permissions,
     get_categories_permissions,
     get_payment_methods_permissions,
     get_todo_items_permissions
 )
-from src.auth.dependencies import require_user_permissions, require_admin_role
-from src.auth.enums.features import Features
-from src.auth.enums.actions import Actions
+from src.app.auth.dependencies import require_user_permissions, require_admin_role
+from src.app.auth.enums.features import Features
+from src.app.auth.enums.actions import Actions
 
 
 class TestUserPermissionSystemIntegration:
@@ -62,14 +62,14 @@ class TestUserPermissionSystemIntegration:
     def test_permission_system_architecture(self):
         """Test that the permission system has proper architecture."""
         # Import all necessary components
-        from src.auth.permissions import (
+        from src.app.auth.permissions import (
             check_user_permissions,
             get_user_permissions,
             user_has_admin_role,
             get_admin_permissions
         )
-        from src.auth.permission_helpers import get_feature_permissions
-        from src.auth.dependencies import require_user_permissions, require_admin_role
+        from src.app.auth.permission_helpers import get_feature_permissions
+        from src.app.auth.dependencies import require_user_permissions, require_admin_role
 
         # Test that all components exist
         assert check_user_permissions is not None
@@ -110,8 +110,8 @@ class TestUserPermissionSystemIntegration:
     def test_permission_system_imports_work(self):
         """Test that all permission system imports work correctly."""
         # Test imports from different modules
-        from src.auth.permissions import check_user_permissions
-        from src.auth.dependencies import require_user_permissions
+        from src.app.auth.permissions import check_user_permissions
+        from src.app.auth.dependencies import require_user_permissions
 
         # All should be imported successfully
         assert check_user_permissions is not None

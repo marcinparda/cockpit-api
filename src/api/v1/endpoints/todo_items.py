@@ -18,9 +18,9 @@ from src.schemas.todo_item import (
     TodoItemCreate,
     TodoItemUpdate,
 )
-from src.auth.enums.actions import Actions
-from src.auth.permission_helpers import get_todo_items_permissions
-from src.auth.jwt_dependencies import get_current_active_user
+from src.app.auth.enums.actions import Actions
+from src.app.auth.permission_helpers import get_todo_items_permissions
+from src.app.auth.jwt_dependencies import get_current_active_user
 from src.api.v1.deps import (
     require_project_access,
     require_item_access

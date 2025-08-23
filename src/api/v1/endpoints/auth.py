@@ -19,9 +19,9 @@ from src.services.user_service import change_user_password, get_user_with_permis
 from src.schemas.permission import Permission as PermissionSchema
 from src.schemas.user_role import UserRole as UserRoleSchema
 from typing import List
-from src.auth.jwt_dependencies import get_current_active_user
-from src.auth.dependencies import require_admin_role
-from src.auth.jwt import invalidate_token
+from src.app.auth.jwt_dependencies import get_current_active_user
+from src.app.auth.dependencies import require_admin_role
+from src.app.auth.jwt import invalidate_token
 from src.models.user import User
 from src.services.task_service import TokenCleanupService
 from src.core.config import settings

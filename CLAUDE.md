@@ -276,9 +276,9 @@ When adding new features:
 ### Permission-Protected Endpoints
 All business endpoints should use permission checks:
 ```python
-from src.auth.dependencies import require_permission
-from src.auth.enums.features import Features
-from src.auth.enums.actions import Actions
+from src.app.auth.dependencies import require_permission
+from src.app.auth.enums.features import Features
+from src.app.auth.enums.actions import Actions
 
 @router.get("/protected-endpoint")
 async def protected_endpoint(

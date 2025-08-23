@@ -166,7 +166,7 @@ class TestAuthDependenciesIntegration:
 
     def test_auth_dependencies_import(self):
         """Test that auth dependencies can be imported."""
-        from src.auth.dependencies import (
+        from src.app.auth.dependencies import (
             require_admin_role, require_user_permissions
         )
 
@@ -175,7 +175,7 @@ class TestAuthDependenciesIntegration:
 
     def test_jwt_dependencies_import(self):
         """Test that JWT dependencies can be imported."""
-        from src.auth.jwt_dependencies import (
+        from src.app.auth.jwt_dependencies import (
             get_current_user, get_current_active_user
         )
 

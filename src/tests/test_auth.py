@@ -14,7 +14,7 @@ def test_auth_imports():
     from src.services.user_service import get_user_by_id, change_user_password
 
     # Test JWT dependencies
-    from src.auth.jwt_dependencies import get_current_user, get_current_active_user
+    from src.app.auth.jwt_dependencies import get_current_user, get_current_active_user
 
     # Test schemas
     from src.schemas.auth import LoginRequest, LoginResponse, PasswordChangeRequest, TokenResponse
@@ -82,7 +82,7 @@ def test_password_change_request_validation():
 
 async def test_jwt_utilities():
     """Test JWT utility functions."""
-    from src.auth.jwt import create_access_token, verify_token, create_token_response
+    from src.app.auth.jwt import create_access_token, verify_token, create_token_response
     from uuid import uuid4
 
     # Test token creation with correct payload structure
@@ -107,7 +107,7 @@ async def test_jwt_utilities():
 
 def test_password_utilities():
     """Test password utility functions."""
-    from src.auth.password import hash_password, verify_password, validate_password_strength
+    from src.app.auth.password import hash_password, verify_password, validate_password_strength
 
     # Test password hashing
     password = "TestPassword123!"

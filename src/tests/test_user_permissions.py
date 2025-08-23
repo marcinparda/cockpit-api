@@ -5,15 +5,15 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from unittest.mock import AsyncMock, MagicMock
 
-from src.auth.permissions import (
+from src.app.auth.permissions import (
     check_user_permissions,
     get_user_permissions,
     user_has_admin_role,
     get_admin_permissions
 )
-from src.auth.enums.features import Features
-from src.auth.enums.actions import Actions
-from src.auth.enums.roles import Roles
+from src.app.auth.enums.features import Features
+from src.app.auth.enums.actions import Actions
+from src.app.auth.enums.roles import Roles
 from src.models.user import User
 from src.models.user_role import UserRole
 from src.models.user_permission import UserPermission
@@ -305,7 +305,7 @@ class TestUserPermissionHelpers:
 
     def test_user_feature_permissions_helper_import(self):
         """Test that user permission helpers can be imported."""
-        from src.auth.permission_helpers import (
+        from src.app.auth.permission_helpers import (
             get_feature_permissions,
             get_expenses_permissions,
             get_categories_permissions,
@@ -322,7 +322,7 @@ class TestUserPermissionHelpers:
 
     def test_user_permission_dependency_creation(self):
         """Test that user permission dependencies can be created."""
-        from src.auth.permission_helpers import get_feature_permissions
+        from src.app.auth.permission_helpers import get_feature_permissions
 
         # Test creating a permission dependency
         permission_dep = get_feature_permissions(
@@ -335,7 +335,7 @@ class TestUserPermissionDependencies:
 
     def test_user_permission_dependencies_import(self):
         """Test that user permission dependencies can be imported."""
-        from src.auth.dependencies import require_user_permissions, require_admin_role
+        from src.app.auth.dependencies import require_user_permissions, require_admin_role
 
         # Test that dependencies are callable
         assert callable(require_user_permissions)
@@ -343,7 +343,7 @@ class TestUserPermissionDependencies:
 
     def test_user_permission_dependencies_have_correct_signature(self):
         """Test that user permission dependencies have the correct signature."""
-        from src.auth.dependencies import require_user_permissions, require_admin_role
+        from src.app.auth.dependencies import require_user_permissions, require_admin_role
         import inspect
 
         # Check require_user_permissions signature

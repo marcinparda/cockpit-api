@@ -5,8 +5,8 @@ from datetime import datetime
 from src.core.database import get_db
 from src.models.payment_method import PaymentMethod as PaymentMethodModel
 from src.schemas.payment_method import PaymentMethod, PaymentMethodCreate, PaymentMethodUpdate
-from src.auth.enums.actions import Actions
-from src.auth.permission_helpers import get_payment_methods_permissions
+from src.app.auth.enums.actions import Actions
+from src.app.auth.permission_helpers import get_payment_methods_permissions
 
 router = APIRouter()
 

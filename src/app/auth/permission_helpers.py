@@ -1,11 +1,11 @@
 
 from fastapi import Depends
 
-from src.auth.dependencies import require_user_permissions
-from src.auth.jwt_dependencies import get_current_active_user
+from src.app.auth.dependencies import require_user_permissions
+from src.app.auth.jwt_dependencies import get_current_active_user
 from src.core.database import get_db
-from src.auth.enums.actions import Actions
-from src.auth.enums.features import Features
+from src.app.auth.enums.actions import Actions
+from src.app.auth.enums.features import Features
 
 
 def get_feature_permissions(feature: Features, action: Actions):

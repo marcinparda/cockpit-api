@@ -7,7 +7,7 @@ from uuid import uuid4
 
 from jose import JWTError
 
-from src.auth.jwt import (
+from src.app.auth.jwt import (
     create_access_token,
     verify_token,
     create_token_response
@@ -111,7 +111,7 @@ class TestJWTEnhancedFeatures:
 
     def test_create_access_token_with_jti(self):
         """Test access token creation with JWT ID."""
-        from src.auth.jwt import extract_token_id
+        from src.app.auth.jwt import extract_token_id
 
         data = {"sub": str(uuid4()), "email": "test@example.com"}
         token = create_access_token(data)
@@ -123,7 +123,7 @@ class TestJWTEnhancedFeatures:
 
     def test_create_refresh_token(self):
         """Test refresh token creation."""
-        from src.auth.jwt import create_refresh_token, extract_token_id
+        from src.app.auth.jwt import create_refresh_token, extract_token_id
 
         data = {"sub": str(uuid4()), "email": "test@example.com"}
         token = create_refresh_token(data)
@@ -135,7 +135,7 @@ class TestJWTEnhancedFeatures:
 
     def test_extract_token_id(self):
         """Test JWT ID extraction."""
-        from src.auth.jwt import extract_token_id
+        from src.app.auth.jwt import extract_token_id
 
         data = {"sub": str(uuid4()), "email": "test@example.com"}
         token = create_access_token(data)

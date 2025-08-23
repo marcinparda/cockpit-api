@@ -5,7 +5,7 @@ from uuid import UUID
 from datetime import datetime
 from src.models.user_role import UserRole
 from src.schemas.user_role import UserRoleCreate, UserRoleUpdate, UserRole as UserRoleSchema
-from src.auth.enums.roles import Roles
+from src.app.auth.enums.roles import Roles
 
 
 class TestUserRoleModel:

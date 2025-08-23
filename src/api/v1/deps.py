@@ -6,7 +6,7 @@ from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_db
-from src.auth.jwt_dependencies import get_current_active_user
+from src.app.auth.jwt_dependencies import get_current_active_user
 from src.models.user import User
 from src.services.todo_access_service import (
     user_can_access_project,

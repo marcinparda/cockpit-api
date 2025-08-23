@@ -15,7 +15,7 @@ import sqlalchemy as sa
 
 # Use application password hasher so hashes match production expectations
 try:
-    from src.auth.password import hash_password
+    from src.app.auth.password import hash_password
 except Exception:
     # Fallback: simple noop if import not possible (e.g. offline SQL generation)
     def hash_password(p: str) -> str:  # type: ignore

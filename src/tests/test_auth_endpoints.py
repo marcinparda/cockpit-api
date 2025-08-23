@@ -13,8 +13,8 @@ from unittest.mock import AsyncMock, patch, MagicMock
 from src.main import app
 from src.models.user import User
 from src.models.user_role import UserRole
-from src.auth.password import hash_password, verify_password
-from src.auth.jwt import create_token_response
+from src.app.auth.password import hash_password, verify_password
+from src.app.auth.jwt import create_token_response
 from src.core.database import get_db
 
 
@@ -259,8 +259,8 @@ class TestAuthenticationIntegration:
 
     async def test_authentication_utilities_work(self):
         """Test that authentication utilities can be imported and used."""
-        from src.auth.jwt import create_access_token, verify_token
-        from src.auth.password import hash_password, verify_password, validate_password_strength
+        from src.app.auth.jwt import create_access_token, verify_token
+        from src.app.auth.password import hash_password, verify_password, validate_password_strength
 
         # Test JWT utilities
         test_data = {"sub": str(uuid4()), "email": "test@example.com"}
@@ -285,7 +285,7 @@ def test_auth_services_import():
     try:
         from src.services.auth_service import authenticate_user, create_user_token, login_user
         from src.services.user_service import get_user_by_id, change_user_password
-        from src.auth.jwt_dependencies import get_current_user, get_current_active_user
+        from src.app.auth.jwt_dependencies import get_current_user, get_current_active_user
         assert True  # All imports successful
     except ImportError as e:
         pytest.fail(f"Failed to import authentication services: {e}")

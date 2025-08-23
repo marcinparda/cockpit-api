@@ -5,7 +5,7 @@ from uuid import uuid4
 from unittest.mock import AsyncMock, patch
 
 from src.core.config import settings
-from src.auth.jwt_dependencies import get_current_user
+from src.app.auth.jwt_dependencies import get_current_user
 
 
 class TestCookieAuthentication:

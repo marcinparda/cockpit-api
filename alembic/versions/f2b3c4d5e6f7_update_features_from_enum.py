@@ -13,7 +13,7 @@ from alembic import op
 import sqlalchemy as sa
 import sqlalchemy.exc as sa_exc
 from sqlalchemy.sql import text
-from src.auth.enums.features import Features
+from src.app.auth.enums.features import Features
 
 
 # revision identifiers, used by Alembic.

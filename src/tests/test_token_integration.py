@@ -6,7 +6,7 @@ import pytest
 from uuid import uuid4
 
 from src.services.token_service import TokenService
-from src.auth.jwt import create_access_token, verify_token
+from src.app.auth.jwt import create_access_token, verify_token
 from src.core.config import settings
 
 

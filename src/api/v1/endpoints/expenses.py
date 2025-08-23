@@ -4,8 +4,8 @@ from sqlalchemy.future import select
 from src.core.database import get_db
 from src.models.expense import Expense as ExpenseModel
 from src.schemas.expense import Expense, ExpenseCreate, ExpenseUpdate
-from src.auth.enums.actions import Actions
-from src.auth.permission_helpers import get_expenses_permissions
+from src.app.auth.enums.actions import Actions
+from src.app.auth.permission_helpers import get_expenses_permissions
 
 router = APIRouter()
 

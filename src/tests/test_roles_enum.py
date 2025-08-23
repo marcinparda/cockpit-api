@@ -1,7 +1,7 @@
 """Test for roles enum."""
 
 import pytest
-from src.auth.enums.roles import Roles
+from src.app.auth.enums.roles import Roles
 
 
 class TestRolesEnum:
@@ -45,8 +45,8 @@ class TestRolesEnum:
     def test_roles_enum_usage_in_permission_system(self):
         """Test that roles enum can be used in permission system."""
         # Test that the roles enum can be imported by permission system
-        from src.auth.permissions import check_user_permissions
-        from src.auth.dependencies import require_admin_role
+        from src.app.auth.permissions import check_user_permissions
+        from src.app.auth.dependencies import require_admin_role
 
         # If these imports work, the roles enum is properly integrated
         assert check_user_permissions is not None

@@ -8,9 +8,9 @@ from src.models.action import Action
 from src.models.permission import Permission
 from src.models.user import User
 from src.models.user_permission import UserPermission
-from src.auth.enums.actions import Actions
-from src.auth.enums.features import Features
-from src.auth.enums.roles import Roles
+from src.app.auth.enums.actions import Actions
+from src.app.auth.enums.features import Features
+from src.app.auth.enums.roles import Roles
 
 
 async def check_user_permissions(

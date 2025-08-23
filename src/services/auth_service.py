@@ -8,8 +8,8 @@ from src.core.config import settings
 
 
 from src.models.user import User
-from src.auth.password import verify_password
-from src.auth.jwt import (
+from src.app.auth.password import verify_password
+from src.app.auth.jwt import (
     create_token_response,
     refresh_access_token, invalidate_token, verify_token,
     create_refresh_token_response

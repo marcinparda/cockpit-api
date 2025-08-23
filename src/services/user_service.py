@@ -14,8 +14,8 @@ from src.models.user import User
 from src.models.user_role import UserRole
 from src.models.user_permission import UserPermission
 from src.models.permission import Permission
-from src.auth.password import hash_password, verify_password, validate_password_strength
-from src.auth.enums.roles import Roles
+from src.app.auth.password import hash_password, verify_password, validate_password_strength
+from src.app.auth.enums.roles import Roles
 
 
 async def get_user_by_id(db: AsyncSession, user_id: UUID) -> Optional[User]:

@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.auth.jwt_dependencies import get_current_active_user
+from src.app.auth.jwt_dependencies import get_current_active_user
 from src.core.database import get_db
 from src.schemas.user import (
     UserCreate, UserUpdate, UserWithRole, UserWithPermissions,
@@ -19,7 +19,7 @@ from src.services.user_service import (
     reset_user_password, get_user_with_permissions,
     get_user_permissions
 )
-from src.auth.dependencies import require_admin_role
+from src.app.auth.dependencies import require_admin_role
 from src.models.user import User
 
 router = APIRouter()

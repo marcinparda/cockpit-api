@@ -41,7 +41,7 @@ class PasswordChangeRequest(BaseModel):
     @classmethod
     def validate_new_password(cls, v: str) -> str:
         """Validate new password strength."""
-        from src.auth.password import validate_password_strength
+        from src.app.auth.password import validate_password_strength
 
         is_valid, errors = validate_password_strength(v)
         if not is_valid:

@@ -14,9 +14,9 @@ from src.schemas.todo_project import (
     TodoProject, TodoProjectCreate, TodoProjectUpdate,
     TodoProjectCollaboratorCreate, TodoProjectCollaboratorResponse
 )
-from src.auth.enums.actions import Actions
-from src.auth.permission_helpers import get_categories_permissions
-from src.auth.jwt_dependencies import get_current_active_user
+from src.app.auth.enums.actions import Actions
+from src.app.auth.permission_helpers import get_categories_permissions
+from src.app.auth.jwt_dependencies import get_current_active_user
 from src.services.todo_access_service import user_can_access_project, is_general_project, user_is_project_owner
 from src.services.todo_project import (
     validate_collaborators_batch,

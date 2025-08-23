@@ -4,8 +4,8 @@ from sqlalchemy.future import select
 from src.core.database import get_db
 from src.models.category import Category as CategoryModel
 from src.schemas.category import Category, CategoryCreate, CategoryUpdate
-from src.auth.enums.actions import Actions
-from src.auth.permission_helpers import get_categories_permissions
+from src.app.auth.enums.actions import Actions
+from src.app.auth.permission_helpers import get_categories_permissions
 
 router = APIRouter()
 
