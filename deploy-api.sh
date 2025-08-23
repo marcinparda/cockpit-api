@@ -63,9 +63,9 @@ docker image prune -f || true
 echo -e "${YELLOW}🌐 Creating Docker network...${NC}"
 docker network create cockpit_network_prod 2>/dev/null || echo "Network already exists"
 
-# Create volume if it doesn't exist
-echo -e "${YELLOW}💾 Creating Docker volume...${NC}"
-docker volume create cockpit_postgres_data_prod 2>/dev/null || echo "Volume already exists"
+# Use existing volume with old production data
+echo -e "${YELLOW}💾 Using existing production volume...${NC}"
+docker volume create cockpit-api_cockpit_postgres_data_prod 2>/dev/null || echo "Volume already exists"
 
 # Pull the latest image
 echo -e "${YELLOW}📥 Pulling latest image from GHCR...${NC}"
@@ -81,7 +81,7 @@ docker run -d \
   -e POSTGRES_USER="${DB_USER}" \
   -e POSTGRES_PASSWORD="${DB_PASSWORD}" \
   -e POSTGRES_DB="${DB_NAME}" \
-  -v cockpit_postgres_data_prod:/var/lib/postgresql/data \
+  -v cockpit-api_cockpit_postgres_data_prod:/var/lib/postgresql/data \
   --health-cmd="pg_isready -U ${DB_USER} -d ${DB_NAME}" \
   --health-interval=10s \
   --health-timeout=5s \
