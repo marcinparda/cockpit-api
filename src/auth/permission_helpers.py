@@ -47,11 +47,6 @@ def get_todo_items_permissions(action: Actions):
     return get_feature_permissions(Features.TODO_ITEMS, action)
 
 
-def get_api_keys_permissions(action: Actions):
-    """User-based API keys permissions dependency."""
-    return get_feature_permissions(Features.API_KEYS, action)
-
-
 def get_shared_permissions(action: Actions):
     """User-based shared permissions dependency."""
     return get_feature_permissions(Features.SHARED, action)

@@ -8,7 +8,6 @@ from src.auth.permission_helpers import (
     get_categories_permissions,
     get_payment_methods_permissions,
     get_todo_items_permissions,
-    get_api_keys_permissions,
     get_shared_permissions
 )
 from src.auth.dependencies import require_user_permissions, require_admin_role
@@ -31,7 +30,6 @@ class TestUserPermissionSystemIntegration:
         assert callable(get_categories_permissions)
         assert callable(get_payment_methods_permissions)
         assert callable(get_todo_items_permissions)
-        assert callable(get_api_keys_permissions)
         assert callable(get_shared_permissions)
 
         # Test dependencies
@@ -64,7 +62,6 @@ class TestUserPermissionSystemIntegration:
         assert callable(get_categories_permissions(Actions.CREATE))
         assert callable(get_payment_methods_permissions(Actions.UPDATE))
         assert callable(get_todo_items_permissions(Actions.DELETE))
-        assert callable(get_api_keys_permissions(Actions.READ))
         assert callable(get_shared_permissions(Actions.READ))
 
     def test_permission_system_architecture(self):
@@ -100,7 +97,6 @@ class TestUserPermissionSystemIntegration:
             Features.CATEGORIES,
             Features.PAYMENT_METHODS,
             Features.TODO_ITEMS,
-            Features.API_KEYS,
             Features.SHARED
         ]
 
