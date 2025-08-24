@@ -225,7 +225,6 @@ async def create_refresh_token_response(
     access_token_expires = timedelta(hours=settings.JWT_EXPIRE_HOURS)
     refresh_token_expires = timedelta(days=settings.JWT_REFRESH_EXPIRE_DAYS)
 
-    # Create tokens
     access_token_data = {"sub": str(user_id), "email": email}
     refresh_token_data = {"sub": str(user_id), "email": email}
 
@@ -268,7 +267,6 @@ async def create_refresh_token_response(
         refresh_exp = datetime.fromtimestamp(
             refresh_exp_timestamp, tz=timezone.utc)
 
-        # Store tokens in database
         if access_jti:
             await TokenService.create_access_token(db, access_jti, user_id, access_exp)
         if refresh_jti:

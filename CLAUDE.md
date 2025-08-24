@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Important Development Rules
+
+### Git and Commit Policy
+**ALWAYS ASK BEFORE COMMITTING**: Before running `git commit`, ask the user for permission first. The user will review changes in their IDE. Never commit without explicit user approval.
+
 ## Development Commands
 
 ### Running the Application

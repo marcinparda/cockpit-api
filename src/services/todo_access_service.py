@@ -1,85 +1,14 @@
 """Access control service for Todo app collaboration feature."""
 
 from sqlalchemy import and_
-from typing import Optional
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import and_, or_
 
-from src.models.todo_project import TodoProject
-from src.models.todo_project_collaborator import TodoProjectCollaborator
-from src.models.todo_item import TodoItem
-
-
-async def user_can_access_project(db: AsyncSession, project_id: int, user_id: UUID) -> bool:
-    """Check if a user can access a project (as owner or collaborator)."""
-    # First check if user is the owner
-    result = await db.execute(
-        select(TodoProject).where(
-            and_(
-                TodoProject.id == project_id,
-                TodoProject.owner_id == user_id
-            )
-        )
-    )
-    if result.scalars().first():
-        return True
-
-    # Then check if user is a collaborator
-    result = await db.execute(
-        select(TodoProjectCollaborator).where(
-            and_(
-                TodoProjectCollaborator.project_id == project_id,
-                TodoProjectCollaborator.user_id == user_id
-            )
-        )
-    )
-    if result.scalars().first():
-        return True
-
-    return False
-
-
-async def user_is_project_owner(db: AsyncSession, project_id: int, user_id: UUID) -> bool:
-    """Check if a user is the owner of a project."""
-    result = await db.execute(
-        select(TodoProject).where(
-            and_(
-                TodoProject.id == project_id,
-                TodoProject.owner_id == user_id
-            )
-        )
-    )
-    return result.scalars().first() is not None
-
-
-async def is_general_project(db: AsyncSession, project_id: int) -> bool:
-    """Check if a project is a General project."""
-    result = await db.execute(
-        select(TodoProject).where(
-            and_(
-                TodoProject.id == project_id,
-                TodoProject.is_general == True
-            )
-        )
-    )
-    return result.scalars().first() is not None
-
-
-async def user_can_access_item(db: AsyncSession, item_id: int, user_id: UUID) -> bool:
-    """Check if a user can access a todo item (by having access to its project)."""
-    # Get the item's project_id
-    result = await db.execute(
-        select(TodoItem.project_id).where(TodoItem.id == item_id)
-    )
-    project_id = result.scalar_one_or_none()
-
-    if project_id is None:
-        return False
-
-    # Check if user can access the project
-    return await user_can_access_project(db, project_id, user_id)
+from src.app.todos.projects.models import TodoProject
+from src.app.todos.collaborators.models import TodoProjectCollaborator
+from src.app.todos.items.models import TodoItem
 
 
 async def get_accessible_project_ids(db: AsyncSession, user_id: UUID) -> list[int]:
@@ -104,7 +33,7 @@ async def get_accessible_project_ids(db: AsyncSession, user_id: UUID) -> list[in
     return list(all_project_ids)
 
 
-async def user_can_access_project(
+async def can_user_access_project(
     db: AsyncSession,
     project_id: int,
     user_id: UUID
@@ -162,7 +91,6 @@ async def user_can_access_item(
     Returns:
         True if user has access, False otherwise
     """
-    # Get the item's project ID
     result = await db.execute(
         select(TodoItem.project_id)
         .where(TodoItem.id == item_id)
@@ -173,7 +101,7 @@ async def user_can_access_item(
         return False
 
     # Check access to the project
-    return await user_can_access_project(db, project_id, user_id)
+    return await can_user_access_project(db, project_id, user_id)
 
 
 async def user_is_project_owner(

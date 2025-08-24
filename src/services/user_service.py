@@ -16,6 +16,7 @@ from src.models.user_permission import UserPermission
 from src.models.permission import Permission
 from src.app.auth.password import hash_password, verify_password, validate_password_strength
 from src.app.auth.enums.roles import Roles
+from src.app.todos.projects.service import create_project
 
 
 async def get_user_by_id(db: AsyncSession, user_id: UUID) -> Optional[User]:
@@ -292,18 +293,10 @@ async def create_user(
     await db.commit()
     await db.refresh(new_user)
 
-    # Create a General project for the new user
-    from src.models.todo_project import TodoProject
-    from datetime import datetime
-
-    now = datetime.utcnow()
-    general_project = TodoProject(
+    general_project = await create_project(
+        db,
         name="General",
-        description="Default project for todo items",
-        owner_id=new_user.id,
-        is_general=True,
-        created_at=now,
-        updated_at=now
+        owner_id=UUID(str(new_user.id))
     )
     db.add(general_project)
     await db.commit()

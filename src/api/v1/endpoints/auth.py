@@ -2,14 +2,13 @@
 
 from uuid import UUID
 from typing import Dict, Any, cast, Literal, Optional
-from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, Cookie, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_db
 from src.schemas.auth import (
     LoginRequest, LoginResponse, PasswordChangeRequest, PasswordChangeResponse,
-    RefreshTokenRequest, RefreshTokenResponse, SimpleRefreshResponse,
+    SimpleRefreshResponse,
     UserInfoResponse
 )
 from src.services.auth_service import (
@@ -75,6 +74,7 @@ async def login(
     except Exception as e:
         # Log unexpected errors and return generic message
         # TODO: Add proper logging
+        print(e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Login service temporarily unavailable"
@@ -159,8 +159,7 @@ async def refresh_tokens(
             is_production = settings.ENVIRONMENT == "production"
             cookie_domain = settings.COOKIE_DOMAIN if is_production else None
             cookie_secure = settings.COOKIE_SECURE if is_production else False
-            cookie_samesite = cast(
-                Literal["strict", "lax", "none"], settings.COOKIE_SAMESITE)
+            cookie_samesite = settings.COOKIE_SAMESITE
 
             # Set new access token cookie
             response.set_cookie(

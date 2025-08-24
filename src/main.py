@@ -5,7 +5,8 @@ import asyncio
 import logging
 from typing import List
 
-from src.api.v1.endpoints import expenses, categories, payment_methods, todo_items, todo_projects, auth, users, roles, health
+from src.api.v1.endpoints import expenses, categories, payment_methods, auth, users, roles, health
+from src.app.todos.router import router as todos_router
 from src.core.config import settings
 from src.common.middleware.rate_limit import RateLimitMiddleware
 from src.common.middleware.jwt_validation import JWTValidationMiddleware
@@ -71,9 +72,7 @@ app.include_router(categories.router,
 app.include_router(
     payment_methods.router, prefix="/api/v1/payment_methods", tags=["ai-budget/payment_methods"])
 app.include_router(
-    todo_items.router, prefix="/api/v1/todo/items", tags=["todo/items"])
-app.include_router(
-    todo_projects.router, prefix="/api/v1/todo/projects", tags=["todo/projects"])
+    todos_router, prefix="/api/v1/todos", tags=["todos"])
 app.include_router(
     auth.router, prefix="/api/v1/auth", tags=["shared/auth"])
 app.include_router(

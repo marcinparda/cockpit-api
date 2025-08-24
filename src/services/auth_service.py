@@ -83,7 +83,6 @@ async def login_user(db: AsyncSession, email: str, password: str, response: Opti
     Raises:
         HTTPException: If authentication fails
     """
-    # Authenticate user
     user = await authenticate_user(db, email, password)
 
     if not user:
@@ -92,7 +91,6 @@ async def login_user(db: AsyncSession, email: str, password: str, response: Opti
             detail="Incorrect email or password"
         )
 
-    # Create token pair (access + refresh) with database tracking
     user_id = UUID(str(user.id))
     email = str(user.email)
     token_response = await create_refresh_token_response(user_id, email, db)
@@ -103,8 +101,7 @@ async def login_user(db: AsyncSession, email: str, password: str, response: Opti
         is_production = settings.ENVIRONMENT == "production"
         cookie_domain = settings.COOKIE_DOMAIN if is_production else None
         cookie_secure = settings.COOKIE_SECURE if is_production else False
-        cookie_samesite = cast(
-            Literal["strict", "lax", "none"], settings.COOKIE_SAMESITE)
+        cookie_samesite = settings.COOKIE_SAMESITE
 
         response.set_cookie(
             key="access_token",

@@ -50,7 +50,7 @@ class TestUserRoleSchemas:
         """Test UserRoleCreate schema validation errors."""
         # Missing name should fail
         with pytest.raises(ValidationError):
-            UserRoleCreate()  # type: ignore
+            UserRoleCreate()
 
         # Empty name should fail
         with pytest.raises(ValidationError):
