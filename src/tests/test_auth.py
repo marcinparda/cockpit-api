@@ -20,7 +20,7 @@ def test_auth_imports():
     from src.app.auth.schemas import LoginRequest, LoginResponse, PasswordChangeRequest, TokenResponse
 
     # Test endpoints
-    from src.api.v1.endpoints.auth import router
+    from src.app.auth.router import router
 
     assert True  # All imports successful
 
@@ -133,7 +133,7 @@ def test_password_utilities():
 
 def test_auth_router():
     """Test that authentication router is properly configured."""
-    from src.api.v1.endpoints.auth import router
+    from src.app.auth.router import router
 
     # Check that router exists and has routes
     assert router is not None

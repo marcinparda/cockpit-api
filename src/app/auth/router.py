@@ -11,12 +11,12 @@ from src.app.auth.schemas import (
     SimpleRefreshResponse,
     UserInfoResponse,
     Permission as PermissionSchema,
-    UserRole as UserRoleSchema
+    UserRole as UserRoleSchema,
 )
 from src.services.auth_service import (
     login_user, refresh_user_tokens
 )
-from src.app.users.service import change_user_password, get_user_with_permissions, get_user_with_role
+from src.app.users.service import change_user_password, get_user_with_permissions, get_user_with_role, get_all_roles
 from typing import List
 from src.app.auth.jwt_dependencies import get_current_active_user
 from src.app.auth.dependencies import require_admin_role
@@ -235,8 +235,7 @@ async def logout(
         # Environment-specific cookie settings
         is_production = settings.ENVIRONMENT == "production"
         cookie_domain = settings.COOKIE_DOMAIN if is_production else None
-        cookie_samesite = cast(
-            Literal["strict", "lax", "none"], settings.COOKIE_SAMESITE)
+        cookie_samesite = settings.COOKIE_SAMESITE
 
         # Clear access token cookie
         response.set_cookie(
@@ -375,3 +374,25 @@ async def dry_run_cleanup(
             status_code=500,
             detail=f"Failed to execute cleanup dry run: {str(e)}"
         )
+
+
+@router.get("/roles", response_model=List[UserRoleSchema], tags=["admin"])
+async def list_all_roles(
+    admin_user: User = Depends(require_admin_role),
+    db: AsyncSession = Depends(get_db)
+) -> List[UserRoleSchema]:
+    """List all available user roles (admin only)."""
+    roles = await get_all_roles(db)
+    return [UserRoleSchema.model_validate(role) for role in roles]
+
+
+@router.get("/roles/{role_id}/permissions", response_model=List[PermissionSchema], tags=["admin"])
+async def get_role_default_permissions(
+    role_id: UUID,
+    admin_user: User = Depends(require_admin_role),
+    db: AsyncSession = Depends(get_db)
+) -> List[PermissionSchema]:
+    """Get default permissions for a specific role (admin only)."""
+    # For now, return empty list as permissions are assigned individually
+    # This could be extended to show recommended permissions per role
+    return []

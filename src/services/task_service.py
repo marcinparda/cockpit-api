@@ -3,7 +3,6 @@
 import logging
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.services.token_service import TokenService
 from src.core.database import async_session_maker

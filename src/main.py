@@ -5,7 +5,8 @@ import asyncio
 import logging
 from typing import List
 
-from src.api.v1.endpoints import auth, roles, health
+from src.app.health.router import router as health_router
+from src.app.auth.router import router as auth_router
 from src.app.todos.router import router as todos_router
 from src.app.users.router import router as users_router
 from src.app.budget.router import router as budget_router
@@ -74,11 +75,9 @@ app.include_router(
 app.include_router(
     users_router, prefix="/api/v1/users", tags=["users"])
 app.include_router(
-    auth.router, prefix="/api/v1/auth", tags=["shared/auth"])
+    auth_router, prefix="/api/v1/auth", tags=["shared/auth"])
 app.include_router(
-    roles.router, prefix="/api/v1/roles", tags=["shared/roles"])
-app.include_router(
-    health.router, prefix="/health", tags=["health"])
+    health_router, prefix="/health", tags=["health"])
 
 
 @app.get("/", tags=["root"])

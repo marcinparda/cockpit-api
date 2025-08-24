@@ -1,6 +1,6 @@
 """Health check and monitoring endpoints."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from typing import Dict, Any
 from datetime import datetime, timezone
 

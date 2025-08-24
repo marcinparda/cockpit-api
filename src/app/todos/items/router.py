@@ -14,7 +14,7 @@ from src.app.todos.items.schemas import (
 from src.app.auth.enums.actions import Actions
 from src.app.auth.permission_helpers import get_todo_items_permissions
 from src.app.auth.jwt_dependencies import get_current_active_user
-from src.api.v1.deps import (
+from src.app.todos.items.dependencies import (
     can_access_item,
 )
 from src.app.todos.items.models import TodoItem as TodoItemModel

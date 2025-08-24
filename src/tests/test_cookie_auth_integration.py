@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from uuid import uuid4
 
 from src.main import app
-from src.api.v1.endpoints import auth
+from src.app.auth import router
 from src.common.middleware.jwt_validation import JWTValidationMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from src.core.config import settings
@@ -20,11 +20,11 @@ def create_test_app():
         title="Test Cockpit API",
         version="0.1.0",
     )
-    
+
     # Add CORS middleware
     origins = [str(origin) for origin in settings.CORS_ORIGINS] if isinstance(
         settings.CORS_ORIGINS, list) else [str(settings.CORS_ORIGINS)]
-    
+
     test_app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
@@ -32,14 +32,14 @@ def create_test_app():
         allow_methods=settings.CORS_ALLOW_METHODS,
         allow_headers=settings.CORS_ALLOW_HEADERS,
     )
-    
+
     # Add JWT validation middleware but skip rate limiting
     test_app.add_middleware(JWTValidationMiddleware)
-    
+
     # Include only auth router for these tests
     test_app.include_router(
-        auth.router, prefix="/api/v1/auth", tags=["shared/auth"])
-    
+        router.router, prefix="/api/v1/auth", tags=["shared/auth"])
+
     return test_app
 
 
@@ -54,7 +54,7 @@ class TestCookieAuthIntegration:
     @patch("src.services.auth_service.authenticate_user")
     @patch("src.services.auth_service.create_refresh_token_response")
     def test_login_sets_cookies(self, mock_create_tokens, mock_authenticate):
-        """Test that login endpoint sets httpOnly cookies."""        
+        """Test that login endpoint sets httpOnly cookies."""
         # Mock user and authentication
         mock_user = AsyncMock()
         mock_user.id = uuid4()
@@ -96,7 +96,7 @@ class TestCookieAuthIntegration:
         # but we can verify the values are set
 
     def test_login_invalid_credentials(self):
-        """Test login with invalid credentials."""        
+        """Test login with invalid credentials."""
         with patch("src.services.auth_service.authenticate_user") as mock_auth:
             mock_auth.return_value = None
 
