@@ -3,9 +3,15 @@ import pytest
 from pydantic import ValidationError
 from uuid import UUID
 from datetime import datetime
-from src.models.user_role import UserRole
+from src.app.auth.models import UserRole
 from src.app.auth.schemas import UserRoleCreate, UserRoleUpdate, UserRole as UserRoleSchema
 from src.app.auth.enums.roles import Roles
+
+# Import all models to resolve relationships
+from src.app.auth.models import *
+from src.app.todos.projects.models import *
+from src.app.todos.items.models import *
+from src.app.todos.collaborators.models import *
 
 
 class TestUserRoleModel:

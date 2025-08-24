@@ -3,11 +3,11 @@ from sqlalchemy.future import select
 from uuid import UUID
 from typing import Sequence
 
-from src.models.feature import Feature
-from src.models.action import Action
-from src.models.permission import Permission
-from src.models.user import User
-from src.models.user_permission import UserPermission
+from src.app.auth.models import Feature
+from src.app.auth.models import Action
+from src.app.auth.models import Permission
+from src.app.auth.models import User
+from src.app.auth.models import UserPermission
 from src.app.auth.enums.actions import Actions
 from src.app.auth.enums.features import Features
 from src.app.auth.enums.roles import Roles

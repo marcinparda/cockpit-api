@@ -1,6 +1,6 @@
 """Categories sub-module."""
 
-from src.models.category import Category
+from src.app.budget.models import Category
 from .router import router
 from .schemas import CategoryCreate, CategoryUpdate, Category as CategorySchema
 from .service import (

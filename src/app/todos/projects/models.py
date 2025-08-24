@@ -4,11 +4,11 @@ from typing import List, TYPE_CHECKING
 from sqlalchemy import Integer, String, Boolean, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from src.models.base import Base
+from src.core.database import Base
 
 if TYPE_CHECKING:
     from src.app.todos.items.models import TodoItem
-    from src.models.user import User
+    from src.app.auth.models import User
     from src.app.todos.collaborators.models import TodoProjectCollaborator
 
 

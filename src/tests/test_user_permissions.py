@@ -14,12 +14,12 @@ from src.app.auth.permissions import (
 from src.app.auth.enums.features import Features
 from src.app.auth.enums.actions import Actions
 from src.app.auth.enums.roles import Roles
-from src.models.user import User
-from src.models.user_role import UserRole
-from src.models.user_permission import UserPermission
-from src.models.permission import Permission
-from src.models.feature import Feature
-from src.models.action import Action
+from src.app.auth.models import User
+from src.app.auth.models import UserRole
+from src.app.auth.models import UserPermission
+from src.app.auth.models import Permission
+from src.app.auth.models import Feature
+from src.app.auth.models import Action
 
 
 class TestUserPermissions:

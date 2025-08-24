@@ -7,7 +7,7 @@ from typing import cast, Literal
 from src.core.config import settings
 
 
-from src.models.user import User
+from src.app.auth.models import User
 from src.app.auth.password import verify_password
 from src.app.auth.jwt import (
     create_token_response,

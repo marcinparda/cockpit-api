@@ -1,6 +1,6 @@
 """Payment methods sub-module."""
 
-from src.models.payment_method import PaymentMethod
+from src.app.budget.models import PaymentMethod
 from .router import router
 from .schemas import PaymentMethodCreate, PaymentMethodUpdate, PaymentMethod as PaymentMethodSchema
 from .service import (

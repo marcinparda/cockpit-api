@@ -4,9 +4,9 @@ from sqlalchemy import Integer, UniqueConstraint, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from src.app.todos.projects.models import TodoProject
-from src.models.user import User
+from src.app.auth.models import User
 
-from src.models.base import BaseModel
+from src.common.models import BaseModel
 
 
 class TodoProjectCollaborator(BaseModel):

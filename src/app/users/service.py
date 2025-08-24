@@ -10,10 +10,10 @@ from fastapi import HTTPException, status
 import secrets
 import string
 
-from src.models.user import User
-from src.models.user_role import UserRole
-from src.models.user_permission import UserPermission
-from src.models.permission import Permission
+from src.app.auth.models import User
+from src.app.auth.models import UserRole
+from src.app.auth.models import UserPermission
+from src.app.auth.models import Permission
 from src.app.auth.password import hash_password, verify_password, validate_password_strength
 from src.app.auth.enums.roles import Roles
 from src.app.todos.projects.service import create_project

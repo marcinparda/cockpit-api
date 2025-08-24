@@ -20,7 +20,7 @@ from .service import (
     get_user_permissions
 )
 from src.app.auth.dependencies import require_admin_role
-from src.models.user import User
+from src.app.auth.models import User
 
 router = APIRouter()
 

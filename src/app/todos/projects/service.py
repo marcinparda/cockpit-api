@@ -7,7 +7,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.todos.projects.models import TodoProject as TodoProjectModel
-from src.models.user import User
+from src.app.auth.models import User
 from src.app.todos.projects import repository
 from src.app.todos.projects.schemas import (
     TodoProject as TodoProjectSchema,

@@ -4,7 +4,7 @@ import pytest
 from uuid import uuid4
 from datetime import datetime
 
-from src.models.user_permission import UserPermission
+from src.app.auth.models import UserPermission
 
 
 class TestUserPermissionModel:

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Optional
 from sqlalchemy import Integer, String, ForeignKey, Boolean, DateTime, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.models.base import BaseModel
+from src.common.models import BaseModel
 
 if TYPE_CHECKING:
     from src.app.todos.projects.models import TodoProject

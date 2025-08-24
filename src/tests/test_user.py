@@ -5,8 +5,8 @@ from uuid import uuid4
 from datetime import datetime, UTC
 from sqlalchemy.orm import Session
 
-from src.models.user import User
-from src.models.user_role import UserRole
+from src.app.auth.models import User
+from src.app.auth.models import UserRole
 from src.app.users.schemas import UserCreate, UserUpdate, User as UserResponse
 
 

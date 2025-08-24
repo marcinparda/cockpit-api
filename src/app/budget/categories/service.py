@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from fastapi import HTTPException, status
 
-from src.models.category import Category
+from src.app.budget.models import Category
 from .schemas import CategoryCreate, CategoryUpdate
 
 

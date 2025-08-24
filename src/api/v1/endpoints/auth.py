@@ -21,7 +21,7 @@ from typing import List
 from src.app.auth.jwt_dependencies import get_current_active_user
 from src.app.auth.dependencies import require_admin_role
 from src.app.auth.jwt import invalidate_token
-from src.models.user import User
+from src.app.auth.models import User
 from src.services.task_service import TokenCleanupService
 from src.core.config import settings
 

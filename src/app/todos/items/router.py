@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated
 
 from src.core.database import get_db
-from src.models.user import User
+from src.app.auth.models import User
 from src.app.todos.items.schemas import (
     TodoItem,
     TodoItemCreate,

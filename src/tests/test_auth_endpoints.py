@@ -11,8 +11,8 @@ import asyncio
 from unittest.mock import AsyncMock, patch, MagicMock
 
 from src.main import app
-from src.models.user import User
-from src.models.user_role import UserRole
+from src.app.auth.models import User
+from src.app.auth.models import UserRole
 from src.app.auth.password import hash_password, verify_password
 from src.app.auth.jwt import create_token_response
 from src.core.database import get_db

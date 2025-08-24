@@ -6,7 +6,7 @@ from sqlalchemy.future import select
 from fastapi import HTTPException, status
 from datetime import datetime
 
-from src.models.payment_method import PaymentMethod
+from src.app.budget.models import PaymentMethod
 from .schemas import PaymentMethodCreate, PaymentMethodUpdate
 
 

@@ -7,7 +7,7 @@ from src.app.todos.collaborators.schemas import (
     TodoProjectCollaboratorCreate,
     TodoProjectCollaboratorResponse,
 )
-from src.models.user import User
+from src.app.auth.models import User
 from src.app.auth.enums.actions import Actions
 from src.app.auth.permission_helpers import get_categories_permissions
 from src.app.auth.jwt_dependencies import get_current_active_user

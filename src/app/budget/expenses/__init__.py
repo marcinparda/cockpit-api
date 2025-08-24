@@ -1,6 +1,6 @@
 """Expenses sub-module."""
 
-from src.models.expense import Expense
+from src.app.budget.models import Expense
 from .router import router
 from .schemas import ExpenseCreate, ExpenseUpdate, Expense as ExpenseSchema
 from .service import (

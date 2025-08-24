@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
 from src.core.database import get_db
-from src.models.user import User
+from src.app.auth.models import User
 from src.app.auth.enums.actions import Actions
 from src.app.auth.enums.features import Features
 from src.app.auth.enums.roles import Roles

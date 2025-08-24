@@ -4,9 +4,9 @@ from uuid import UUID
 from sqlalchemy import and_, select, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models.access_token import AccessToken
-from src.models.refresh_token import RefreshToken
-from src.models.user import User
+from src.app.auth.models import AccessToken
+from src.app.auth.models import RefreshToken
+from src.app.auth.models import User
 from src.core.config import settings
 
 

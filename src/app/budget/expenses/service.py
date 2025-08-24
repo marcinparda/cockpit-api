@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from fastapi import HTTPException, status
 
-from src.models.expense import Expense
+from src.app.budget.models import Expense
 from .schemas import ExpenseCreate, ExpenseUpdate
 
 
