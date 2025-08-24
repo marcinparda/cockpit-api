@@ -5,10 +5,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated
 
 from src.core.database import get_db
-from src.app.todos.projects.models import TodoProject
 from src.models.user import User
 from src.app.todos.items.schemas import (
-    TodoItem as TodoItemSchema,
+    TodoItem,
     TodoItemCreate,
     TodoItemUpdate,
 )
@@ -29,7 +28,7 @@ from uuid import UUID
 router = APIRouter()
 
 
-@router.get("", response_model=List[TodoItemSchema])
+@router.get("", response_model=List[TodoItem])
 async def get_todo_items(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
@@ -46,23 +45,10 @@ async def get_todo_items(
         db, current_user.id, skip=skip, limit=limit, sort_by=sort_by, order=order
     )
 
-    return [
-        TodoItemSchema(
-            id=item.id,
-            name=item.name,
-            description=item.description,
-            shops=item.shops,
-            project_id=item.project_id,
-            is_closed=item.is_closed,
-            created_at=item.created_at,
-            updated_at=item.updated_at,
-            completed_at=item.completed_at,
-        )
-        for item in items
-    ]
+    return items
 
 
-@router.post("", response_model=TodoItemSchema, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=TodoItem, status_code=status.HTTP_201_CREATED)
 async def create_todo_item(
     item: TodoItemCreate,
     db: AsyncSession = Depends(get_db),
@@ -90,19 +76,10 @@ async def create_todo_item(
         is_closed=False,
     )
 
-    return TodoItemSchema(
-        id=db_item.id,
-        name=db_item.name,
-        description=db_item.description,
-        shops=db_item.shops,
-        project_id=db_item.project_id,
-        is_closed=db_item.is_closed,
-        created_at=db_item.created_at,
-        updated_at=db_item.updated_at,
-    )
+    return await todo_item_service.get_item_by_id(db, db_item.id)
 
 
-@router.get("/{item_id}", response_model=TodoItemSchema)
+@router.get("/{item_id}", response_model=TodoItem)
 async def get_todo_item(
     *,
     db: AsyncSession = Depends(get_db),
@@ -113,20 +90,10 @@ async def get_todo_item(
 ) -> Any:
     """Get todo item by ID if the user has access to its project."""
 
-    return TodoItemSchema(
-        id=item.id,
-        name=item.name,
-        description=item.description,
-        shops=item.shops,
-        project_id=item.project_id,
-        is_closed=item.is_closed,
-        created_at=item.created_at,
-        updated_at=item.updated_at,
-        completed_at=item.completed_at,
-    )
+    return item
 
 
-@router.put("/{item_id}", response_model=TodoItemSchema)
+@router.put("/{item_id}", response_model=TodoItem)
 async def update_todo_item(
     *,
     db: AsyncSession = Depends(get_db),
@@ -146,20 +113,10 @@ async def update_todo_item(
             detail=f"Todo item with ID {item_id} not found"
         )
 
-    return TodoItemSchema(
-        id=updated.id,
-        name=updated.name,
-        description=updated.description,
-        shops=updated.shops,
-        project_id=updated.project_id,
-        is_closed=updated.is_closed,
-        created_at=updated.created_at,
-        updated_at=updated.updated_at,
-        completed_at=updated.completed_at,
-    )
+    return updated
 
 
-@router.delete("/{item_id}", response_model=TodoItemSchema)
+@router.delete("/{item_id}", response_model=TodoItem)
 async def delete_todo_item(
     *,
     db: AsyncSession = Depends(get_db),
@@ -177,14 +134,4 @@ async def delete_todo_item(
             detail=f"Todo item with ID {item_id} not found"
         )
 
-    return TodoItemSchema(
-        id=deleted.id,
-        name=deleted.name,
-        description=deleted.description,
-        shops=deleted.shops,
-        project_id=deleted.project_id,
-        is_closed=deleted.is_closed,
-        created_at=deleted.created_at,
-        updated_at=deleted.updated_at,
-        completed_at=deleted.completed_at,
-    )
+    return deleted

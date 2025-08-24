@@ -1,5 +1,6 @@
-from typing import Optional
+from typing import Optional, Union
 from datetime import datetime
+from uuid import UUID
 from pydantic import BaseModel, ConfigDict, field_serializer
 from src.app.todos.projects.schemas import TodoProject
 
@@ -30,14 +31,14 @@ class SimpleTodoProject(BaseModel):
     name: str
     created_at: datetime
     updated_at: datetime
-    owner_id: str  # Change type to str to handle UUID conversion
+    owner_id: Union[str, UUID]  # Accept both str and UUID
     is_general: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 
     @field_serializer('owner_id')
-    def serialize_owner_id(self, owner_id):
-        return str(owner_id) if owner_id else None
+    def serialize_owner_id(self, owner_id) -> str:
+        return str(owner_id)
 
 
 class TodoItemInDBBase(TodoItemBase):

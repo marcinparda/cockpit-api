@@ -5,6 +5,7 @@ from typing import List, Sequence, Optional
 
 from sqlalchemy import select, insert
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from src.app.todos.items.models import TodoItem as TodoItemModel
 
@@ -29,7 +30,7 @@ async def list_items_by_project_ids(
     if not project_ids:
         return []
 
-    stmt = select(TodoItemModel).where(
+    stmt = select(TodoItemModel).options(selectinload(TodoItemModel.project)).where(
         TodoItemModel.project_id.in_(project_ids))
     if order_by is not None:
         stmt = stmt.order_by(order_by)
@@ -42,7 +43,9 @@ async def list_items_by_project_ids(
 
 async def get_item_by_id(db: AsyncSession, item_id: int) -> Optional[TodoItemModel]:
     """Get a single item by its id or return None if not found."""
-    return await db.get(TodoItemModel, item_id)
+    stmt = select(TodoItemModel).options(selectinload(TodoItemModel.project)).where(TodoItemModel.id == item_id)
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
 
 
 async def create_item(
@@ -88,7 +91,7 @@ async def update_item(db: AsyncSession, item_id: int, **fields) -> Optional[Todo
 
     item.updated_at = datetime.now()
     await db.commit()
-    await db.refresh(item)
+    await db.refresh(item, ["project"])  # Refresh with project relationship
     return item
 
 
