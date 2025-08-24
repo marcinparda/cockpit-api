@@ -5,8 +5,10 @@ import asyncio
 import logging
 from typing import List
 
-from src.api.v1.endpoints import expenses, categories, payment_methods, auth, users, roles, health
+from src.api.v1.endpoints import auth, roles, health
 from src.app.todos.router import router as todos_router
+from src.app.users.router import router as users_router
+from src.app.expenses.router import router as expenses_router
 from src.core.config import settings
 from src.common.middleware.rate_limit import RateLimitMiddleware
 from src.common.middleware.jwt_validation import JWTValidationMiddleware
@@ -66,17 +68,13 @@ app.add_middleware(RateLimitMiddleware)
 app.add_middleware(JWTValidationMiddleware)
 
 app.include_router(
-    expenses.router, prefix="/api/v1/expenses", tags=["ai-budget/expenses"])
-app.include_router(categories.router,
-                   prefix="/api/v1/categories", tags=["ai-budget/categories"])
-app.include_router(
-    payment_methods.router, prefix="/api/v1/payment_methods", tags=["ai-budget/payment_methods"])
+    expenses_router, prefix="/api/v1", tags=["expenses"])
 app.include_router(
     todos_router, prefix="/api/v1/todos", tags=["todos"])
 app.include_router(
-    auth.router, prefix="/api/v1/auth", tags=["shared/auth"])
+    users_router, prefix="/api/v1/users", tags=["users"])
 app.include_router(
-    users.router, prefix="/api/v1/users", tags=["shared/users"])
+    auth.router, prefix="/api/v1/auth", tags=["shared/auth"])
 app.include_router(
     roles.router, prefix="/api/v1/roles", tags=["shared/roles"])
 app.include_router(
