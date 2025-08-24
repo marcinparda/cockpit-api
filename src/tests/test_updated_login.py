@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
 from src.services.auth_service import login_user
-from src.schemas.auth import LoginResponse
+from src.app.auth.schemas import LoginResponse
 
 
 @pytest.mark.asyncio

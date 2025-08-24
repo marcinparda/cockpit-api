@@ -12,7 +12,7 @@ from .schemas import (
     UserPermissionAssign, PasswordResetRequest,
     PasswordResetResponse, UserPermissionAssignResponse, SimpleUserResponse
 )
-from src.schemas.permission import Permission as PermissionSchema
+from src.app.auth.schemas import Permission as PermissionSchema
 from .service import (
     get_all_users, create_user, get_user_by_id, update_user, delete_user,
     assign_user_role, assign_user_permissions, revoke_user_permission,

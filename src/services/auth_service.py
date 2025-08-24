@@ -14,7 +14,7 @@ from src.app.auth.jwt import (
     refresh_access_token, invalidate_token, verify_token,
     create_refresh_token_response
 )
-from src.schemas.auth import LoginResponse, TokenResponse, RefreshTokenResponse
+from src.app.auth.schemas import LoginResponse, TokenResponse, RefreshTokenResponse
 
 
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> Optional[User]:

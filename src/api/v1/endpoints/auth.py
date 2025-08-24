@@ -6,17 +6,17 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_db
-from src.schemas.auth import (
+from src.app.auth.schemas import (
     LoginRequest, LoginResponse, PasswordChangeRequest, PasswordChangeResponse,
     SimpleRefreshResponse,
-    UserInfoResponse
+    UserInfoResponse,
+    Permission as PermissionSchema,
+    UserRole as UserRoleSchema
 )
 from src.services.auth_service import (
     login_user, refresh_user_tokens
 )
 from src.app.users.service import change_user_password, get_user_with_permissions, get_user_with_role
-from src.schemas.permission import Permission as PermissionSchema
-from src.schemas.user_role import UserRole as UserRoleSchema
 from typing import List
 from src.app.auth.jwt_dependencies import get_current_active_user
 from src.app.auth.dependencies import require_admin_role

@@ -6,8 +6,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_db
-from src.schemas.user_role import UserRole as UserRoleSchema
-from src.schemas.permission import Permission as PermissionSchema
+from src.app.auth.schemas import UserRole as UserRoleSchema, Permission as PermissionSchema
 from src.app.users.service import get_all_roles
 from src.app.auth.dependencies import require_admin_role
 from src.models.user import User

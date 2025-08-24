@@ -4,7 +4,7 @@ from pydantic import ValidationError
 from uuid import UUID
 from datetime import datetime
 from src.models.user_role import UserRole
-from src.schemas.user_role import UserRoleCreate, UserRoleUpdate, UserRole as UserRoleSchema
+from src.app.auth.schemas import UserRoleCreate, UserRoleUpdate, UserRole as UserRoleSchema
 from src.app.auth.enums.roles import Roles
 
 

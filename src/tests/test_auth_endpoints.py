@@ -195,7 +195,7 @@ class TestAuthEndpointsWithHttpx:
 
     def test_password_change_request_schema_validation(self):
         """Test password change request validates in schema."""
-        from src.schemas.auth import PasswordChangeRequest
+        from src.app.auth.schemas import PasswordChangeRequest
 
         # Test valid password change request
         request = PasswordChangeRequest(
@@ -207,7 +207,7 @@ class TestAuthEndpointsWithHttpx:
 
     def test_login_request_schema_validation(self):
         """Test login request schema validation."""
-        from src.schemas.auth import LoginRequest
+        from src.app.auth.schemas import LoginRequest
 
         # Test valid login request
         request = LoginRequest(
@@ -243,7 +243,7 @@ class TestAuthenticationIntegration:
 
     def test_schema_validation_integration(self):
         """Test schema validation integration."""
-        from src.schemas.auth import LoginRequest, PasswordChangeRequest
+        from src.app.auth.schemas import LoginRequest, PasswordChangeRequest
 
         # Test valid login request
         login_req = LoginRequest(
@@ -294,7 +294,7 @@ def test_auth_services_import():
 def test_auth_schemas_import():
     """Test that authentication schemas can be imported without errors."""
     try:
-        from src.schemas.auth import LoginRequest, LoginResponse, PasswordChangeRequest, TokenResponse
+        from src.app.auth.schemas import LoginRequest, LoginResponse, PasswordChangeRequest, TokenResponse
         assert True  # All imports successful
     except ImportError as e:
         pytest.fail(f"Failed to import authentication schemas: {e}")
@@ -303,7 +303,7 @@ def test_auth_schemas_import():
 def test_password_validation_in_schema():
     """Test password validation in PasswordChangeRequest schema."""
     try:
-        from src.schemas.auth import PasswordChangeRequest
+        from src.app.auth.schemas import PasswordChangeRequest
 
         # Test valid password
         valid_request = PasswordChangeRequest(

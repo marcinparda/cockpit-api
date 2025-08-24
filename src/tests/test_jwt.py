@@ -12,7 +12,7 @@ from src.app.auth.jwt import (
     verify_token,
     create_token_response
 )
-from src.schemas.auth import TokenData, TokenResponse
+from src.app.auth.schemas import TokenData, TokenResponse
 
 
 class TestJWTUtils:

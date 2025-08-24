@@ -17,7 +17,7 @@ def test_auth_imports():
     from src.app.auth.jwt_dependencies import get_current_user, get_current_active_user
 
     # Test schemas
-    from src.schemas.auth import LoginRequest, LoginResponse, PasswordChangeRequest, TokenResponse
+    from src.app.auth.schemas import LoginRequest, LoginResponse, PasswordChangeRequest, TokenResponse
 
     # Test endpoints
     from src.api.v1.endpoints.auth import router
@@ -27,7 +27,7 @@ def test_auth_imports():
 
 def test_login_request_schema():
     """Test LoginRequest schema validation."""
-    from src.schemas.auth import LoginRequest
+    from src.app.auth.schemas import LoginRequest
 
     # Valid login request
     valid_request = LoginRequest(
@@ -41,7 +41,7 @@ def test_login_request_schema():
 
 def test_login_response_schema():
     """Test LoginResponse schema creation."""
-    from src.schemas.auth import LoginResponse
+    from src.app.auth.schemas import LoginResponse
 
     # Valid login response
     response = LoginResponse(message="Successfully logged in")
@@ -51,7 +51,7 @@ def test_login_response_schema():
 
 def test_password_change_request_schema():
     """Test PasswordChangeRequest schema validation."""
-    from src.schemas.auth import PasswordChangeRequest
+    from src.app.auth.schemas import PasswordChangeRequest
 
     # Valid password change request
     valid_request = PasswordChangeRequest(
@@ -65,7 +65,7 @@ def test_password_change_request_schema():
 
 def test_password_change_request_validation():
     """Test password validation in PasswordChangeRequest schema."""
-    from src.schemas.auth import PasswordChangeRequest
+    from src.app.auth.schemas import PasswordChangeRequest
     from pydantic import ValidationError
 
     # Test weak password validation

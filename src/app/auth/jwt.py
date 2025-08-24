@@ -9,7 +9,7 @@ from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.config import settings
-from src.schemas.auth import TokenData, TokenResponse, RefreshTokenResponse
+from src.app.auth.schemas import TokenData, TokenResponse, RefreshTokenResponse
 
 
 def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
