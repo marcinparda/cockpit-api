@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_db
 from src.app.auth.jwt import verify_token
-from src.services.user_service import get_user_with_role
+from src.app.users.service import get_user_with_role
 from src.models.user import User
 
 

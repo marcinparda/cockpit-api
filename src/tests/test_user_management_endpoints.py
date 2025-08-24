@@ -67,7 +67,7 @@ class TestUserSchemaIntegration:
 
     def test_user_schemas_import(self):
         """Test that all user schemas can be imported."""
-        from src.schemas.user import (
+        from src.app.users.schemas import (
             UserCreate, UserUpdate, UserWithRole, UserWithPermissions,
             UserPermissionAssign, UserPermissionRevoke,
             PasswordResetRequest, PasswordResetResponse
@@ -85,7 +85,7 @@ class TestUserSchemaIntegration:
 
     def test_user_permission_assign_schema(self):
         """Test UserPermissionAssign schema validation."""
-        from src.schemas.user import UserPermissionAssign
+        from src.app.users.schemas import UserPermissionAssign
         from uuid import uuid4
 
         # Valid data
@@ -100,7 +100,7 @@ class TestUserSchemaIntegration:
 
     def test_password_reset_schemas(self):
         """Test password reset schemas."""
-        from src.schemas.user import PasswordResetRequest, PasswordResetResponse
+        from src.app.users.schemas import PasswordResetRequest, PasswordResetResponse
 
         # Reset request with password
         request = PasswordResetRequest(new_password="NewPass123!")
@@ -124,7 +124,7 @@ class TestUserServiceIntegration:
 
     def test_user_service_imports(self):
         """Test that all user service functions can be imported."""
-        from src.services.user_service import (
+        from src.app.users.service import (
             get_all_users, create_user, update_user, delete_user,
             assign_user_role, assign_user_permissions, revoke_user_permission,
             reset_user_password, get_all_roles, generate_temporary_password
@@ -144,7 +144,7 @@ class TestUserServiceIntegration:
 
     def test_generate_temporary_password(self):
         """Test temporary password generation."""
-        from src.services.user_service import generate_temporary_password
+        from src.app.users.service import generate_temporary_password
 
         # Default length
         password = generate_temporary_password()

@@ -284,7 +284,7 @@ def test_auth_services_import():
     """Test that authentication services can be imported without errors."""
     try:
         from src.services.auth_service import authenticate_user, create_user_token, login_user
-        from src.services.user_service import get_user_by_id, change_user_password
+        from src.app.users.service import get_user_by_id, change_user_password
         from src.app.auth.jwt_dependencies import get_current_user, get_current_active_user
         assert True  # All imports successful
     except ImportError as e:

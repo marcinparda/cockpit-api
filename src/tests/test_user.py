@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from src.models.user import User
 from src.models.user_role import UserRole
-from src.schemas.user import UserCreate, UserUpdate, User as UserResponse
+from src.app.users.schemas import UserCreate, UserUpdate, User as UserResponse
 
 
 class TestUserModel:

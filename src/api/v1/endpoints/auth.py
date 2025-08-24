@@ -14,7 +14,7 @@ from src.schemas.auth import (
 from src.services.auth_service import (
     login_user, refresh_user_tokens
 )
-from src.services.user_service import change_user_password, get_user_with_permissions, get_user_with_role
+from src.app.users.service import change_user_password, get_user_with_permissions, get_user_with_role
 from src.schemas.permission import Permission as PermissionSchema
 from src.schemas.user_role import UserRole as UserRoleSchema
 from typing import List
