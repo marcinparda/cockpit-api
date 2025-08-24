@@ -54,11 +54,12 @@ poetry install
 ## Architecture Overview
 
 ### Core Structure
-This is a FastAPI-based personal productivity API with a sophisticated permissions system. The application follows a layered architecture with clear separation of concerns:
+This is a FastAPI-based personal productivity API with a sophisticated permissions system. The application is transitioning to a **Domain-Driven Design (DDD)** approach with modules defined at the app folder level, following a layered architecture with clear separation of concerns:
 
+- **Domain Modules**: Each business domain (auth, todos, budget, users) is organized as a self-contained module in `src/app/`
 - **Models**: SQLAlchemy models with UUID-based primary keys and automatic timestamping via `BaseModel`
-- **Schemas**: Pydantic models for request/response validation
-- **Services**: Business logic layer handling complex operations
+- **Schemas**: Pydantic models for request/response validation within each domain
+- **Services**: Business logic layer handling complex operations per domain
 - **API Endpoints**: FastAPI routers organized by feature domain
 - **Auth System**: Role-based permissions with feature-action granularity
 
@@ -243,15 +244,16 @@ Individual expense records:
 7. **Self-References**: Users can create other users; categories can have parent categories
 
 ### API Organization
-Endpoints are organized by feature domains:
+Endpoints are organized by feature domains using DDD modules:
 - `/api/v1/auth` - Authentication and token management
 - `/api/v1/users` - User management (admin-only operations)
 - `/api/v1/roles` - Role management
 - `/api/v1/todo/projects` - Todo project management
 - `/api/v1/todo/items` - Todo item management  
-- `/api/v1/expenses` - Expense tracking
-- `/api/v1/categories` - Category management
-- `/api/v1/payment_methods` - Payment method management
+- `/api/v1/todo/collaborators` - Todo project collaboration management
+- `/api/v1/budget/expenses` - Expense tracking
+- `/api/v1/budget/categories` - Category management
+- `/api/v1/budget/payment_methods` - Payment method management
 - `/health` - Health check endpoints
 
 ### Authentication Flow
@@ -270,13 +272,15 @@ Endpoints are organized by feature domains:
 ## Development Guidelines
 
 ### Database Changes
-When adding new features:
-1. Create the database model in `src/models/`
-2. Add the feature to `Features` enum in `src/auth/enums/features.py`
+When adding new features following the DDD approach:
+1. Create the database model in the appropriate domain module (e.g., `src/app/todos/projects/models.py`)
+2. Add the feature to `Features` enum in `src/app/auth/enums/features.py`
 3. Create migration: `alembic revision --autogenerate -m "add_new_feature"`
 4. Update permissions by adding feature-action pairs to the permissions migration
 5. Apply migration: `alembic upgrade head`
 6. **Update CLAUDE.md**: After any database schema changes, update the "Database Schema" section in this file to reflect new tables, columns, or relationships
+
+**Note**: For legacy models still in `src/models/`, follow the existing pattern, but prefer creating new models within domain modules.
 
 ### Permission-Protected Endpoints
 All business endpoints should use permission checks:
@@ -312,13 +316,111 @@ Development database connection:
 - DB_NAME=cockpit_db
 
 ### File Organization
-- `src/models/` - SQLAlchemy database models
-- `src/schemas/` - Pydantic request/response schemas
-- `src/services/` - Business logic services
-- `src/api/v1/endpoints/` - FastAPI route handlers
-- `src/auth/` - Authentication, authorization, and permissions
-- `src/middleware/` - Custom FastAPI middleware
-- `src/tests/` - Test suite
-- `alembic/versions/` - Database migration files
+
+#### Project Structure (DDD Approach)
+```
+src/
+├── main.py                          # FastAPI application entry point
+├── core/                            # Core infrastructure
+│   ├── config.py                    # Application configuration
+│   ├── database.py                  # Database connection and session management
+│   └── scheduler.py                 # Background task scheduler
+├── common/                          # Shared utilities
+│   ├── dependencies.py              # Common FastAPI dependencies
+│   ├── exceptions.py                # Custom exception classes
+│   ├── utils.py                     # Utility functions
+│   └── middleware/                  # Custom middleware
+│       ├── jwt_validation.py        # JWT validation middleware
+│       └── rate_limit.py            # Rate limiting middleware
+├── models/                          # Global SQLAlchemy models (legacy - being phased out)
+├── schemas/                         # Global Pydantic schemas (legacy - being phased out)
+├── services/                        # Global services (legacy - being phased out)
+├── tasks/                           # Background tasks
+│   └── token_cleanup.py             # Token cleanup scheduler
+├── app/                             # Domain modules (DDD approach)
+│   ├── auth/                        # Authentication domain
+│   │   ├── dependencies.py          # Auth-specific dependencies
+│   │   ├── jwt.py                   # JWT token handling
+│   │   ├── jwt_dependencies.py      # JWT FastAPI dependencies
+│   │   ├── password.py              # Password hashing utilities
+│   │   ├── permissions.py           # Permission management
+│   │   ├── permission_helpers.py    # Permission utility functions
+│   │   └── enums/                   # Auth-related enums
+│   │       ├── actions.py           # Permission actions
+│   │       ├── features.py          # Feature definitions
+│   │       └── roles.py             # User roles
+│   ├── users/                       # User management domain
+│   │   ├── router.py                # User API endpoints
+│   │   ├── schemas.py               # User Pydantic schemas
+│   │   ├── service.py               # User business logic
+│   │   └── core/                    # User core components
+│   ├── todos/                       # Todo management domain
+│   │   ├── router.py                # Main todo router
+│   │   ├── projects/                # Todo projects subdomain
+│   │   │   ├── models.py            # Project database models
+│   │   │   ├── repository.py        # Project data access layer
+│   │   │   ├── router.py            # Project API endpoints
+│   │   │   ├── schemas.py           # Project Pydantic schemas
+│   │   │   └── service.py           # Project business logic
+│   │   ├── items/                   # Todo items subdomain
+│   │   │   ├── models.py            # Item database models
+│   │   │   ├── repository.py        # Item data access layer
+│   │   │   ├── router.py            # Item API endpoints
+│   │   │   ├── schemas.py           # Item Pydantic schemas
+│   │   │   └── service.py           # Item business logic
+│   │   └── collaborators/           # Project collaboration subdomain
+│   │       ├── models.py            # Collaborator database models
+│   │       ├── repository.py        # Collaborator data access layer
+│   │       ├── router.py            # Collaborator API endpoints
+│   │       ├── schemas.py           # Collaborator Pydantic schemas
+│   │       └── service.py           # Collaborator business logic
+│   └── budget/                      # Budget management domain
+│       ├── router.py                # Main budget router
+│       ├── expenses/                # Expense tracking subdomain
+│       │   ├── router.py            # Expense API endpoints
+│       │   ├── schemas.py           # Expense Pydantic schemas
+│       │   └── service.py           # Expense business logic
+│       ├── categories/              # Category management subdomain
+│       │   ├── router.py            # Category API endpoints
+│       │   ├── schemas.py           # Category Pydantic schemas
+│       │   └── service.py           # Category business logic
+│       └── payment_methods/         # Payment method subdomain
+│           ├── router.py            # Payment method API endpoints
+│           ├── schemas.py           # Payment method Pydantic schemas
+│           └── service.py           # Payment method business logic
+├── api/                             # API layer
+│   └── v1/                          # API version 1
+│       ├── deps.py                  # API dependencies
+│       └── endpoints/               # API endpoints (legacy structure)
+│           ├── auth.py              # Auth endpoints
+│           ├── health.py            # Health check endpoints
+│           └── roles.py             # Role management endpoints
+├── tests/                           # Test suite
+└── alembic/                         # Database migrations
+    └── versions/                    # Migration files
+```
+
+#### Key Architectural Decisions
+
+1. **Domain Module Structure**: Each domain in `src/app/` follows a consistent pattern:
+   - `router.py` - FastAPI endpoint definitions
+   - `schemas.py` - Pydantic models for request/response validation
+   - `service.py` - Business logic implementation
+   - `models.py` - SQLAlchemy database models (domain-specific)
+   - `repository.py` - Data access layer (where applicable)
+
+2. **Subdomain Organization**: Complex domains like `todos` and `budget` are further organized into subdomains (projects, items, collaborators, expenses, etc.)
+
+3. **Legacy Migration**: The project is transitioning from a layered architecture to DDD:
+   - Global `models/`, `schemas/`, and `services/` directories contain legacy code
+   - New development follows the domain module pattern in `src/app/`
+   - Authentication remains centralized due to its cross-cutting nature
+
+4. **Separation of Concerns**:
+   - **Core**: Infrastructure and configuration
+   - **Common**: Shared utilities and middleware
+   - **App**: Business domains with clear boundaries
+   - **API**: External interface layer
+   - **Tasks**: Background processing
 
 The API supports expense tracking and collaborative todo management while maintaining strict access controls and audit trails through the comprehensive permissions system.
