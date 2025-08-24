@@ -8,7 +8,7 @@ from typing import List
 from src.api.v1.endpoints import auth, roles, health
 from src.app.todos.router import router as todos_router
 from src.app.users.router import router as users_router
-from src.app.expenses.router import router as expenses_router
+from src.app.budget.router import router as budget_router
 from src.core.config import settings
 from src.common.middleware.rate_limit import RateLimitMiddleware
 from src.common.middleware.jwt_validation import JWTValidationMiddleware
@@ -68,7 +68,7 @@ app.add_middleware(RateLimitMiddleware)
 app.add_middleware(JWTValidationMiddleware)
 
 app.include_router(
-    expenses_router, prefix="/api/v1", tags=["expenses"])
+    budget_router, prefix="/api/v1/budget", tags=["budget"])
 app.include_router(
     todos_router, prefix="/api/v1/todos", tags=["todos"])
 app.include_router(
