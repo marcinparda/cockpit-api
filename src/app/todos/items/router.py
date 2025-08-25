@@ -19,9 +19,7 @@ from src.app.todos.items.dependencies import (
 )
 from src.app.todos.items.models import TodoItem as TodoItemModel
 from src.app.todos.items import service as todo_item_service
-from src.app.todos.access_service import (
-    can_user_access_project,
-)
+from src.app.todos.domain.access_control_service import can_user_access_project
 from uuid import UUID
 
 

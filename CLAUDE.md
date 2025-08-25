@@ -308,7 +308,7 @@ Endpoints are organized by feature domains using DDD modules:
 - **AuthService** (`src/app/auth/service.py`): Handles login, token generation, and user authentication
 - **UserService** (`src/app/users/service.py`): User management operations including password changes
 - **TokenService** (`src/app/auth/token_service.py`): JWT token creation, validation, and cleanup
-- **TodoAccessService** (`src/app/todos/access_service.py`): Manages todo project access permissions and collaboration
+- **TodoAccessControlService** (`src/app/todos/domain/access_control_service.py`): Domain service managing todo project access permissions and collaboration across multiple aggregates
 - **TokenCleanupService** (`src/tasks/token_cleanup.py`): Background token cleanup and maintenance operations
 
 ## Development Guidelines
@@ -323,8 +323,6 @@ When adding new features following the DDD approach:
 4. Update permissions by adding feature-action pairs to the permissions migration
 5. Apply migration: `alembic upgrade head`
 6. **Update CLAUDE.md**: After any database schema changes, update the "Database Schema" section in this file to reflect new tables, columns, or relationships
-
-**Note**: For legacy models still in `src/models/`, follow the existing pattern, but prefer creating new models within domain modules. All services have been migrated to their respective domain modules.
 
 ### Permission-Protected Endpoints
 
@@ -410,19 +408,22 @@ src/
 │   │   ├── service.py               # User business logic
 │   │   └── core/                    # User core components
 │   ├── todos/                       # Todo management domain
-│   │   ├── access_service.py        # Todo project access control service
+│   │   ├── domain/                  # Domain services for cross-aggregate business rules
+│   │   │   ├── __init__.py          # Domain services module
+│   │   │   └── access_control_service.py # Access control domain service
 │   │   ├── router.py                # Main todo router
 │   │   ├── projects/                # Todo projects subdomain
 │   │   │   ├── models.py            # Project database models
 │   │   │   ├── repository.py        # Project data access layer
 │   │   │   ├── router.py            # Project API endpoints
 │   │   │   ├── schemas.py           # Project Pydantic schemas
-│   │   │   └── service.py           # Project business logic
+│   │   │   └── service.py           # Project business logic (includes ownership/general checks)
 │   │   ├── items/                   # Todo items subdomain
 │   │   │   ├── models.py            # Item database models
 │   │   │   ├── repository.py        # Item data access layer
 │   │   │   ├── router.py            # Item API endpoints
 │   │   │   ├── schemas.py           # Item Pydantic schemas
+│   │   │   ├── dependencies.py      # Item access control dependencies
 │   │   │   └── service.py           # Item business logic
 │   │   └── collaborators/           # Project collaboration subdomain
 │   │       ├── models.py            # Collaborator database models
@@ -468,17 +469,24 @@ src/
 
 2. **Subdomain Organization**: Complex domains like `todos` and `budget` are further organized into subdomains (projects, items, collaborators, expenses, etc.)
 
-3. **Legacy Migration**: The project has transitioned from a layered architecture to DDD:
+3. **Domain Services**: Cross-aggregate business rules are handled by domain services within each bounded context:
+   
+   - Todo domain uses `domain/access_control_service.py` for access control spanning projects, collaborators, and items
+   - Single-aggregate business rules remain in their respective subdomain services
+   - This follows DDD principles while maintaining clear boundaries
+
+4. **Legacy Migration**: The project has transitioned from a layered architecture to DDD:
 
    - Global `models/` and `schemas/` directories contain remaining legacy code
    - The `src/services/` directory has been completely removed, with all services moved to their respective domains
    - New development follows the domain module pattern in `src/app/`
    - Authentication remains centralized due to its cross-cutting nature
 
-4. **Separation of Concerns**:
+5. **Separation of Concerns**:
    - **Core**: Infrastructure and configuration
    - **Common**: Shared utilities and middleware
    - **App**: Business domains with clear boundaries
+   - **Domain**: Cross-aggregate business rules within bounded contexts
    - **API**: External interface layer
    - **Tasks**: Background processing
 

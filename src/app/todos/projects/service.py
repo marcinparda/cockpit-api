@@ -5,6 +5,8 @@ from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import and_
+from sqlalchemy.future import select
 
 from src.app.todos.projects.models import TodoProject as TodoProjectModel
 from src.app.auth.models import User
@@ -79,3 +81,50 @@ async def list_user_projects_schemas(
     for project in projects_by_id.values():
         projects.append(await build_todo_project_schema(db, project))
     return projects
+
+
+async def user_is_project_owner(
+    db: AsyncSession,
+    project_id: int,
+    user_id: UUID
+) -> bool:
+    """
+    Check if a user is the owner of a project.
+
+    Args:
+        db: Database session
+        project_id: ID of the project to check
+        user_id: ID of the user
+
+    Returns:
+        True if user is the owner, False otherwise
+    """
+    result = await db.execute(
+        select(TodoProjectModel)
+        .where(and_(
+            TodoProjectModel.id == project_id,
+            TodoProjectModel.owner_id == user_id
+        ))
+    )
+    return result.scalars().first() is not None
+
+
+async def is_general_project(
+    db: AsyncSession,
+    project_id: int
+) -> bool:
+    """
+    Check if a project is a "General" project.
+
+    Args:
+        db: Database session
+        project_id: ID of the project to check
+
+    Returns:
+        True if project is a General project, False otherwise
+    """
+    result = await db.execute(
+        select(TodoProjectModel.is_general)
+        .where(TodoProjectModel.id == project_id)
+    )
+    return result.scalar() or False

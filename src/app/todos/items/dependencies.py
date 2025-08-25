@@ -5,9 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.database import get_db
 from src.app.auth.jwt_dependencies import get_current_active_user
 from src.app.auth.models import User
-from src.app.todos.access_service import (
-    user_can_access_item,
-)
+from src.app.todos.domain.access_control_service import user_can_access_item
 from src.app.todos.items.models import TodoItem
 
 

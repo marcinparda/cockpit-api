@@ -1,10 +1,9 @@
-"""Access control service for Todo app collaboration feature."""
+"""Domain service for Todo access control business rules."""
 
 from sqlalchemy import and_
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import and_, or_
 
 from src.app.todos.projects.models import TodoProject
 from src.app.todos.collaborators.models import TodoProjectCollaborator
@@ -102,50 +101,3 @@ async def user_can_access_item(
 
     # Check access to the project
     return await can_user_access_project(db, project_id, user_id)
-
-
-async def user_is_project_owner(
-    db: AsyncSession,
-    project_id: int,
-    user_id: UUID
-) -> bool:
-    """
-    Check if a user is the owner of a project.
-
-    Args:
-        db: Database session
-        project_id: ID of the project to check
-        user_id: ID of the user
-
-    Returns:
-        True if user is the owner, False otherwise
-    """
-    result = await db.execute(
-        select(TodoProject)
-        .where(and_(
-            TodoProject.id == project_id,
-            TodoProject.owner_id == user_id
-        ))
-    )
-    return result.scalars().first() is not None
-
-
-async def is_general_project(
-    db: AsyncSession,
-    project_id: int
-) -> bool:
-    """
-    Check if a project is a "General" project.
-
-    Args:
-        db: Database session
-        project_id: ID of the project to check
-
-    Returns:
-        True if project is a General project, False otherwise
-    """
-    result = await db.execute(
-        select(TodoProject.is_general)
-        .where(TodoProject.id == project_id)
-    )
-    return result.scalar() or False
