@@ -52,7 +52,7 @@ poetry run pytest --cov=src
 poetry install
 ```
 
-## Architecture OverviewYe
+## Architecture Overview
 
 ### Core Structure
 
@@ -305,10 +305,11 @@ Endpoints are organized by feature domains using DDD modules:
 
 ### Key Services
 
-- **AuthService**: Handles login, token generation, and user authentication
-- **UserService**: User management operations including password changes
-- **TokenService**: JWT token creation, validation, and cleanup
-- **TodoAccessService**: Manages todo project access permissions and collaboration
+- **AuthService** (`src/app/auth/service.py`): Handles login, token generation, and user authentication
+- **UserService** (`src/app/users/service.py`): User management operations including password changes
+- **TokenService** (`src/app/auth/token_service.py`): JWT token creation, validation, and cleanup
+- **TodoAccessService** (`src/app/todos/access_service.py`): Manages todo project access permissions and collaboration
+- **TokenCleanupService** (`src/tasks/token_cleanup.py`): Background token cleanup and maintenance operations
 
 ## Development Guidelines
 
@@ -323,7 +324,7 @@ When adding new features following the DDD approach:
 5. Apply migration: `alembic upgrade head`
 6. **Update CLAUDE.md**: After any database schema changes, update the "Database Schema" section in this file to reflect new tables, columns, or relationships
 
-**Note**: For legacy models still in `src/models/`, follow the existing pattern, but prefer creating new models within domain modules.
+**Note**: For legacy models still in `src/models/`, follow the existing pattern, but prefer creating new models within domain modules. All services have been migrated to their respective domain modules.
 
 ### Permission-Protected Endpoints
 
@@ -384,7 +385,6 @@ src/
 │       └── rate_limit.py            # Rate limiting middleware
 ├── models/                          # Global SQLAlchemy models (legacy - being phased out)
 ├── schemas/                         # Global Pydantic schemas (legacy - being phased out)
-├── services/                        # Global services (legacy - being phased out)
 ├── tasks/                           # Background tasks
 │   └── token_cleanup.py             # Token cleanup scheduler
 ├── app/                             # Domain modules (DDD approach)
@@ -392,9 +392,14 @@ src/
 │   │   ├── dependencies.py          # Auth-specific dependencies
 │   │   ├── jwt.py                   # JWT token handling
 │   │   ├── jwt_dependencies.py      # JWT FastAPI dependencies
+│   │   ├── models.py                # Authentication database models
 │   │   ├── password.py              # Password hashing utilities
 │   │   ├── permissions.py           # Permission management
 │   │   ├── permission_helpers.py    # Permission utility functions
+│   │   ├── router.py                # Authentication API endpoints
+│   │   ├── schemas.py               # Authentication Pydantic schemas
+│   │   ├── service.py               # Authentication business logic
+│   │   ├── token_service.py         # Token management service
 │   │   └── enums/                   # Auth-related enums
 │   │       ├── actions.py           # Permission actions
 │   │       ├── features.py          # Feature definitions
@@ -405,6 +410,7 @@ src/
 │   │   ├── service.py               # User business logic
 │   │   └── core/                    # User core components
 │   ├── todos/                       # Todo management domain
+│   │   ├── access_service.py        # Todo project access control service
 │   │   ├── router.py                # Main todo router
 │   │   ├── projects/                # Todo projects subdomain
 │   │   │   ├── models.py            # Project database models
@@ -462,9 +468,10 @@ src/
 
 2. **Subdomain Organization**: Complex domains like `todos` and `budget` are further organized into subdomains (projects, items, collaborators, expenses, etc.)
 
-3. **Legacy Migration**: The project is transitioning from a layered architecture to DDD:
+3. **Legacy Migration**: The project has transitioned from a layered architecture to DDD:
 
-   - Global `models/`, `schemas/`, and `services/` directories contain legacy code
+   - Global `models/` and `schemas/` directories contain remaining legacy code
+   - The `src/services/` directory has been completely removed, with all services moved to their respective domains
    - New development follows the domain module pattern in `src/app/`
    - Authentication remains centralized due to its cross-cutting nature
 
