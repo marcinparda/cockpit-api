@@ -11,7 +11,7 @@ from src.app.auth.models import User
 from src.app.auth.enums.actions import Actions
 from src.app.auth.permission_helpers import get_categories_permissions
 from src.app.auth.jwt_dependencies import get_current_active_user
-from src.services.todo_access_service import can_user_access_project, user_is_project_owner
+from src.app.todos.access_service import can_user_access_project, user_is_project_owner
 from src.app.todos.collaborators.service import (
     validate_collaborators_batch,
     create_collaborators,

@@ -3,7 +3,6 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from fastapi import HTTPException, status, Response
-from typing import cast, Literal
 from src.core.config import settings
 
 

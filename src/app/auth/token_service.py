@@ -6,7 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.auth.models import AccessToken
 from src.app.auth.models import RefreshToken
-from src.app.auth.models import User
 from src.core.config import settings
 
 
@@ -119,7 +118,7 @@ class TokenService:
         )
         token = result.scalar_one_or_none()
         if token:
-            token.is_revoked = True  # type: ignore
+            token.is_revoked = True
             await db.commit()
             return True
         return False
@@ -132,7 +131,7 @@ class TokenService:
         )
         token = result.scalar_one_or_none()
         if token:
-            token.is_revoked = True  # type: ignore
+            token.is_revoked = True
             await db.commit()
             return True
         return False
@@ -147,7 +146,7 @@ class TokenService:
         if token:
             # Convert timezone-aware datetime to naive for database storage
             now = datetime.now(timezone.utc)
-            token.last_used_at = now.replace(tzinfo=None)  # type: ignore
+            token.last_used_at = now.replace(tzinfo=None)
             await db.commit()
             return True
         return False
@@ -162,7 +161,7 @@ class TokenService:
         if token:
             # Convert timezone-aware datetime to naive for database storage
             now = datetime.now(timezone.utc)
-            token.last_used_at = now.replace(tzinfo=None)  # type: ignore
+            token.last_used_at = now.replace(tzinfo=None)
             await db.commit()
             return True
         return False
@@ -192,11 +191,11 @@ class TokenService:
 
         revoked_count = 0
         for access_token in access_tokens:
-            access_token.is_revoked = True  # type: ignore
+            access_token.is_revoked = True
             revoked_count += 1
 
         for refresh_token in refresh_tokens:
-            refresh_token.is_revoked = True  # type: ignore
+            refresh_token.is_revoked = True
             revoked_count += 1
 
         await db.commit()

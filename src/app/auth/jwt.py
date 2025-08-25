@@ -9,7 +9,8 @@ from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.config import settings
-from src.app.auth.schemas import TokenData, TokenResponse, RefreshTokenResponse
+from src.app.auth.schemas import TokenResponse, RefreshTokenResponse
+from src.app.auth.token_service import TokenService
 
 
 def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
@@ -103,7 +104,6 @@ async def verify_token(token: str, db: Optional[AsyncSession] = None) -> Dict[st
 
         # Check if token is revoked in database (if database session provided)
         if db and jti:
-            from src.services.token_service import TokenService
 
             token_type = payload.get("token_type", "access")
             is_valid = False
@@ -148,7 +148,7 @@ async def invalidate_token(token: str, db: Optional[AsyncSession] = None) -> boo
             return False
 
         if db:
-            from src.services.token_service import TokenService
+            from src.app.auth.token_service import TokenService
 
             token_type = payload.get("token_type", "access")
             if token_type == "refresh":
@@ -240,7 +240,7 @@ async def create_refresh_token_response(
 
     # Store tokens in database if database session provided
     if db:
-        from src.services.token_service import TokenService
+        from src.app.auth.token_service import TokenService
 
         # Extract JTIs and expiration times
         access_payload = jwt.decode(

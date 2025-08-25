@@ -8,7 +8,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from src.core.config import settings
-from src.services.task_service import TokenCleanupService
+from src.tasks.token_cleanup import TokenCleanupService
 
 logger = logging.getLogger(__name__)
 

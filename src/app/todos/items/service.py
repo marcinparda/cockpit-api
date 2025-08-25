@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.todos.items import repository as repository
 from src.app.todos.items.models import TodoItem as TodoItemModel
-from src.services.todo_access_service import get_accessible_project_ids
+from src.app.todos.access_service import get_accessible_project_ids
 
 
 async def list_items_by_project(db: AsyncSession, project_id: int) -> List[TodoItemModel]:

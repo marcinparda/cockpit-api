@@ -13,7 +13,7 @@ from src.app.auth.schemas import (
     Permission as PermissionSchema,
     UserRole as UserRoleSchema,
 )
-from src.services.auth_service import (
+from src.app.auth.service import (
     login_user, refresh_user_tokens
 )
 from src.app.users.service import change_user_password, get_user_with_permissions, get_user_with_role, get_all_roles
@@ -22,7 +22,7 @@ from src.app.auth.jwt_dependencies import get_current_active_user
 from src.app.auth.dependencies import require_admin_role
 from src.app.auth.jwt import invalidate_token
 from src.app.auth.models import User
-from src.services.task_service import TokenCleanupService
+from src.tasks.token_cleanup import TokenCleanupService
 from src.core.config import settings
 
 

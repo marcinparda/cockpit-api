@@ -8,7 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError as DatabaseError
 from jose import JWTError
 
 from src.app.auth.jwt import extract_token_id
-from src.services.token_service import TokenService
+from src.app.auth.token_service import TokenService
 from src.core.database import async_session_maker
 
 

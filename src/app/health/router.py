@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 from typing import Dict, Any
 from datetime import datetime, timezone
 
-from src.services.task_service import TokenCleanupService
+from src.tasks.token_cleanup import TokenCleanupService
 from src.core.scheduler import task_scheduler
 from src.core.config import settings
 

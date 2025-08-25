@@ -16,7 +16,7 @@ from src.app.auth.models import User
 from src.app.auth.enums.actions import Actions
 from src.app.auth.permission_helpers import get_categories_permissions
 from src.app.auth.jwt_dependencies import get_current_active_user
-from src.services.todo_access_service import can_user_access_project, is_general_project, user_is_project_owner
+from src.app.todos.access_service import can_user_access_project, is_general_project, user_is_project_owner
 from src.app.todos.projects.service import (
     list_user_projects_schemas,
     get_owner_email,
