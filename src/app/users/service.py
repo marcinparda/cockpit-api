@@ -10,13 +10,28 @@ from fastapi import HTTPException, status
 import secrets
 import string
 
-from src.app.auth.models import User
-from src.app.auth.models import UserRole
-from src.app.auth.models import UserPermission
-from src.app.auth.models import Permission
-from src.app.auth.password import hash_password, verify_password, validate_password_strength
-from src.app.auth.enums.roles import Roles
-from src.app.todos.projects.service import create_project
+from src.app.users.models import User
+from src.app.authorization.models import UserRole
+from src.app.authorization.models import UserPermission
+from src.app.authorization.models import Permission
+from src.app.authentication.password_service import hash_password, verify_password, validate_password_strength
+
+
+async def get_user_with_role(db: AsyncSession, user_id: UUID) -> Optional[User]:
+    """
+    Get user with role information.
+    Args:
+        db: Database session
+        user_id: User's UUID
+    Returns:
+        User object with role loaded, None if not found
+    """
+    result = await db.execute(
+        select(User)
+        .options(selectinload(User.role))
+        .where(User.id == user_id)
+    )
+    return result.scalars().first()
 
 
 async def get_user_by_id(db: AsyncSession, user_id: UUID) -> Optional[User]:
@@ -49,25 +64,6 @@ async def get_user_by_email(db: AsyncSession, email: str) -> Optional[User]:
     """
     result = await db.execute(
         select(User).where(User.email == email)
-    )
-    return result.scalars().first()
-
-
-async def get_user_with_role(db: AsyncSession, user_id: UUID) -> Optional[User]:
-    """
-    Get user with role information.
-
-    Args:
-        db: Database session
-        user_id: User's UUID
-
-    Returns:
-        User object with role loaded, None if not found
-    """
-    result = await db.execute(
-        select(User)
-        .options(selectinload(User.role))
-        .where(User.id == user_id)
     )
     return result.scalars().first()
 
@@ -150,36 +146,6 @@ async def change_user_password(
     await db.refresh(user)
 
     return True
-
-
-async def get_user_permissions(db: AsyncSession, user_id: UUID) -> Sequence[Permission]:
-    """
-    Get all permissions for a user.
-
-    Args:
-        db: Database session
-        user_id: User's UUID
-
-    Returns:
-        Sequence of Permission objects
-    """
-    # Get user with role
-    user = await get_user_with_role(db, user_id)
-    if not user or user.is_active is False:
-        return []
-
-    # Admin users have all permissions
-    if user.role and user.role.name == Roles.ADMIN.value:
-        result = await db.execute(select(Permission))
-        return result.scalars().all()
-
-    # Get user-specific permissions
-    result = await db.execute(
-        select(Permission)
-        .join(UserPermission)
-        .where(UserPermission.user_id == user_id)
-    )
-    return result.scalars().all()
 
 
 def generate_temporary_password(length: int = 12) -> str:
@@ -292,17 +258,6 @@ async def create_user(
     db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
-
-    general_project = await create_project(
-        db,
-        name="General",
-        owner_id=UUID(str(new_user.id))
-    )
-    db.add(general_project)
-    await db.commit()
-
-    # Load role relationship
-    await db.refresh(new_user, ["role"])
 
     return new_user
 

@@ -1,5 +1,3 @@
-"""Password hashing and verification utilities using bcrypt directly."""
-
 import bcrypt
 from src.core.config import settings
 
@@ -77,33 +75,3 @@ def validate_password_strength(password: str) -> tuple[bool, list[str]]:
         errors.append("Password must contain at least one special character")
 
     return len(errors) == 0, errors
-
-
-def needs_rehash(hashed_password: str) -> bool:
-    """
-    Check if a password hash needs to be rehashed.
-
-    This checks if the hash was created with different bcrypt rounds
-    than the current configuration.
-
-    Args:
-        hashed_password: The stored password hash
-
-    Returns:
-        True if the password should be rehashed, False otherwise
-    """
-    try:
-        # Extract the cost (rounds) from the hash
-        # bcrypt hash format: $2b$rounds$salt+hash
-        if not hashed_password.startswith('$2b$'):
-            return True  # Not a bcrypt hash, needs rehashing
-
-        parts = hashed_password.split('$')
-        if len(parts) < 4:
-            return True  # Invalid format
-
-        hash_rounds = int(parts[2])
-        return hash_rounds != settings.BCRYPT_ROUNDS
-    except Exception:
-        # If we can't parse the hash, it definitely needs updating
-        return True

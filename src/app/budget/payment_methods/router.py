@@ -9,8 +9,8 @@ from .service import (
     update_payment_method,
     delete_payment_method
 )
-from src.app.auth.enums.actions import Actions
-from src.app.auth.permission_helpers import get_payment_methods_permissions
+from src.app.authorization.enums.actions import Actions
+from src.app.authorization.feature_permission_service import get_payment_methods_permissions
 
 router = APIRouter()
 

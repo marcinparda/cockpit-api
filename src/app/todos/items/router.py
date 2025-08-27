@@ -5,15 +5,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated
 
 from src.core.database import get_db
-from src.app.auth.models import User
+from src.app.users.models import User
 from src.app.todos.items.schemas import (
     TodoItem,
     TodoItemCreate,
     TodoItemUpdate,
 )
-from src.app.auth.enums.actions import Actions
-from src.app.auth.permission_helpers import get_todo_items_permissions
-from src.app.auth.jwt_dependencies import get_current_active_user
+from src.app.authorization.enums.actions import Actions
+from src.app.authorization.feature_permission_service import get_todo_items_permissions
+from src.app.authentication.jwt_dependencies import get_current_active_user
 from src.app.todos.items.dependencies import (
     can_access_item,
 )

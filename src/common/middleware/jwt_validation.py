@@ -1,14 +1,14 @@
 """JWT token validation middleware."""
 
 from typing import Optional
-from fastapi import Request, HTTPException, status
+from fastapi import Request, status
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError as DatabaseError
 from jose import JWTError
 
-from src.app.auth.jwt import extract_token_id
-from src.app.auth.token_service import TokenService
+from src.app.authentication.jwt_service import extract_token_id
+from src.app.authentication.token_service import is_access_token_valid, update_access_token_last_used_timestamp
 from src.core.database import async_session_maker
 
 
@@ -61,7 +61,7 @@ class JWTValidationMiddleware(BaseHTTPMiddleware):
         if token_id:
             try:
                 async with async_session_maker() as db:
-                    is_valid = await TokenService.is_access_token_valid(db, token_id)
+                    is_valid = await is_access_token_valid(db, token_id)
                     if not is_valid:
                         return JSONResponse(
                             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -71,7 +71,7 @@ class JWTValidationMiddleware(BaseHTTPMiddleware):
                         )
 
                     # Update token last used timestamp
-                    await TokenService.update_access_token_last_used(db, token_id)
+                    await update_access_token_last_used_timestamp(db, token_id)
 
             except DatabaseError as db_error:
                 # Log database-related errors but don't block the request

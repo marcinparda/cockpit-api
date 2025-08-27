@@ -4,7 +4,7 @@ from sqlalchemy import Integer, UniqueConstraint, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from src.app.todos.projects.models import TodoProject
-from src.app.auth.models import User
+from src.app.users.models import User
 
 from src.common.models import BaseModel
 

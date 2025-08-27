@@ -9,8 +9,7 @@ from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.config import settings
-from src.app.auth.schemas import TokenResponse, RefreshTokenResponse
-from src.app.auth.token_service import TokenService
+from src.app.authentication import token_service
 
 
 def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
@@ -109,11 +108,11 @@ async def verify_token(token: str, db: Optional[AsyncSession] = None) -> Dict[st
             is_valid = False
 
             if token_type == "refresh":
-                is_valid = await TokenService.is_refresh_token_valid(db, jti)
+                is_valid = await token_service.is_refresh_token_valid(db, jti)
             else:
-                is_valid = await TokenService.is_access_token_valid(db, jti)
+                is_valid = await token_service.is_access_token_valid(db, jti)
                 # Update last used timestamp for access tokens
-                await TokenService.update_access_token_last_used(db, jti)
+                await token_service.update_access_token_last_used_timestamp(db, jti)
 
             if not is_valid:
                 raise JWTError("Token has been invalidated")
@@ -148,13 +147,11 @@ async def invalidate_token(token: str, db: Optional[AsyncSession] = None) -> boo
             return False
 
         if db:
-            from src.app.auth.token_service import TokenService
-
             token_type = payload.get("token_type", "access")
             if token_type == "refresh":
-                return await TokenService.revoke_refresh_token(db, jti)
+                return await token_service.revoke_refresh_token(db, jti)
             else:
-                return await TokenService.revoke_access_token(db, jti)
+                return await token_service.revoke_access_token(db, jti)
 
         return True  # Fallback to success if no database session
     except JWTError:
@@ -181,46 +178,21 @@ def extract_token_id(token: str) -> Optional[str]:
         return None
 
 
-def create_token_response(user_id: UUID, email: str) -> TokenResponse:
-    """
-    Create a complete token response for login.
-
-    Args:
-        user_id: The user's UUID
-        email: The user's email address
-
-    Returns:
-        TokenResponse containing access token and metadata
-    """
-    access_token_expires = timedelta(hours=settings.JWT_EXPIRE_HOURS)
-
-    access_token = create_access_token(
-        data={"sub": str(user_id), "email": email},
-        expires_delta=access_token_expires
-    )
-
-    return TokenResponse(
-        access_token=access_token,
-        token_type="bearer",
-        expires_in=settings.JWT_EXPIRE_HOURS * 3600  # Convert hours to seconds
-    )
-
-
-async def create_refresh_token_response(
+async def create_tokens_with_storage(
     user_id: UUID,
     email: str,
-    db: Optional[AsyncSession] = None
-) -> RefreshTokenResponse:
+    db: AsyncSession
+) -> Tuple[str, str]:
     """
-    Create a complete refresh token response for login with database token tracking.
+    Create access and refresh tokens with database storage.
 
     Args:
         user_id: The user's UUID
         email: The user's email address
-        db: Optional database session for token storage
+        db: Database session for token storage
 
     Returns:
-        RefreshTokenResponse containing access token, refresh token and metadata
+        Tuple of (access_token, refresh_token)
     """
     access_token_expires = timedelta(hours=settings.JWT_EXPIRE_HOURS)
     refresh_token_expires = timedelta(days=settings.JWT_REFRESH_EXPIRE_DAYS)
@@ -238,51 +210,40 @@ async def create_refresh_token_response(
         expires_delta=refresh_token_expires
     )
 
-    # Store tokens in database if database session provided
-    if db:
-        from src.app.auth.token_service import TokenService
-
-        # Extract JTIs and expiration times
-        access_payload = jwt.decode(
-            access_token,
-            settings.JWT_SECRET_KEY,
-            algorithms=[settings.JWT_ALGORITHM]
-        )
-        refresh_payload = jwt.decode(
-            refresh_token,
-            settings.JWT_SECRET_KEY,
-            algorithms=[settings.JWT_ALGORITHM]
-        )
-
-        access_jti = access_payload.get("jti")
-        refresh_jti = refresh_payload.get("jti")
-        access_exp_timestamp = access_payload.get("exp")
-        refresh_exp_timestamp = refresh_payload.get("exp")
-
-        if not access_exp_timestamp or not refresh_exp_timestamp:
-            raise JWTError("Missing expiration in token payload")
-
-        access_exp = datetime.fromtimestamp(
-            access_exp_timestamp, tz=timezone.utc)
-        refresh_exp = datetime.fromtimestamp(
-            refresh_exp_timestamp, tz=timezone.utc)
-
-        if access_jti:
-            await TokenService.create_access_token(db, access_jti, user_id, access_exp)
-        if refresh_jti:
-            await TokenService.create_refresh_token(db, refresh_jti, user_id, refresh_exp)
-
-    return RefreshTokenResponse(
-        access_token=access_token,
-        refresh_token=refresh_token,
-        token_type="bearer",
-        expires_in=settings.JWT_EXPIRE_HOURS * 3600,  # Convert hours to seconds
-        refresh_expires_in=settings.JWT_REFRESH_EXPIRE_DAYS *
-        24 * 3600  # Convert days to seconds
+    # Extract JTIs and expiration times
+    access_payload = jwt.decode(
+        access_token,
+        settings.JWT_SECRET_KEY,
+        algorithms=[settings.JWT_ALGORITHM]
+    )
+    refresh_payload = jwt.decode(
+        refresh_token,
+        settings.JWT_SECRET_KEY,
+        algorithms=[settings.JWT_ALGORITHM]
     )
 
+    access_jti = access_payload.get("jti")
+    refresh_jti = refresh_payload.get("jti")
+    access_exp_timestamp = access_payload.get("exp")
+    refresh_exp_timestamp = refresh_payload.get("exp")
 
-async def refresh_access_token(refresh_token: str, db: Optional[AsyncSession] = None) -> Tuple[str, str]:
+    if not access_exp_timestamp or not refresh_exp_timestamp:
+        raise JWTError("Missing expiration in token payload")
+
+    access_exp = datetime.fromtimestamp(
+        access_exp_timestamp, tz=timezone.utc)
+    refresh_exp = datetime.fromtimestamp(
+        refresh_exp_timestamp, tz=timezone.utc)
+
+    if access_jti:
+        await token_service.create_access_token(db, access_jti, user_id, access_exp)
+    if refresh_jti:
+        await token_service.create_refresh_token(db, refresh_jti, user_id, refresh_exp)
+
+    return access_token, refresh_token
+
+
+async def refresh_access_token(refresh_token: str, db: AsyncSession) -> Tuple[str, str]:
     """
     Create new access token using refresh token.
 
@@ -309,13 +270,10 @@ async def refresh_access_token(refresh_token: str, db: Optional[AsyncSession] = 
         if not user_id or not email:
             raise JWTError("Invalid token payload")
 
-        # Invalidate old refresh token
-        if db:
-            await invalidate_token(refresh_token, db)
+        await invalidate_token(refresh_token, db)
 
         # Create new tokens
-        response = await create_refresh_token_response(UUID(user_id), email, db)
-        return response.access_token, response.refresh_token
+        return await create_tokens_with_storage(UUID(user_id), email, db)
 
     except JWTError:
         raise

@@ -12,10 +12,10 @@ from src.app.todos.projects.schemas import (
     TodoProjectUpdate,
     TodoProjectOwner as TodoProjectOwnerSchema,
 )
-from src.app.auth.models import User
-from src.app.auth.enums.actions import Actions
-from src.app.auth.permission_helpers import get_categories_permissions
-from src.app.auth.jwt_dependencies import get_current_active_user
+from src.app.users.models import User
+from src.app.authorization.enums.actions import Actions
+from src.app.authorization.feature_permission_service import get_categories_permissions
+from src.app.authentication.jwt_dependencies import get_current_active_user
 from src.app.todos.domain.access_control_service import can_user_access_project
 from src.app.todos.projects.service import (
     list_user_projects_schemas,

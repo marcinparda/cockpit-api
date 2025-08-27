@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional, List
 from uuid import UUID
 from pydantic import BaseModel, EmailStr, field_validator
-from src.app.auth.schemas import UserRole, Permission
+from src.app.authentication.schemas import UserRole, Permission
 
 
 class UserBase(BaseModel):

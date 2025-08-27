@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.app.todos.collaborators.models import TodoProjectCollaborator
 from src.app.todos.collaborators import repository
 from src.app.todos.collaborators.schemas import TodoProjectCollaboratorResponse
-from src.app.auth.models import User
+from src.app.users.models import User
 
 
 async def validate_collaborators_batch(

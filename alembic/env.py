@@ -7,7 +7,8 @@ from alembic import context
 # Import your Base and settings
 from src.core.config import settings
 # Import all models from their new domain locations
-from src.app.auth.models import *
+from src.app.authentication.models import *
+from src.app.authorization.models import *
 from src.app.budget.models import *
 # Import todo models to resolve relationships
 from src.app.todos.projects.models import *

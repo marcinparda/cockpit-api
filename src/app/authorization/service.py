@@ -3,17 +3,18 @@ from sqlalchemy.future import select
 from uuid import UUID
 from typing import Sequence
 
-from src.app.auth.models import Feature
-from src.app.auth.models import Action
-from src.app.auth.models import Permission
-from src.app.auth.models import User
-from src.app.auth.models import UserPermission
-from src.app.auth.enums.actions import Actions
-from src.app.auth.enums.features import Features
-from src.app.auth.enums.roles import Roles
+from src.app.authorization.models import Feature
+from src.app.authorization.models import Action
+from src.app.authorization.models import Permission
+from src.app.authorization.models import UserPermission
+
+from src.app.users.models import User
+from src.app.authorization.enums.actions import Actions
+from src.app.authorization.enums.features import Features
+from src.app.authorization.enums.roles import Roles
 
 
-async def check_user_permissions(
+async def has_user_permissions(
     db: AsyncSession,
     user_id: UUID,
     feature: Features,
@@ -31,7 +32,6 @@ async def check_user_permissions(
     Returns:
         True if the user has permission, False otherwise
     """
-    # Get user with role
     user_query = await db.execute(
         select(User).where(User.id == user_id)
     )
@@ -96,7 +96,6 @@ async def get_user_permissions(
     Returns:
         Sequence of Permission objects
     """
-    # Get user with role
     user_query = await db.execute(
         select(User).where(User.id == user_id)
     )
@@ -116,28 +115,6 @@ async def get_user_permissions(
         .where(UserPermission.user_id == user_id)
     )
     return result.scalars().all()
-
-
-async def user_has_admin_role(
-    db: AsyncSession,
-    user_id: UUID
-) -> bool:
-    """
-    Check if user has admin role.
-
-    Args:
-        db: Database session
-        user_id: UUID of the user
-
-    Returns:
-        True if user has admin role, False otherwise
-    """
-    user_query = await db.execute(
-        select(User).where(User.id == user_id)
-    )
-    user = user_query.scalars().first()
-
-    return bool(user and user.role and user.role.name == Roles.ADMIN.value)
 
 
 async def get_admin_permissions(

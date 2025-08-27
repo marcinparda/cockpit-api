@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.todos.collaborators.models import TodoProjectCollaborator
 from src.app.todos.projects.models import TodoProject
-from src.app.auth.models import User
+from src.app.users.models import User
 
 
 async def list_project_collaborators(db: AsyncSession, project_id: int) -> List[TodoProjectCollaborator]:

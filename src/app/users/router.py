@@ -5,22 +5,23 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.app.auth.jwt_dependencies import get_current_active_user
+from src.app.authentication.jwt_dependencies import get_current_active_user
 from src.core.database import get_db
 from .schemas import (
     UserCreate, UserUpdate, UserWithRole, UserWithPermissions,
     UserPermissionAssign, PasswordResetRequest,
     PasswordResetResponse, UserPermissionAssignResponse, SimpleUserResponse
 )
-from src.app.auth.schemas import Permission as PermissionSchema
+from src.app.authentication.schemas import Permission as PermissionSchema
 from .service import (
-    get_all_users, create_user, get_user_by_id, update_user, delete_user,
+    get_all_users, get_user_by_id, update_user, delete_user,
     assign_user_role, assign_user_permissions, revoke_user_permission,
-    reset_user_password, get_user_with_permissions,
-    get_user_permissions
+    reset_user_password, get_user_with_permissions
 )
-from src.app.auth.dependencies import require_admin_role
-from src.app.auth.models import User
+from .domain.user_onboarding_service import onboard_new_user
+from src.app.authorization.service import get_user_permissions
+from src.app.authorization.dependencies import require_admin_role
+from src.app.users.models import User
 
 router = APIRouter()
 
@@ -45,7 +46,7 @@ async def create_new_user(
     db: AsyncSession = Depends(get_db)
 ) -> UserWithRole:
     """Create a new user account (admin only)."""
-    user = await create_user(
+    user = await onboard_new_user(
         db=db,
         email=user_data.email,
         role_id=user_data.role_id,

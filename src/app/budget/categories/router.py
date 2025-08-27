@@ -9,8 +9,8 @@ from .service import (
     update_category,
     delete_category
 )
-from src.app.auth.enums.actions import Actions
-from src.app.auth.permission_helpers import get_categories_permissions
+from src.app.authorization.enums.actions import Actions
+from src.app.authorization.feature_permission_service import get_categories_permissions
 
 router = APIRouter()
 

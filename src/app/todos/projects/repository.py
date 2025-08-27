@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.todos.projects.models import TodoProject as TodoProjectModel
 from src.app.todos.collaborators.models import TodoProjectCollaborator
-from src.app.auth.models import User
+from src.app.users.models import User
 
 
 async def list_projects_owned_by(db: AsyncSession, owner_id: UUID) -> List[TodoProjectModel]:

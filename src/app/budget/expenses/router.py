@@ -9,8 +9,8 @@ from .service import (
     update_expense,
     delete_expense
 )
-from src.app.auth.enums.actions import Actions
-from src.app.auth.permission_helpers import get_expenses_permissions
+from src.app.authorization.enums.actions import Actions
+from src.app.authorization.feature_permission_service import get_expenses_permissions
 
 router = APIRouter()
 

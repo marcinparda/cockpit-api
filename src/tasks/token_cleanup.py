@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 
-from src.app.auth.token_service import TokenService
+from src.app.authentication import token_service
 from src.core.database import async_session_maker
 from src.core.config import settings
 
@@ -44,12 +44,12 @@ class TokenCleanupService:
             async with async_session_maker() as db:
                 # Clean up expired tokens
                 logger.info("Cleaning up expired tokens")
-                expired_stats = await TokenService.cleanup_expired_tokens(db)
+                expired_stats = await token_service.cleanup_expired_tokens(db)
                 cleanup_stats["expired_cleanup"] = expired_stats
 
                 # Clean up old revoked tokens
                 logger.info("Cleaning up old revoked tokens")
-                revoked_stats = await TokenService.cleanup_old_revoked_tokens(
+                revoked_stats = await token_service.cleanup_old_revoked_tokens(
                     db, retention_days
                 )
                 cleanup_stats["revoked_cleanup"] = revoked_stats
@@ -87,7 +87,7 @@ class TokenCleanupService:
         """Get current token statistics for monitoring."""
         try:
             async with async_session_maker() as db:
-                stats = await TokenService.get_token_statistics(db)
+                stats = await token_service.get_token_statistics(db)
                 return {
                     "success": True,
                     "statistics": stats,
@@ -114,7 +114,7 @@ class TokenCleanupService:
         try:
             # Check database connectivity
             async with async_session_maker() as db:
-                stats = await TokenService.get_token_statistics(db)
+                stats = await token_service.get_token_statistics(db)
                 health_status["checks"]["database"] = {
                     "status": "healthy",
                     "message": "Database connection successful"

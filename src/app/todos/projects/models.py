@@ -8,7 +8,7 @@ from src.core.database import Base
 
 if TYPE_CHECKING:
     from src.app.todos.items.models import TodoItem
-    from src.app.auth.models import User
+    from src.app.users.models import User
     from src.app.todos.collaborators.models import TodoProjectCollaborator
 
 
