@@ -1,0 +1,25 @@
+"""User permission management endpoints."""
+
+from uuid import UUID
+from typing import List
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.services.authorization.user_permissions.service import get_user_permissions_by_user_id
+from src.core.database import get_db
+from src.services.authorization.permissions.models import Permission
+from src.services.authentication.shared.dependencies import get_current_user
+from src.services.users.models import User
+
+
+router = APIRouter()
+
+
+@router.get("/me", response_model=List[Permission])
+async def get_current_user_permission(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get current user's permissions."""
+    current_user_permissions = await get_user_permissions_by_user_id(db, UUID(str(current_user.id)))
+    return [up.permission for up in current_user_permissions if up.permission]

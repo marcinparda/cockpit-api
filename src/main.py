@@ -5,12 +5,12 @@ import asyncio
 import logging
 from typing import List
 
-from src.app.health.router import router as health_router
-from src.app.authentication.router import router as authentication_router
-from src.app.authorization.router import router as authorization_router
-from src.app.todos.router import router as todos_router
-from src.app.users.router import router as users_router
-from src.app.budget.router import router as budget_router
+from src.services.health.router import router as health_router
+from src.services.authentication.router import router as authentication_router
+from src.services.authorization.shared.router import router as authorization_router
+from src.services.todos.router import router as todos_router
+from src.services.users.router import router as users_router
+from src.services.budget.router import router as budget_router
 from src.core.config import settings
 from src.common.middleware.rate_limit import RateLimitMiddleware
 from src.common.middleware.jwt_validation import JWTValidationMiddleware
@@ -76,7 +76,7 @@ app.include_router(
 app.include_router(
     users_router, prefix="/api/v1/users", tags=["users"])
 app.include_router(
-    authentication_router, prefix="/api/v1/auth", tags=["shared/auth"])
+    authentication_router, prefix="/api/v1/authentication", tags=["authentication"])
 app.include_router(
     authorization_router, prefix="/api/v1/authorization", tags=["authorization"])
 app.include_router(

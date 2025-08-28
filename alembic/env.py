@@ -7,13 +7,18 @@ from alembic import context
 # Import your Base and settings
 from src.core.config import settings
 # Import all models from their new domain locations
-from src.app.authentication.models import *
-from src.app.authorization.models import *
-from src.app.budget.models import *
+from src.services.authentication.tokens.models import *
+# Import authorization models from their new submodule locations
+from src.services.authorization.roles.models import *
+from src.services.authorization.permissions.models import *
+from src.services.authorization.user_permissions.models import *
+from src.services.budget.categories.models import *
+from src.services.budget.expenses.models import *
+from src.services.budget.payment_methods.models import *
 # Import todo models to resolve relationships
-from src.app.todos.projects.models import *
-from src.app.todos.items.models import *
-from src.app.todos.collaborators.models import *
+from src.services.todos.projects.models import *
+from src.services.todos.items.models import *
+from src.services.todos.collaborators.models import *
 from src.core.database import Base
 
 # Alembic Config object, provides access to .ini values

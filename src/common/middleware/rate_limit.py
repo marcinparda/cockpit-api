@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 # Import verify_token at module level to make it patchable in tests
 try:
-    from src.app.authentication.jwt_service import verify_token
+    from src.services.authentication.tokens.jwt_service import verify_token
 except ImportError:
     # Handle the case where jwt module is not available during testing
     async def verify_token(token: str, db: Optional[AsyncSession] = None) -> Dict[str, Any]:

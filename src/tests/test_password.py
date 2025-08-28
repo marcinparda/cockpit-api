@@ -1,6 +1,6 @@
 """Tests for password hashing and validation utilities."""
 
-from src.app.authentication.password_service import (
+from src.services.authentication.passwords.service import (
     hash_password,
     verify_password,
     validate_password_strength,
