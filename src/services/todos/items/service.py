@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from typing import List, Sequence, Optional
 from datetime import datetime
-from sqlalchemy import asc, desc
+from uuid import UUID
+from sqlalchemy import asc, desc, and_
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 
 from src.services.todos.items import repository as repository
 from src.services.todos.items.models import TodoItem as TodoItemModel
-from src.services.todos.core.access_control_service import get_accessible_project_ids
+from src.services.todos.projects.service import get_accessible_project_ids, can_user_access_project
 
 
 async def list_items_by_project(db: AsyncSession, project_id: int) -> List[TodoItemModel]:
@@ -78,3 +80,32 @@ async def update_item(db: AsyncSession, item_id: int, **fields) -> Optional[Todo
 async def delete_item(db: AsyncSession, item_id: int) -> Optional[TodoItemModel]:
     """Delete an item and return the deleted object or None if not found."""
     return await repository.delete_item(db, item_id)
+
+
+async def can_user_access_item(
+    db: AsyncSession,
+    item_id: int,
+    user_id: UUID
+) -> bool:
+    """
+    Check if a user has access to an item (via project ownership or collaboration).
+
+    Args:
+        db: Database session
+        item_id: ID of the item to check
+        user_id: ID of the user
+
+    Returns:
+        True if user has access, False otherwise
+    """
+    result = await db.execute(
+        select(TodoItemModel.project_id)
+        .where(TodoItemModel.id == item_id)
+    )
+    project_id = result.scalar()
+
+    if not project_id:
+        return False
+
+    # Check access to the project
+    return await can_user_access_project(db, project_id, user_id)

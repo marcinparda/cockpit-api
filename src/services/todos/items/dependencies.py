@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.database import get_db
 from src.services.authentication.shared.dependencies import get_current_user
 from src.services.users.models import User
-from src.services.todos.core.access_control_service import can_user_access_item
+from src.services.todos.items.service import can_user_access_item
 from src.services.todos.items.models import TodoItem
 
 

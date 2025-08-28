@@ -16,7 +16,6 @@ from src.services.users.models import User
 from src.services.authorization.permissions.enums import Actions
 from src.services.authorization.shared.feature_permission_service import get_categories_permissions
 from src.services.authentication.shared.dependencies import get_current_user
-from src.services.todos.core.access_control_service import can_user_access_project
 from src.services.todos.projects.service import (
     list_user_projects_schemas,
     get_owner_email,
@@ -24,6 +23,7 @@ from src.services.todos.projects.service import (
     build_todo_project_schema,
     is_general_project,
     user_is_project_owner,
+    can_user_access_project,
 )
 from src.services.todos.collaborators.service import get_collaborator_emails
 

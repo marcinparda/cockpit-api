@@ -11,8 +11,7 @@ from src.services.users.models import User
 from src.services.authorization.permissions.enums import Actions
 from src.services.authorization.shared.feature_permission_service import get_categories_permissions
 from src.services.authentication.shared.dependencies import get_current_user
-from src.services.todos.core.access_control_service import can_user_access_project
-from src.services.todos.projects.service import user_is_project_owner
+from src.services.todos.projects.service import user_is_project_owner, can_user_access_project
 from src.services.todos.collaborators.service import (
     validate_collaborators_batch,
     create_collaborators,
