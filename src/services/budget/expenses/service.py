@@ -3,7 +3,6 @@
 from typing import Optional, Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from fastapi import HTTPException, status
 
 from src.services.budget.expenses.models import Expense
 from .schemas import ExpenseCreate, ExpenseUpdate

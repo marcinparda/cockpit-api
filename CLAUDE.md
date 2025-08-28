@@ -93,8 +93,8 @@ Admin users automatically have all permissions. Regular users must have explicit
 
 When adding new features following the DDD approach:
 
-1. Create the database model in the appropriate domain module (e.g., `src/app/todos/projects/models.py`)
-2. Add the feature to `Features` enum in `src.app.authorization.permissions.enums`
+1. Create the database model in the appropriate service (e.g., `src/services/todos/projects/models.py`)
+2. Add the feature to `Features` enum in `src/services/authorization/permissions/enums.py`
 3. Create migration: `alembic revision --autogenerate -m "add_new_feature"`
 4. Update permissions by adding feature-action pairs to the permissions migration
 5. Apply migration: `alembic upgrade head`

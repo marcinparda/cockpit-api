@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.services.authorization.user_permissions.service import get_user_permissions_by_user_id
 from src.core.database import get_db
 from src.services.authorization.permissions.models import Permission
-from src.services.authentication.shared.dependencies import get_current_user
+from src.services.authentication.dependencies import get_current_user
 from src.services.users.models import User
 
 

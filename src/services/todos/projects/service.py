@@ -84,7 +84,7 @@ async def list_user_projects_schemas(
     return projects
 
 
-async def user_is_project_owner(
+async def is_user_project_owner(
     db: AsyncSession,
     project_id: int,
     user_id: UUID

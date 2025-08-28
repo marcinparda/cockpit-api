@@ -7,8 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.database import get_db
 from .schemas import UserRole
 from src.services.authorization.roles.service import get_all_roles, get_user_roles_by_id
-from src.services.authentication.shared.dependencies import get_current_user
-from src.services.authorization.shared.dependencies import require_admin_role
+from src.services.authentication.dependencies import get_current_user
+from src.services.authorization.permissions.dependencies import require_admin_role
 from src.services.users.models import User
 from uuid import UUID
 

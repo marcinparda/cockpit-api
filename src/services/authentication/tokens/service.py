@@ -1,8 +1,11 @@
+import secrets
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Any, Dict, Optional, Tuple
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from jose import JWTError, jwt
+from src.core.config import settings
 from src.services.authentication.tokens.repository import (
     create_access_token_record,
     create_refresh_token_record,
@@ -11,24 +14,238 @@ from src.services.authentication.tokens.repository import (
     update_access_token_revoked_status,
     update_refresh_token_revoked_status,
     update_access_token_last_used,
-    delete_expired_access_tokens,
-    delete_expired_refresh_tokens,
-    delete_old_revoked_access_tokens,
-    delete_old_revoked_refresh_tokens,
-    count_access_tokens_total,
-    count_access_tokens_active,
-    count_access_tokens_revoked,
-    count_access_tokens_expired,
-    count_refresh_tokens_total,
-    count_refresh_tokens_active,
-    count_refresh_tokens_revoked,
-    count_refresh_tokens_expired,
 )
-from src.services.authentication.tokens.jwt_service import (
-    verify_token, invalidate_token, create_tokens_with_storage
-)
-from jose import JWTError
-from src.core.config import settings
+
+
+def create_access_token_jwt(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
+    """
+    Create a JWT access token.
+
+    Args:
+        data: The payload data to encode in the token
+        expires_delta: Optional custom expiration time
+
+    Returns:
+        Encoded JWT token string
+    """
+    to_encode = data.copy()
+
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + \
+            timedelta(hours=settings.JWT_EXPIRE_HOURS)
+
+    # Add standard claims
+    to_encode.update({
+        "exp": expire,
+        "iat": datetime.now(timezone.utc),
+        "jti": secrets.token_urlsafe(32)  # JWT ID for blacklist tracking
+    })
+
+    encoded_jwt = jwt.encode(
+        to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+
+    return encoded_jwt
+
+
+def create_refresh_token_jwt(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
+    """
+    Create a JWT refresh token.
+
+    Args:
+        data: The payload data to encode in the token
+        expires_delta: Optional custom expiration time
+
+    Returns:
+        Encoded JWT refresh token string
+    """
+    to_encode = data.copy()
+
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + \
+            timedelta(days=settings.JWT_REFRESH_EXPIRE_DAYS)
+
+    # Add standard claims
+    to_encode.update({
+        "exp": expire,
+        "iat": datetime.now(timezone.utc),
+        "jti": secrets.token_urlsafe(32),  # JWT ID for blacklist tracking
+        "token_type": "refresh"
+    })
+
+    encoded_jwt = jwt.encode(
+        to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+
+    return encoded_jwt
+
+
+async def verify_token(token: str, db: Optional[AsyncSession] = None) -> Dict[str, Any]:
+    """
+    Verify and decode a JWT token.
+
+    Args:
+        token: The JWT token to verify
+        db: Optional database session for token validation
+
+    Returns:
+        Dictionary containing the decoded payload
+
+    Raises:
+        JWTError: If token is invalid, expired, or malformed
+    """
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY,
+                             algorithms=[settings.JWT_ALGORITHM])
+
+        user_id: Optional[str] = payload.get("sub")
+        jti: Optional[str] = payload.get("jti")
+
+        if user_id is None:
+            raise JWTError("Token missing user identifier")
+
+        # Check if token is revoked in database (if database session provided)
+        if db and jti:
+
+            token_type = payload.get("token_type", "access")
+            is_valid = False
+
+            if token_type == "refresh":
+                is_valid = await is_refresh_token_valid(db, jti)
+            else:
+                is_valid = await is_access_token_valid(db, jti)
+                # Update last used timestamp for access tokens
+                await update_access_token_last_used_timestamp(db, jti)
+
+            if not is_valid:
+                raise JWTError("Token has been invalidated")
+
+        return payload
+
+    except JWTError:
+        raise
+    except ValueError as e:
+        # Handle UUID conversion errors
+        raise JWTError(f"Invalid token format: {e}")
+
+
+async def invalidate_token(token: str, db: Optional[AsyncSession] = None) -> bool:
+    """
+    Invalidate a JWT token by revoking it in the database.
+
+    Args:
+        token: The JWT token to invalidate
+        db: Optional database session for token revocation
+
+    Returns:
+        True if token was successfully invalidated, False otherwise
+    """
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY,
+                             algorithms=[settings.JWT_ALGORITHM])
+
+        jti = payload.get("jti")
+
+        if not jti:
+            return False
+
+        if db:
+            token_type = payload.get("token_type", "access")
+            if token_type == "refresh":
+                return await revoke_refresh_token(db, jti)
+            else:
+                return await revoke_access_token(db, jti)
+
+        return True  # Fallback to success if no database session
+    except JWTError:
+        return False
+
+
+def extract_token_id(token: str) -> Optional[str]:
+    """
+    Extract the JWT ID from a token without full verification.
+
+    Args:
+        token: The JWT token
+
+    Returns:
+        JWT ID if present, None otherwise
+    """
+    try:
+        # Decode without verification to get JTI
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY,
+                             algorithms=[settings.JWT_ALGORITHM],
+                             options={"verify_signature": False})
+        return payload.get("jti")
+    except JWTError:
+        return None
+
+
+async def create_tokens_with_storage(
+    user_id: UUID,
+    email: str,
+    db: AsyncSession
+) -> Tuple[str, str]:
+    """
+    Create access and refresh tokens with database storage.
+
+    Args:
+        user_id: The user's UUID
+        email: The user's email address
+        db: Database session for token storage
+
+    Returns:
+        Tuple of (access_token, refresh_token)
+    """
+    access_token_expires = timedelta(hours=settings.JWT_EXPIRE_HOURS)
+    refresh_token_expires = timedelta(days=settings.JWT_REFRESH_EXPIRE_DAYS)
+
+    access_token_data = {"sub": str(user_id), "email": email}
+    refresh_token_data = {"sub": str(user_id), "email": email}
+
+    access_token = create_access_token_jwt(
+        data=access_token_data,
+        expires_delta=access_token_expires
+    )
+
+    refresh_token = create_refresh_token_jwt(
+        data=refresh_token_data,
+        expires_delta=refresh_token_expires
+    )
+
+    # Extract JTIs and expiration times
+    access_payload = jwt.decode(
+        access_token,
+        settings.JWT_SECRET_KEY,
+        algorithms=[settings.JWT_ALGORITHM]
+    )
+    refresh_payload = jwt.decode(
+        refresh_token,
+        settings.JWT_SECRET_KEY,
+        algorithms=[settings.JWT_ALGORITHM]
+    )
+
+    access_jti = access_payload.get("jti")
+    refresh_jti = refresh_payload.get("jti")
+    access_exp_timestamp = access_payload.get("exp")
+    refresh_exp_timestamp = refresh_payload.get("exp")
+
+    if not access_exp_timestamp or not refresh_exp_timestamp:
+        raise JWTError("Missing expiration in token payload")
+
+    access_exp = datetime.fromtimestamp(
+        access_exp_timestamp, tz=timezone.utc)
+    refresh_exp = datetime.fromtimestamp(
+        refresh_exp_timestamp, tz=timezone.utc)
+
+    if access_jti:
+        await create_access_token(db, access_jti, user_id, access_exp)
+    if refresh_jti:
+        await create_refresh_token(db, refresh_jti, user_id, refresh_exp)
+
+    return access_token, refresh_token
 
 
 async def create_access_token(
@@ -107,75 +324,6 @@ async def update_access_token_last_used_timestamp(db: AsyncSession, jti: str) ->
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     return await update_access_token_last_used(db, jti, now)
 
-
-async def cleanup_expired_tokens(db: AsyncSession) -> dict:
-    """Clean up expired tokens from the database."""
-    now = datetime.now(timezone.utc)
-    now_naive = now.replace(tzinfo=None)
-
-    access_deleted = await delete_expired_access_tokens(db, now_naive)
-    refresh_deleted = await delete_expired_refresh_tokens(db, now_naive)
-
-    return {
-        "expired_access_tokens_deleted": access_deleted,
-        "expired_refresh_tokens_deleted": refresh_deleted,
-        "cleanup_time": now
-    }
-
-
-async def cleanup_old_revoked_tokens(
-    db: AsyncSession,
-    retention_days: Optional[int] = None
-) -> dict:
-    """Clean up old revoked tokens that are past retention period."""
-    if retention_days is None:
-        retention_days = settings.TOKEN_CLEANUP_RETENTION_DAYS
-
-    cutoff_date = datetime.now(timezone.utc) - timedelta(days=retention_days)
-    cutoff_date_naive = cutoff_date.replace(tzinfo=None)
-
-    access_deleted = await delete_old_revoked_access_tokens(db, cutoff_date_naive)
-    refresh_deleted = await delete_old_revoked_refresh_tokens(db, cutoff_date_naive)
-
-    return {
-        "old_revoked_access_tokens_deleted": access_deleted,
-        "old_revoked_refresh_tokens_deleted": refresh_deleted,
-        "retention_days": retention_days,
-        "cutoff_date": cutoff_date,
-        "cleanup_time": datetime.now(timezone.utc)
-    }
-
-
-async def get_token_statistics(db: AsyncSession) -> dict:
-    """Get token usage statistics."""
-    now = datetime.now(timezone.utc)
-    now_naive = now.replace(tzinfo=None)
-
-    access_total = await count_access_tokens_total(db)
-    access_active = await count_access_tokens_active(db, now_naive)
-    access_revoked = await count_access_tokens_revoked(db)
-    access_expired = await count_access_tokens_expired(db, now_naive)
-
-    refresh_total = await count_refresh_tokens_total(db)
-    refresh_active = await count_refresh_tokens_active(db, now_naive)
-    refresh_revoked = await count_refresh_tokens_revoked(db)
-    refresh_expired = await count_refresh_tokens_expired(db, now_naive)
-
-    return {
-        "access_tokens": {
-            "total": access_total,
-            "active": access_active,
-            "revoked": access_revoked,
-            "expired": access_expired
-        },
-        "refresh_tokens": {
-            "total": refresh_total,
-            "active": refresh_active,
-            "revoked": refresh_revoked,
-            "expired": refresh_expired
-        },
-        "generated_at": now
-    }
 
 
 async def refresh_access_token(refresh_token: str, db: AsyncSession):

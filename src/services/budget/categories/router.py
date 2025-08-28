@@ -10,7 +10,7 @@ from .service import (
     delete_category
 )
 from src.services.authorization.permissions.enums import Actions
-from src.services.authorization.shared.feature_permission_service import get_categories_permissions
+from src.services.budget.categories.dependencies import get_categories_permissions
 
 router = APIRouter()
 

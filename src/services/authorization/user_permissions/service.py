@@ -13,7 +13,7 @@ async def get_user_permissions_by_user_id(
     user_id: UUID
 ) -> Sequence[UserPermission]:
     """Get all user permissions for a specific user."""
-    return await repository.get_user_permissions_by_user_id(db, user_id)
+    return await repository.get_user_permissions(db, user_id)
 
 
 async def get_user_permission(

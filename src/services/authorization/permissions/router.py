@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_db
 from .schemas import Permission
-from src.services.authorization.shared.dependencies import require_admin_role
+from src.services.authorization.permissions.dependencies import require_admin_role
 from src.services.users.models import User
 
 

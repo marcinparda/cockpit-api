@@ -3,7 +3,9 @@ from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_db
-from src.services.authentication.shared.dependencies import get_current_user
+from src.services.authentication.dependencies import get_current_user
+from src.services.authorization.permissions.dependencies import require_permission
+from src.services.authorization.permissions.enums import Actions, Features
 from src.services.users.models import User
 from src.services.todos.items.service import can_user_access_item
 from src.services.todos.items.models import TodoItem
@@ -39,3 +41,8 @@ def can_access_item(item_id: int):
         return item
 
     return dependency
+
+
+def get_todo_items_permissions(action: Actions):
+    """User-based todo items permissions dependency."""
+    return require_permission(Features.TODO_ITEMS, action)

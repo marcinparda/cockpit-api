@@ -9,7 +9,7 @@ from uuid import UUID
 from src.services.authorization.user_permissions.models import UserPermission
 
 
-async def get_user_permissions_by_user_id(
+async def get_user_permissions(
     db: AsyncSession,
     user_id: UUID
 ) -> Sequence[UserPermission]:

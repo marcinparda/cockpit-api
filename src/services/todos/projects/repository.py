@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.services.todos.projects.models import TodoProject as TodoProjectModel
 from src.services.todos.collaborators.models import TodoProjectCollaborator
 from src.services.users.models import User
+from datetime import datetime
 
 
 async def list_projects_owned_by(db: AsyncSession, owner_id: UUID) -> List[TodoProjectModel]:
@@ -38,8 +39,6 @@ async def get_user_by_id(db: AsyncSession, user_id: UUID) -> Optional[User]:
 
 
 async def create_project(db: AsyncSession, *, name: str, owner_id: UUID) -> TodoProjectModel:
-    from datetime import datetime
-
     now = datetime.now()
     stmt = (
         insert(TodoProjectModel)

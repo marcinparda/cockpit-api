@@ -10,8 +10,8 @@ from src.services.authentication.sessions.schemas import (
     LoginRequest, LoginResponse, UserInfoResponse
 )
 from src.services.authentication.sessions.service import login_user, secure_logout
-from src.services.authentication.shared.dependencies import get_current_user
-from src.services.authentication.shared.exception_utils import (
+from src.services.authentication.dependencies import get_current_user
+from src.services.authentication.exception_utils import (
     login_exception_handler,
     logout_exception_handler
 )

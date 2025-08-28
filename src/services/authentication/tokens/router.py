@@ -7,8 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.database import get_db
 from src.services.authentication.tokens.schemas import SimpleRefreshResponse
 from src.services.authentication.tokens.service import refresh_access_token
-from src.services.authentication.shared.cookie_utils import set_auth_cookies
-from src.services.authentication.shared.exception_utils import token_refresh_exception_handler
+from src.services.authentication.sessions.cookie_utils import set_auth_cookies
+from src.services.authentication.exception_utils import token_refresh_exception_handler
 
 
 router = APIRouter()

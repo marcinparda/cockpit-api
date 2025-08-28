@@ -7,7 +7,7 @@ from starlette.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError as DatabaseError
 from jose import JWTError
 
-from src.services.authentication.tokens.jwt_service import extract_token_id
+from src.services.authentication.tokens.service import extract_token_id
 from src.services.authentication.tokens.service import is_access_token_valid, update_access_token_last_used_timestamp
 from src.core.database import async_session_maker
 

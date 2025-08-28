@@ -12,8 +12,8 @@ from src.services.todos.items.schemas import (
     TodoItemUpdate,
 )
 from src.services.authorization.permissions.enums import Actions
-from src.services.authorization.shared.feature_permission_service import get_todo_items_permissions
-from src.services.authentication.shared.dependencies import get_current_user
+from src.services.todos.items.dependencies import get_todo_items_permissions
+from src.services.authentication.dependencies import get_current_user
 from src.services.todos.items.dependencies import (
     can_access_item,
 )

@@ -1,12 +1,10 @@
-"""JWT dependencies with token extraction supporting both cookies and Bearer tokens."""
-
 from typing import Optional
 from uuid import UUID
 from fastapi import Depends, HTTPException, status, Cookie
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_db
-from src.services.authentication.tokens.jwt_service import verify_token
+from src.services.authentication.tokens.service import verify_token
 from src.services.users.service import get_user_by_id
 from src.services.users.models import User
 

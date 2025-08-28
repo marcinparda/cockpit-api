@@ -10,7 +10,7 @@ from .service import (
     delete_expense
 )
 from src.services.authorization.permissions.enums import Actions
-from src.services.authorization.shared.feature_permission_service import get_expenses_permissions
+from src.services.budget.expenses.dependencies import get_expenses_permissions
 
 router = APIRouter()
 

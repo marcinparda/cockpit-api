@@ -13,16 +13,14 @@ from src.services.todos.projects.schemas import (
     TodoProjectOwner as TodoProjectOwnerSchema,
 )
 from src.services.users.models import User
-from src.services.authorization.permissions.enums import Actions
-from src.services.authorization.shared.feature_permission_service import get_categories_permissions
-from src.services.authentication.shared.dependencies import get_current_user
+from src.services.authentication.dependencies import get_current_user
 from src.services.todos.projects.service import (
     list_user_projects_schemas,
     get_owner_email,
     create_project,
     build_todo_project_schema,
     is_general_project,
-    user_is_project_owner,
+    is_user_project_owner,
     can_user_access_project,
 )
 from src.services.todos.collaborators.service import get_collaborator_emails
@@ -34,7 +32,6 @@ router = APIRouter()
 async def list_todo_projects(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(get_categories_permissions(Actions.READ))
 ):
     """List all todo projects the user owns or collaborates on."""
     return await list_user_projects_schemas(db, UUID(str(current_user.id)))
@@ -45,7 +42,6 @@ async def create_todo_project(
     project: TodoProjectCreate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(get_categories_permissions(Actions.CREATE))
 ):
     """Create a new todo project."""
     db_project = await create_project(db, name=project.name, owner_id=UUID(str(current_user.id)))
@@ -57,7 +53,6 @@ async def get_todo_project(
     todo_project_id: Annotated[int, Path(...)],
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(get_categories_permissions(Actions.READ))
 ):
     """Get a specific todo project if the user has access."""
     has_access = await can_user_access_project(
@@ -97,7 +92,6 @@ async def update_todo_project(
     todo_project_id: Annotated[int, Path(...)],
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(get_categories_permissions(Actions.UPDATE))
 ):
     """Update a todo project if the user has access and it's not a General project."""
     has_access = await can_user_access_project(
@@ -149,10 +143,9 @@ async def delete_todo_project(
     todo_project_id: Annotated[int, Path(...)],
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(get_categories_permissions(Actions.DELETE))
 ):
     """Delete a todo project if the user is the owner and it's not a General project."""
-    is_owner = await user_is_project_owner(
+    is_owner = await is_user_project_owner(
         db, todo_project_id, UUID(str(current_user.id))
     )
     if not is_owner:

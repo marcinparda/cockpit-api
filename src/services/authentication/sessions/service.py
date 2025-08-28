@@ -1,42 +1,16 @@
 """Session management service."""
 
 from typing import Optional
+from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Response
+from fastapi import Response, HTTPException, status
 
 from src.services.users.models import User
-from src.services.authentication.sessions.repository import get_user_by_email
-from src.services.authentication.passwords.service import verify_password
+from src.services.users.service import get_user_by_email
 from src.services.authentication.sessions.schemas import LoginResponse
-from src.services.authentication.shared.service import AuthService
-
-
-async def authenticate_user(db: AsyncSession, email: str, password: str) -> Optional[User]:
-    """
-    Authenticate a user by email and password.
-
-    Args:
-        db: Database session
-        email: User's email address
-        password: Plain text password
-
-    Returns:
-        User object if authentication successful, None otherwise
-    """
-    # Get user by email
-    user = await get_user_by_email(db, email)
-
-    if not user:
-        return None
-
-    if bool(user.is_active) is False:
-        return None
-
-    # Verify password
-    if not verify_password(password, str(user.password_hash)):
-        return None
-
-    return user
+from src.services.authentication.tokens.service import create_tokens_with_storage
+from src.services.authentication.sessions.cookie_utils import set_auth_cookies
+from src.services.authentication.passwords.service import verify_password
 
 
 async def login_user(db: AsyncSession, email: str, password: str, response: Optional[Response] = None) -> LoginResponse:
@@ -55,14 +29,25 @@ async def login_user(db: AsyncSession, email: str, password: str, response: Opti
     Raises:
         HTTPException: If authentication fails
     """
+    user = await authenticate_user(db, email, password)
 
-    domain_service = AuthService()
-    return await domain_service.authenticate_and_create_session(
-        db=db,
-        email=email,
-        password=password,
-        response=response
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    access_token, refresh_token = await create_tokens_with_storage(
+        user_id=UUID(str(user.id)),
+        email=str(user.email),
+        db=db
     )
+
+    if response:
+        set_auth_cookies(response, access_token, refresh_token)
+
+    return LoginResponse(message="Login successful")
 
 
 async def secure_logout() -> None:
@@ -80,3 +65,29 @@ async def secure_logout() -> None:
     """
 
     pass
+
+
+async def authenticate_user(db: AsyncSession, email: str, password: str) -> Optional[User]:
+    """
+    Authenticate a user by email and password.
+
+    Args:
+        db: Database session
+        email: User's email address
+        password: Plain text password
+
+    Returns:
+        User object if authentication successful, None otherwise
+    """
+    user = await get_user_by_email(db, email)
+
+    if not user:
+        return None
+
+    if bool(user.is_active) is False:
+        return None
+
+    if not verify_password(password, str(user.password_hash)):
+        return None
+
+    return user

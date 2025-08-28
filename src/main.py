@@ -7,7 +7,7 @@ from typing import List
 
 from src.services.health.router import router as health_router
 from src.services.authentication.router import router as authentication_router
-from src.services.authorization.shared.router import router as authorization_router
+from src.services.authorization.router import router as authorization_router
 from src.services.todos.router import router as todos_router
 from src.services.users.router import router as users_router
 from src.services.budget.router import router as budget_router

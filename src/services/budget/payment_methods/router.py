@@ -10,7 +10,7 @@ from .service import (
     delete_payment_method
 )
 from src.services.authorization.permissions.enums import Actions
-from src.services.authorization.shared.feature_permission_service import get_payment_methods_permissions
+from src.services.budget.payment_methods.dependencies import get_payment_methods_permissions
 
 router = APIRouter()
 

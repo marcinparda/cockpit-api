@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 
-from src.services.authentication.tokens.tasks import TokenCleanupService
+from src.services.authentication.tokens.token_cleanup_service import validate_cleanup_health
 from src.core.scheduler import task_scheduler
 from src.core.config import settings
 from .schemas import (
@@ -35,7 +35,7 @@ class HealthService:
             Exception: If health check fails for any reason.
         """
         # Get health status from the cleanup service
-        health_status = await TokenCleanupService.validate_cleanup_health()
+        health_status = await validate_cleanup_health()
 
         # Build scheduler information
         scheduler_info = SchedulerInfo(

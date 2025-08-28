@@ -9,9 +9,8 @@ from src.services.todos.collaborators.schemas import (
 )
 from src.services.users.models import User
 from src.services.authorization.permissions.enums import Actions
-from src.services.authorization.shared.feature_permission_service import get_categories_permissions
-from src.services.authentication.shared.dependencies import get_current_user
-from src.services.todos.projects.service import user_is_project_owner, can_user_access_project
+from src.services.authentication.dependencies import get_current_user
+from src.services.todos.projects.service import is_user_project_owner, can_user_access_project
 from src.services.todos.collaborators.service import (
     validate_collaborators_batch,
     create_collaborators,
@@ -35,11 +34,10 @@ async def add_collaborators(
     project_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(get_categories_permissions(Actions.UPDATE))
 ):
     """Add a list of collaborators to a todo project atomically."""
     # Check ownership
-    is_owner = await user_is_project_owner(
+    is_owner = await is_user_project_owner(
         db, project_id, UUID(str(current_user.id))
     )
     if not is_owner:
@@ -91,7 +89,6 @@ async def list_collaborators(
     project_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(get_categories_permissions(Actions.READ))
 ):
     """List all collaborators for a todo project."""
     # Check access
@@ -117,11 +114,10 @@ async def remove_collaborator(
     project_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(get_categories_permissions(Actions.DELETE))
 ):
     """Remove a collaborator from a todo project."""
     # Check ownership
-    is_owner = await user_is_project_owner(
+    is_owner = await is_user_project_owner(
         db, project_id, UUID(str(current_user.id))
     )
     if not is_owner:

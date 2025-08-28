@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.services.authentication.shared.dependencies import get_current_user
+from src.services.authentication.dependencies import get_current_user
 from src.core.database import get_db
 from .schemas import (
     UserCreate, UserUpdate, UserWithRole,
@@ -17,8 +17,8 @@ from .service import (
     get_all_users, get_user_by_id, update_user, delete_user,
     assign_user_role, assign_user_permissions, revoke_user_permission, onboard_new_user
 )
-from src.services.authorization.shared.access_control_service import get_user_permissions
-from src.services.authorization.shared.dependencies import require_admin_role
+from src.services.authorization.permissions.service import get_user_permissions
+from src.services.authorization.permissions.dependencies import require_admin_role
 from src.services.users.models import User
 
 router = APIRouter()

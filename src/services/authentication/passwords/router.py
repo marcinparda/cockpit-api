@@ -9,8 +9,8 @@ from src.services.authentication.passwords.schemas import (
     PasswordChangeRequest, PasswordChangeResponse
 )
 from src.services.users.service import change_user_password
-from src.services.authentication.shared.dependencies import get_current_user
-from src.services.authentication.shared.exception_utils import password_change_exception_handler
+from src.services.authentication.dependencies import get_current_user
+from src.services.authentication.exception_utils import password_change_exception_handler
 from src.services.users.models import User
 
 
