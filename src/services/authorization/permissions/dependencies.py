@@ -41,6 +41,8 @@ def require_permission(feature: Features, action: Actions):
         Raises:
             HTTPException: If user doesn't have permission
         """
+        await db.refresh(current_user, ["role"])
+
         # Admin users have all permissions
         if current_user.role and current_user.role.name == Roles.ADMIN.value:
             return current_user
@@ -66,12 +68,14 @@ def require_permission(feature: Features, action: Actions):
 
 async def require_admin_role(
     current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ) -> User:
     """
     Dependency to ensure current user has admin role.
 
     Args:
         current_user: Current authenticated user
+        db: Database session
 
     Returns:
         User object if user has admin role
@@ -79,6 +83,8 @@ async def require_admin_role(
     Raises:
         HTTPException: If user is not admin
     """
+    await db.refresh(current_user, ["role"])
+
     if not current_user.role or current_user.role.name != Roles.ADMIN.value:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
