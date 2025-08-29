@@ -98,7 +98,6 @@ When adding new features:
 3. Create migration: `alembic revision --autogenerate -m "add_new_feature"`
 4. Update permissions by adding feature-action pairs to the permissions migration
 5. Apply migration: `alembic upgrade head`
-6. **Update CLAUDE.md**: After any database schema changes, update the "Database Schema" section in this file to reflect new tables, columns, or relationships
 
 ### Permission-Protected Endpoints
 
@@ -139,6 +138,7 @@ Development database connection:
    - `repository.py` - Data access layer (where applicable)
 
 2. **Submodule Organization**: Complex services like `todos`, `budget`, and `authorization` are organized into submodules:
+
    - `todos`: `projects`, `items`, `collaborators`
    - `budget`: `categories`, `expenses`, `payment_methods`
    - `authorization`: `permissions`, `roles`, `user_permissions`
