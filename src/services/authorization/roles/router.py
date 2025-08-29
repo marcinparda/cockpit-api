@@ -23,7 +23,8 @@ async def get_current_user_roles(
 ):
     """Get current user's roles as a list of role names (strings)."""
     user_roles = await get_user_roles_by_id(db, UUID(str(current_user.id)))
-    return [UserRole.model_validate(role) for role in user_roles.roles if role]
+    print(f"User roles: {user_roles}")
+    return [UserRole.model_validate(role) for role in user_roles]
 
 
 @router.get("/", response_model=List[UserRole])

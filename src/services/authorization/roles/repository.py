@@ -8,12 +8,6 @@ from sqlalchemy.future import select
 from src.services.authorization.roles.models import UserRole
 
 
-async def get_user_roles_by_id(db: AsyncSession, user_id: UUID) -> Optional[UserRole]:
-    """Get a role by user ID."""
-    result = await db.execute(select(UserRole).where(UserRole.id == user_id))
-    return result.scalars().first()
-
-
 async def get_role_by_id(db: AsyncSession, role_id: UUID) -> Optional[UserRole]:
     """Get a role by its ID."""
     result = await db.execute(select(UserRole).where(UserRole.id == role_id))
