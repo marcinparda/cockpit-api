@@ -51,18 +51,7 @@ async def has_user_permission(
     feature: Features,
     action: Actions
 ) -> bool:
-    """
-    Check if a current user has permission to perform an action on a feature.
-
-    Args:
-        db: Database session
-        user_id: UUID of the user
-        feature: Feature to check permission for
-        action: Action to check permission for
-
-    Returns:
-        True if the user has permission, False otherwise
-    """
+    """Check if a current user has permission to perform an action on a feature."""
     user = await repository.get_user_by_id(db, user_id)
 
     if not user or user.is_active is False:
