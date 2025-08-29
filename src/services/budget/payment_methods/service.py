@@ -2,11 +2,10 @@
 
 from typing import Optional, Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
-from fastapi import HTTPException, status
 from datetime import datetime
 
 from src.services.budget.payment_methods.models import PaymentMethod
+from src.services.budget.payment_methods import repository
 from .schemas import PaymentMethodCreate, PaymentMethodUpdate
 
 
@@ -21,7 +20,7 @@ async def get_payment_method_by_id(db: AsyncSession, payment_method_id: int) -> 
     Returns:
         PaymentMethod object if found, None otherwise
     """
-    return await db.get(PaymentMethod, payment_method_id)
+    return await repository.get_payment_method_by_id(db, payment_method_id)
 
 
 async def get_all_payment_methods(db: AsyncSession) -> Sequence[PaymentMethod]:
@@ -34,8 +33,7 @@ async def get_all_payment_methods(db: AsyncSession) -> Sequence[PaymentMethod]:
     Returns:
         Sequence of all payment methods
     """
-    result = await db.execute(select(PaymentMethod))
-    return result.scalars().all()
+    return await repository.get_all_payment_methods(db)
 
 
 async def create_payment_method(
@@ -58,10 +56,7 @@ async def create_payment_method(
         created_at=now,
         updated_at=now
     )
-    db.add(payment_method)
-    await db.commit()
-    await db.refresh(payment_method)
-    return payment_method
+    return await repository.save_payment_method(db, payment_method)
 
 
 async def update_payment_method(
@@ -80,7 +75,7 @@ async def update_payment_method(
     Returns:
         Updated PaymentMethod object, None if not found
     """
-    payment_method = await get_payment_method_by_id(db, payment_method_id)
+    payment_method = await repository.get_payment_method_by_id(db, payment_method_id)
     if not payment_method:
         return None
 
@@ -89,9 +84,7 @@ async def update_payment_method(
         setattr(payment_method, key, value)
 
     payment_method.updated_at = datetime.now()
-    await db.commit()
-    await db.refresh(payment_method)
-    return payment_method
+    return await repository.update_payment_method(db, payment_method)
 
 
 async def delete_payment_method(db: AsyncSession, payment_method_id: int) -> bool:
@@ -105,10 +98,9 @@ async def delete_payment_method(db: AsyncSession, payment_method_id: int) -> boo
     Returns:
         True if payment method was deleted, False if not found
     """
-    payment_method = await get_payment_method_by_id(db, payment_method_id)
+    payment_method = await repository.get_payment_method_by_id(db, payment_method_id)
     if not payment_method:
         return False
 
-    await db.delete(payment_method)
-    await db.commit()
+    await repository.delete_payment_method_record(db, payment_method)
     return True

@@ -5,8 +5,6 @@ from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import and_
-from sqlalchemy.future import select
 
 from src.services.todos.projects.models import TodoProject as TodoProjectModel
 from src.services.users.models import User
@@ -16,7 +14,6 @@ from src.services.todos.projects.schemas import (
     TodoProjectOwner as TodoProjectOwnerSchema,
 )
 from src.services.todos.collaborators.service import get_collaborator_emails
-from src.services.todos.collaborators.models import TodoProjectCollaborator
 
 
 async def get_owned_projects(db: AsyncSession, user_id: UUID) -> List[TodoProjectModel]:
@@ -100,14 +97,7 @@ async def is_user_project_owner(
     Returns:
         True if user is the owner, False otherwise
     """
-    result = await db.execute(
-        select(TodoProjectModel)
-        .where(and_(
-            TodoProjectModel.id == project_id,
-            TodoProjectModel.owner_id == user_id
-        ))
-    )
-    return result.scalars().first() is not None
+    return await repository.is_user_project_owner(db, project_id, user_id)
 
 
 async def is_general_project(
@@ -124,33 +114,12 @@ async def is_general_project(
     Returns:
         True if project is a General project, False otherwise
     """
-    result = await db.execute(
-        select(TodoProjectModel.is_general)
-        .where(TodoProjectModel.id == project_id)
-    )
-    return result.scalar() or False
+    return await repository.is_general_project(db, project_id)
 
 
 async def get_accessible_project_ids(db: AsyncSession, user_id: UUID) -> list[int]:
     """Get all project IDs that a user can access (owned or collaborated)."""
-    # Get projects where user is owner
-    result = await db.execute(
-        select(TodoProjectModel.id).where(TodoProjectModel.owner_id == user_id)
-    )
-    owned_project_ids = result.scalars().all()
-
-    # Get projects where user is collaborator
-    result = await db.execute(
-        select(TodoProjectCollaborator.project_id).where(
-            TodoProjectCollaborator.user_id == user_id
-        )
-    )
-    collab_project_ids = result.scalars().all()
-
-    # Combine and deduplicate
-    all_project_ids = set(owned_project_ids) | set(collab_project_ids)
-
-    return list(all_project_ids)
+    return await repository.get_accessible_project_ids(db, user_id)
 
 
 async def can_user_access_project(
@@ -169,27 +138,4 @@ async def can_user_access_project(
     Returns:
         True if user is owner or collaborator, False otherwise
     """
-    # Check if user is the owner
-    result = await db.execute(
-        select(TodoProjectModel)
-        .where(and_(
-            TodoProjectModel.id == project_id,
-            TodoProjectModel.owner_id == user_id
-        ))
-    )
-    project = result.scalars().first()
-
-    if project:
-        return True
-
-    # Check if user is a collaborator
-    result = await db.execute(
-        select(TodoProjectCollaborator)
-        .where(and_(
-            TodoProjectCollaborator.project_id == project_id,
-            TodoProjectCollaborator.user_id == user_id
-        ))
-    )
-    collaborator = result.scalars().first()
-
-    return collaborator is not None
+    return await repository.can_user_access_project(db, project_id, user_id)

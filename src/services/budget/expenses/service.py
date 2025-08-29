@@ -2,10 +2,10 @@
 
 from typing import Optional, Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
 from fastapi import HTTPException, status
 
 from src.services.budget.expenses.models import Expense
+from src.services.budget.expenses import repository
 from src.services.budget.categories.service import get_category_by_id
 from src.services.budget.payment_methods.service import get_payment_method_by_id
 from .schemas import ExpenseCreate, ExpenseUpdate
@@ -22,7 +22,7 @@ async def get_expense_by_id(db: AsyncSession, expense_id: int) -> Optional[Expen
     Returns:
         Expense object if found, None otherwise
     """
-    return await db.get(Expense, expense_id)
+    return await repository.get_expense_by_id(db, expense_id)
 
 
 async def get_all_expenses(db: AsyncSession) -> Sequence[Expense]:
@@ -35,8 +35,7 @@ async def get_all_expenses(db: AsyncSession) -> Sequence[Expense]:
     Returns:
         Sequence of all expenses
     """
-    result = await db.execute(select(Expense))
-    return result.scalars().all()
+    return await repository.get_all_expenses(db)
 
 
 async def create_expense(
@@ -71,10 +70,7 @@ async def create_expense(
         )
 
     expense = Expense(**expense_data.model_dump())
-    db.add(expense)
-    await db.commit()
-    await db.refresh(expense)
-    return expense
+    return await repository.save_expense(db, expense)
 
 
 async def update_expense(
@@ -96,7 +92,7 @@ async def update_expense(
     Raises:
         HTTPException: If category_id or payment_method_id doesn't exist
     """
-    expense = await get_expense_by_id(db, expense_id)
+    expense = await repository.get_expense_by_id(db, expense_id)
     if not expense:
         return None
 
@@ -121,9 +117,7 @@ async def update_expense(
     for key, value in update_data.items():
         setattr(expense, key, value)
 
-    await db.commit()
-    await db.refresh(expense)
-    return expense
+    return await repository.update_expense(db, expense)
 
 
 async def delete_expense(db: AsyncSession, expense_id: int) -> bool:
@@ -137,10 +131,9 @@ async def delete_expense(db: AsyncSession, expense_id: int) -> bool:
     Returns:
         True if expense was deleted, False if not found
     """
-    expense = await get_expense_by_id(db, expense_id)
+    expense = await repository.get_expense_by_id(db, expense_id)
     if not expense:
         return False
 
-    await db.delete(expense)
-    await db.commit()
+    await repository.delete_expense_record(db, expense)
     return True

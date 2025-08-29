@@ -105,3 +105,12 @@ async def delete_item(db: AsyncSession, item_id: int) -> Optional[TodoItemModel]
     await db.delete(item)
     await db.commit()
     return item
+
+
+async def get_project_id(db: AsyncSession, item_id: int) -> Optional[int]:
+    """Get the project ID for a given item."""
+    result = await db.execute(
+        select(TodoItemModel.project_id)
+        .where(TodoItemModel.id == item_id)
+    )
+    return result.scalar()

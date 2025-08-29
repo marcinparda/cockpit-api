@@ -12,7 +12,7 @@ from src.services.users import repository
 from src.services.authorization.user_permissions.models import UserPermission
 from src.services.authentication.passwords.service import hash_password, verify_password, validate_password_strength
 from src.services.users import service as users_service
-from src.services.todos.projects.service import create_project
+from src.services.todos.projects import repository as projects_repository
 
 
 async def get_user_by_id(db: AsyncSession, user_id: UUID) -> Optional[User]:
@@ -434,15 +434,13 @@ async def onboard_new_user(
     )
 
     # Create the user's General project (cross-aggregate business rule)
-    general_project = await create_project(
+    await projects_repository.create_project(
         db,
         name="General",
         owner_id=UUID(str(new_user.id))
     )
-    db.add(general_project)
-    await db.commit()
 
     # Load role relationship for return
-    await db.refresh(new_user, ["role"])
+    await repository.refresh_user_with_role(db, new_user)
 
     return new_user

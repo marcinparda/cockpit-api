@@ -2,10 +2,9 @@
 
 from typing import Optional, Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
-from fastapi import HTTPException, status
 
 from src.services.budget.categories.models import Category
+from src.services.budget.categories import repository
 from .schemas import CategoryCreate, CategoryUpdate
 
 
@@ -20,7 +19,7 @@ async def get_category_by_id(db: AsyncSession, category_id: int) -> Optional[Cat
     Returns:
         Category object if found, None otherwise
     """
-    return await db.get(Category, category_id)
+    return await repository.get_category_by_id(db, category_id)
 
 
 async def get_all_categories(db: AsyncSession) -> Sequence[Category]:
@@ -33,8 +32,7 @@ async def get_all_categories(db: AsyncSession) -> Sequence[Category]:
     Returns:
         Sequence of all categories
     """
-    result = await db.execute(select(Category))
-    return result.scalars().all()
+    return await repository.get_all_categories(db)
 
 
 async def create_category(
@@ -52,10 +50,7 @@ async def create_category(
         Created Category object
     """
     category = Category(**category_data.model_dump())
-    db.add(category)
-    await db.commit()
-    await db.refresh(category)
-    return category
+    return await repository.save_category(db, category)
 
 
 async def update_category(
@@ -74,16 +69,14 @@ async def update_category(
     Returns:
         Updated Category object, None if not found
     """
-    category = await get_category_by_id(db, category_id)
+    category = await repository.get_category_by_id(db, category_id)
     if not category:
         return None
 
     for key, value in category_data.model_dump(exclude_unset=True).items():
         setattr(category, key, value)
 
-    await db.commit()
-    await db.refresh(category)
-    return category
+    return await repository.update_category(db, category)
 
 
 async def delete_category(db: AsyncSession, category_id: int) -> bool:
@@ -97,10 +90,9 @@ async def delete_category(db: AsyncSession, category_id: int) -> bool:
     Returns:
         True if category was deleted, False if not found
     """
-    category = await get_category_by_id(db, category_id)
+    category = await repository.get_category_by_id(db, category_id)
     if not category:
         return False
 
-    await db.delete(category)
-    await db.commit()
+    await repository.delete_category_record(db, category)
     return True

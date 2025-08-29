@@ -3,9 +3,8 @@ from __future__ import annotations
 from typing import List, Sequence, Optional
 from datetime import datetime
 from uuid import UUID
-from sqlalchemy import asc, desc, and_
+from sqlalchemy import asc, desc
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
 
 from src.services.todos.items import repository as repository
 from src.services.todos.items.models import TodoItem as TodoItemModel
@@ -98,11 +97,7 @@ async def can_user_access_item(
     Returns:
         True if user has access, False otherwise
     """
-    result = await db.execute(
-        select(TodoItemModel.project_id)
-        .where(TodoItemModel.id == item_id)
-    )
-    project_id = result.scalar()
+    project_id = await repository.get_project_id(db, item_id)
 
     if not project_id:
         return False
