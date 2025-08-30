@@ -9,9 +9,9 @@ from src.core.database import Base
 class TimestampMixin:
     """Mixin to add created_at and updated_at timestamps to models."""
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=func.now(), nullable=False)
+        DateTime(timezone=True), default=func.now(), nullable=False, init=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(
-        timezone=True), default=func.now(), onupdate=func.now(), nullable=False)
+        timezone=True), default=func.now(), onupdate=func.now(), nullable=False, init=False)
 
 
 class BaseModel(Base, TimestampMixin):

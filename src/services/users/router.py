@@ -12,14 +12,15 @@ from .schemas import (
     UserPermissionAssign,
     UserPermissionAssignResponse, SimpleUserResponse
 )
-from src.services.authorization.permissions.models import Permission
-from .service import (
+from src.services.authorization.permissions.schemas import Permission
+from src.services.users.service import (
     get_all_users, get_user_by_id, update_user, delete_user,
     assign_user_role, assign_user_permissions, revoke_user_permission, onboard_new_user
 )
 from src.services.authorization.user_permissions.service import get_user_permissions
 from src.services.authorization.permissions.dependencies import require_admin_role
-from src.services.users.models import User
+from src.services.users.models import User as UserModel
+from src.services.users.schemas import User as UserSchema
 
 router = APIRouter()
 
@@ -29,7 +30,7 @@ async def list_users(
     skip: int = Query(0, ge=0, description="Number of users to skip"),
     limit: int = Query(100, ge=1, le=1000,
                        description="Maximum number of users to return"),
-    _current_user: User = Depends(get_current_user),
+    _current_user: UserModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ) -> List[SimpleUserResponse]:
     """List all users with their roles."""
@@ -37,61 +38,54 @@ async def list_users(
     return [SimpleUserResponse.model_validate(user, from_attributes=True) for user in users]
 
 
-@router.post("", response_model=User, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=UserSchema, status_code=status.HTTP_201_CREATED)
 async def create_new_user(
     user_data: UserCreate,
-    admin_user: User = Depends(require_admin_role),
+    admin_user: UserModel = Depends(require_admin_role),
     db: AsyncSession = Depends(get_db)
-) -> User:
+) -> UserModel:
     """Create a new user account (admin only)."""
-    user = await onboard_new_user(
+    return await onboard_new_user(
         db=db,
         email=user_data.email,
         role_id=user_data.role_id,
         created_by_id=UUID(str(admin_user.id)),
         temporary_password=user_data.password
     )
-    return User.model_validate(user)
 
 
-@router.get("/{user_id}", response_model=User)
+@router.get("/{user_id}", response_model=UserSchema)
 async def get_user_details(
     user_id: UUID,
-    admin_user: User = Depends(require_admin_role),
+    admin_user: UserModel = Depends(require_admin_role),
     db: AsyncSession = Depends(get_db)
-) -> User:
+) -> UserModel:
     """Get detailed user information including permissions (admin only)."""
     user = await get_user_by_id(db, user_id)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-    return User.model_validate(user)
+    return user
 
 
-@router.put("/{user_id}", response_model=User)
+@router.put("/{user_id}", response_model=UserSchema)
 async def update_user_info(
     user_id: UUID,
     user_data: UserUpdate,
-    admin_user: User = Depends(require_admin_role),
+    admin_user: UserModel = Depends(require_admin_role),
     db: AsyncSession = Depends(get_db)
-) -> User:
+) -> UserModel:
     """Update user information (admin only)."""
-    user = await update_user(
+    return await update_user(
         db=db,
         user_id=user_id,
         email=user_data.email,
         is_active=user_data.is_active,
         role_id=user_data.role_id
     )
-    return User.model_validate(user)
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user_account(
     user_id: UUID,
-    admin_user: User = Depends(require_admin_role),
+    admin_user: UserModel = Depends(require_admin_role),
     db: AsyncSession = Depends(get_db)
 ) -> None:
     """Delete user account (admin only)."""
@@ -107,7 +101,7 @@ async def delete_user_account(
 async def change_user_role(
     user_id: UUID,
     role_id: UUID,
-    admin_user: User = Depends(require_admin_role),
+    admin_user: UserModel = Depends(require_admin_role),
     db: AsyncSession = Depends(get_db)
 ) -> UserWithRole:
     """Change user's role (admin only)."""
@@ -119,7 +113,7 @@ async def change_user_role(
 async def assign_permissions_to_user(
     user_id: UUID,
     permission_data: UserPermissionAssign,
-    admin_user: User = Depends(require_admin_role),
+    admin_user: UserModel = Depends(require_admin_role),
     db: AsyncSession = Depends(get_db)
 ) -> UserPermissionAssignResponse:
     """Assign permissions to user (admin only)."""
@@ -136,7 +130,7 @@ async def assign_permissions_to_user(
 async def revoke_permission_from_user(
     user_id: UUID,
     permission_id: UUID,
-    admin_user: User = Depends(require_admin_role),
+    admin_user: UserModel = Depends(require_admin_role),
     db: AsyncSession = Depends(get_db)
 ) -> None:
     """Revoke specific permission from user (admin only)."""
@@ -146,17 +140,8 @@ async def revoke_permission_from_user(
 @router.get("/{user_id}/permissions", response_model=List[Permission])
 async def get_user_permissions_endpoint(
     user_id: UUID,
-    admin_user: User = Depends(require_admin_role),
+    admin_user: UserModel = Depends(require_admin_role),
     db: AsyncSession = Depends(get_db)
-) -> List[Permission]:
+):
     """Get all permissions assigned to a user (admin only)."""
-    # Verify user exists
-    user = await get_user_by_id(db, user_id)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-
-    permissions = await get_user_permissions(db, user_id)
-    return [Permission.model_validate(permission) for permission in permissions]
+    return await get_user_permissions(db, user_id)

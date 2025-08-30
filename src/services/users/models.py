@@ -1,12 +1,11 @@
 """User models for user management."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
+from uuid import UUID
 
-from sqlalchemy import (
-    Column, String, Boolean, ForeignKey
-)
+from sqlalchemy import String, Boolean, ForeignKey, text
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 
 from src.common.models import BaseModel
 
@@ -23,16 +22,19 @@ class User(BaseModel):
 
     __tablename__ = "users"
 
-    id = Column(PG_UUID(as_uuid=True), primary_key=True,
-                server_default='uuid_generate_v4()')
-    email = Column(String(255), unique=True, nullable=False, index=True)
-    password_hash = Column(String(255), nullable=False)
-    is_active = Column(Boolean, default=True, nullable=False)
-    role_id = Column(PG_UUID(as_uuid=True), ForeignKey(
+    id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True,
+                                     server_default=text('uuid_generate_v4()'), init=False)
+    email: Mapped[str] = mapped_column(
+        String(255), unique=True, nullable=False, index=True)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    role_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey(
         "user_roles.id"), nullable=False)
-    password_changed = Column(Boolean, default=False, nullable=False)
-    created_by = Column(PG_UUID(as_uuid=True),
-                        ForeignKey("users.id"), nullable=True)
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, default=True, nullable=False)
+    password_changed: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False)
+    created_by: Mapped[Optional[UUID]] = mapped_column(PG_UUID(as_uuid=True),
+                                                       ForeignKey("users.id"), nullable=True, default=None)
 
     # Relationships
     role = relationship("UserRole", back_populates="users")

@@ -15,18 +15,15 @@ from src.services.users import service as users_service
 from src.services.todos.projects import repository as projects_repository
 
 
-async def get_user_by_id(db: AsyncSession, user_id: UUID) -> Optional[User]:
-    """
-    Get user by ID.
-
-    Args:
-        db: Database session
-        user_id: User's UUID
-
-    Returns:
-        User object if found, None otherwise
-    """
-    return await repository.get_user_by_id(db, user_id)
+async def get_user_by_id(db: AsyncSession, user_id: UUID) -> User:
+    """Get user by user ID."""
+    user = await repository.get_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    return user
 
 
 async def get_user_by_email(db: AsyncSession, email: str) -> Optional[User]:
@@ -138,23 +135,7 @@ async def create_user(
     created_by_id: UUID,
     temporary_password: Optional[str] = None
 ) -> User:
-    """
-    Create a new user (admin only).
-
-    Args:
-        db: Database session
-        email: User's email address
-        role_id: Role to assign to user
-        created_by_id: ID of admin creating the user
-        temporary_password: Optional password (generated if not provided)
-
-    Returns:
-        Created User object
-
-    Raises:
-        HTTPException: If email already exists or role not found
-    """
-    # Check if email already exists
+    """Create a new user (admin only)."""
     existing_user = await repository.get_user_by_email(db, email)
     if existing_user:
         raise HTTPException(
@@ -162,7 +143,6 @@ async def create_user(
             detail="Email already registered"
         )
 
-    # Verify role exists
     role = await repository.get_role_by_id(db, role_id)
     if not role:
         raise HTTPException(
@@ -170,11 +150,9 @@ async def create_user(
             detail="Role not found"
         )
 
-    # Generate password if not provided
     if not temporary_password:
         temporary_password = generate_temporary_password()
 
-    # Validate password strength
     is_valid, errors = validate_password_strength(temporary_password)
     if not is_valid:
         raise HTTPException(
@@ -182,10 +160,8 @@ async def create_user(
             detail=f"Password validation failed: {', '.join(errors)}"
         )
 
-    # Hash password
     password_hash = hash_password(temporary_password)
 
-    # Create user
     new_user = User(
         email=email,
         password_hash=password_hash,
@@ -205,23 +181,7 @@ async def update_user(
     is_active: Optional[bool] = None,
     role_id: Optional[UUID] = None
 ) -> User:
-    """
-    Update user information (admin only).
-
-    Args:
-        db: Database session
-        user_id: User ID to update
-        email: New email address (optional)
-        is_active: New active status (optional)
-        role_id: New role ID (optional)
-
-    Returns:
-        Updated User object
-
-    Raises:
-        HTTPException: If user not found or email already exists
-    """
-    # Get user
+    """Update user information (admin only)."""
     user = await repository.get_user_by_id(db, user_id)
     if not user:
         raise HTTPException(
@@ -229,7 +189,6 @@ async def update_user(
             detail="User not found"
         )
 
-    # Check email uniqueness if provided
     if email and email != user.email:
         existing_user = await repository.get_user_by_email(db, email)
         if existing_user:
@@ -238,7 +197,6 @@ async def update_user(
                 detail="Email already registered"
             )
 
-    # Update role if provided - validate first
     if role_id:
         role = await repository.get_role_by_id(db, role_id)
         if not role:
@@ -247,7 +205,6 @@ async def update_user(
                 detail="Role not found"
             )
 
-    # Update user fields
     if email is not None:
         user.email = email
     if is_active is not None:
@@ -255,10 +212,7 @@ async def update_user(
     if role_id is not None:
         user.role_id = role_id
 
-    user = await repository.update_user(db, user)
-
-    # Load role relationship
-    return await repository.refresh_user_with_role(db, user)
+    return await repository.update_user(db, user)
 
 
 async def delete_user(db: AsyncSession, user_id: UUID) -> bool:
