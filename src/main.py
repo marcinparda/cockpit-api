@@ -1,14 +1,18 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-import asyncio
 import logging
 from typing import List
 
-from src.api.v1.endpoints import expenses, categories, payment_methods, todo_items, todo_projects, auth, users, roles, health
+from src.services.health.router import router as health_router
+from src.services.authentication.router import router as authentication_router
+from src.services.authorization.router import router as authorization_router
+from src.services.todos.router import router as todos_router
+from src.services.users.router import router as users_router
+from src.services.budget.router import router as budget_router
 from src.core.config import settings
-from src.middleware.rate_limit import RateLimitMiddleware
-from src.middleware.jwt_validation import JWTValidationMiddleware
+from src.common.middleware.rate_limit import RateLimitMiddleware
+from src.common.middleware.jwt_validation import JWTValidationMiddleware
 from src.core.scheduler import task_scheduler
 
 # Configure logging
@@ -65,23 +69,17 @@ app.add_middleware(RateLimitMiddleware)
 app.add_middleware(JWTValidationMiddleware)
 
 app.include_router(
-    expenses.router, prefix="/api/v1/expenses", tags=["ai-budget/expenses"])
-app.include_router(categories.router,
-                   prefix="/api/v1/categories", tags=["ai-budget/categories"])
+    budget_router, prefix="/api/v1/budget")
 app.include_router(
-    payment_methods.router, prefix="/api/v1/payment_methods", tags=["ai-budget/payment_methods"])
+    todos_router, prefix="/api/v1/todos")
 app.include_router(
-    todo_items.router, prefix="/api/v1/todo/items", tags=["todo/items"])
+    users_router, prefix="/api/v1/users")
 app.include_router(
-    todo_projects.router, prefix="/api/v1/todo/projects", tags=["todo/projects"])
+    authentication_router, prefix="/api/v1/authentication")
 app.include_router(
-    auth.router, prefix="/api/v1/auth", tags=["shared/auth"])
+    authorization_router, prefix="/api/v1/authorization")
 app.include_router(
-    users.router, prefix="/api/v1/users", tags=["shared/users"])
-app.include_router(
-    roles.router, prefix="/api/v1/roles", tags=["shared/roles"])
-app.include_router(
-    health.router, prefix="/health", tags=["health"])
+    health_router, prefix="/health", tags=["health"])
 
 
 @app.get("/", tags=["root"])

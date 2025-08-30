@@ -8,7 +8,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from src.core.config import settings
-from src.services.task_service import TokenCleanupService
+from src.services.authentication.tokens.token_cleanup_service import comprehensive_token_cleanup
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +101,7 @@ class TaskScheduler:
         logger.info("Starting scheduled token cleanup job")
 
         try:
-            cleanup_stats = await TokenCleanupService.comprehensive_token_cleanup(
+            cleanup_stats = await comprehensive_token_cleanup(
                 retention_days=settings.TOKEN_CLEANUP_RETENTION_DAYS,
                 batch_size=settings.TOKEN_CLEANUP_BATCH_SIZE
             )

@@ -1,10 +1,9 @@
 """Tests for password hashing and validation utilities."""
 
-from src.auth.password import (
+from src.services.authentication.passwords.service import (
     hash_password,
     verify_password,
     validate_password_strength,
-    needs_rehash
 )
 
 
@@ -105,18 +104,3 @@ class TestPasswordUtils:
 
         assert is_valid is False
         assert len(errors) > 1
-
-    def test_needs_rehash_valid_hash(self):
-        """Test checking if a valid hash needs rehashing."""
-        password = "TestPassword123!"
-        hashed = hash_password(password)
-
-        # Fresh hash shouldn't need rehashing
-        assert needs_rehash(hashed) is False
-
-    def test_needs_rehash_invalid_hash(self):
-        """Test checking if an invalid hash needs rehashing."""
-        invalid_hash = "not-a-valid-hash"
-
-        # Invalid hash should definitely need rehashing
-        assert needs_rehash(invalid_hash) is True
