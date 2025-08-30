@@ -22,6 +22,6 @@ router.include_router(
 
 router.include_router(
     user_permissions_router,
-    prefix="/permissions",
+    prefix="/user-permissions",
     tags=["authorization/user-permissions"]
 )

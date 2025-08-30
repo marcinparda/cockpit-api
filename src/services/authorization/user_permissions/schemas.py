@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from uuid import UUID
 from typing import Optional
 
-from src.services.authorization.permissions.schemas import Permission
+from src.services.authorization.permissions.schemas import PermissionSchema
 
 
 class UserPermissionBase(BaseModel):
@@ -26,7 +26,7 @@ class UserPermissionUpdate(BaseModel):
 class UserPermission(UserPermissionBase):
     """Complete user permission schema."""
     id: UUID
-    permission: Optional[Permission] = None
+    permission: Optional[PermissionSchema] = None
 
     class Config:
         from_attributes = True

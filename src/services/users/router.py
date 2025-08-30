@@ -17,7 +17,7 @@ from .service import (
     get_all_users, get_user_by_id, update_user, delete_user,
     assign_user_role, assign_user_permissions, revoke_user_permission, onboard_new_user
 )
-from src.services.authorization.permissions.service import get_user_permissions
+from src.services.authorization.user_permissions.service import get_user_permissions
 from src.services.authorization.permissions.dependencies import require_admin_role
 from src.services.users.models import User
 
