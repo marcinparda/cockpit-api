@@ -1,10 +1,16 @@
 """User permission models."""
 
-from sqlalchemy import Column, ForeignKey, UniqueConstraint
+from typing import TYPE_CHECKING
+from uuid import UUID
+from sqlalchemy import ForeignKey, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.common.models import BaseModel
+
+if TYPE_CHECKING:
+    from src.services.users.models import User
+    from src.services.authorization.permissions.models import Permission
 
 
 class UserPermission(BaseModel):
@@ -12,12 +18,10 @@ class UserPermission(BaseModel):
 
     __tablename__ = "user_permissions"
 
-    id = Column(PG_UUID(as_uuid=True), primary_key=True,
-                server_default='uuid_generate_v4()')
-    user_id = Column(PG_UUID(as_uuid=True), ForeignKey(
-        "users.id"), nullable=False)
-    permission_id = Column(PG_UUID(as_uuid=True), ForeignKey(
-        "permissions.id"), nullable=False)
+    id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True,
+                                     server_default=text('uuid_generate_v4()'), init=False)
+    user_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    permission_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("permissions.id"), nullable=False)
 
     # Relationships
     user = relationship("User", back_populates="permissions")

@@ -13,10 +13,7 @@ from .schemas import (
     UserPermissionAssignResponse, SimpleUserResponse
 )
 from src.services.authorization.permissions.schemas import Permission
-from src.services.users.service import (
-    get_all_users, get_user_by_id, update_user, delete_user,
-    assign_user_role, assign_user_permissions, revoke_user_permission, onboard_new_user
-)
+from src.services.users import service
 from src.services.authorization.user_permissions.service import get_user_permissions
 from src.services.authorization.permissions.dependencies import require_admin_role
 from src.services.users.models import User as UserModel
@@ -34,7 +31,7 @@ async def list_users(
     db: AsyncSession = Depends(get_db)
 ) -> List[SimpleUserResponse]:
     """List all users with their roles."""
-    users = await get_all_users(db, skip=skip, limit=limit)
+    users = await service.get_all_users(db, skip=skip, limit=limit)
     return [SimpleUserResponse.model_validate(user, from_attributes=True) for user in users]
 
 
@@ -45,7 +42,7 @@ async def create_new_user(
     db: AsyncSession = Depends(get_db)
 ) -> UserModel:
     """Create a new user account (admin only)."""
-    return await onboard_new_user(
+    return await service.onboard_new_user(
         db=db,
         email=user_data.email,
         role_id=user_data.role_id,
@@ -61,7 +58,7 @@ async def get_user_details(
     db: AsyncSession = Depends(get_db)
 ) -> UserModel:
     """Get detailed user information including permissions (admin only)."""
-    user = await get_user_by_id(db, user_id)
+    user = await service.get_user_by_id(db, user_id)
     return user
 
 
@@ -73,7 +70,7 @@ async def update_user_info(
     db: AsyncSession = Depends(get_db)
 ) -> UserModel:
     """Update user information (admin only)."""
-    return await update_user(
+    return await service.update_user(
         db=db,
         user_id=user_id,
         email=user_data.email,
@@ -89,7 +86,7 @@ async def delete_user_account(
     db: AsyncSession = Depends(get_db)
 ) -> None:
     """Delete user account (admin only)."""
-    deleted = await delete_user(db, user_id)
+    deleted = await service.delete_user(db, user_id)
     if not deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -105,8 +102,7 @@ async def change_user_role(
     db: AsyncSession = Depends(get_db)
 ) -> UserWithRole:
     """Change user's role (admin only)."""
-    user = await assign_user_role(db, user_id, role_id)
-    return UserWithRole.model_validate(user)
+    return await service.assign_role_to_user(db, user_id, role_id)
 
 
 @router.post("/{user_id}/permissions", response_model=UserPermissionAssignResponse, status_code=status.HTTP_201_CREATED)
@@ -117,7 +113,7 @@ async def assign_permissions_to_user(
     db: AsyncSession = Depends(get_db)
 ) -> UserPermissionAssignResponse:
     """Assign permissions to user (admin only)."""
-    assignments = await assign_user_permissions(
+    assignments = await service.assign_permissions_to_user(
         db, user_id, permission_data.permission_ids
     )
     return UserPermissionAssignResponse(
@@ -134,7 +130,7 @@ async def revoke_permission_from_user(
     db: AsyncSession = Depends(get_db)
 ) -> None:
     """Revoke specific permission from user (admin only)."""
-    await revoke_user_permission(db, user_id, permission_id)
+    await service.revoke_user_permission(db, user_id, permission_id)
 
 
 @router.get("/{user_id}/permissions", response_model=List[Permission])

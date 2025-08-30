@@ -243,7 +243,7 @@ async def delete_user(db: AsyncSession, user_id: UUID) -> bool:
     return True
 
 
-async def assign_user_role(
+async def assign_role_to_user(
     db: AsyncSession,
     user_id: UUID,
     role_id: UUID
@@ -257,15 +257,17 @@ async def assign_user_role(
         role_id: Role ID to assign
 
     Returns:
-        Updated User object
+        Updated User object with role relationship loaded
 
     Raises:
         HTTPException: If user or role not found
     """
-    return await update_user(db, user_id, role_id=role_id)
+    user = await update_user(db, user_id, role_id=role_id)
+    await repository.refresh_user_with_role(db, user)
+    return user
 
 
-async def assign_user_permissions(
+async def assign_permissions_to_user(
     db: AsyncSession,
     user_id: UUID,
     permission_ids: List[UUID]
