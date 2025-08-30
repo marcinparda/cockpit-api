@@ -33,6 +33,7 @@ async def get_permissions_by_user_id(
     """Get all permissions for a user."""
     result = await db.execute(
         select(Permission)
+        .options(joinedload(Permission.feature), joinedload(Permission.action))
         .join(UserPermission)
         .where(UserPermission.user_id == user_id)
     )
