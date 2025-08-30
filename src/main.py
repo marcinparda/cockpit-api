@@ -69,15 +69,15 @@ app.add_middleware(RateLimitMiddleware)
 app.add_middleware(JWTValidationMiddleware)
 
 app.include_router(
-    budget_router, prefix="/api/v1/budget", tags=["budget"])
+    budget_router, prefix="/api/v1/budget")
 app.include_router(
-    todos_router, prefix="/api/v1/todos", tags=["todos"])
+    todos_router, prefix="/api/v1/todos")
 app.include_router(
-    users_router, prefix="/api/v1/users", tags=["users"])
+    users_router, prefix="/api/v1/users")
 app.include_router(
-    authentication_router, prefix="/api/v1/authentication", tags=["authentication"])
+    authentication_router, prefix="/api/v1/authentication")
 app.include_router(
-    authorization_router, prefix="/api/v1/authorization", tags=["authorization"])
+    authorization_router, prefix="/api/v1/authorization")
 app.include_router(
     health_router, prefix="/health", tags=["health"])
 
