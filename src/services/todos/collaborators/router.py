@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
@@ -8,18 +8,8 @@ from src.services.todos.collaborators.schemas import (
     TodoProjectCollaboratorResponse,
 )
 from src.services.users.models import User
-from src.services.authorization.permissions.enums import Actions
 from src.services.authentication.dependencies import get_current_user
-from src.services.todos.projects.service import is_user_project_owner, can_user_access_project
-from src.services.todos.collaborators.service import (
-    validate_collaborators_batch,
-    create_collaborators,
-    build_collaborator_responses_from_users,
-    list_project_collaborators,
-    get_collaborator_by_project_and_user,
-)
-from src.services.todos.projects.service import get_user_by_id
-from src.services.todos.projects.models import TodoProject
+from src.services.todos.collaborators import service
 
 router = APIRouter()
 
@@ -36,49 +26,13 @@ async def add_collaborators(
     current_user: User = Depends(get_current_user),
 ):
     """Add a list of collaborators to a todo project atomically."""
-    # Check ownership
-    is_owner = await is_user_project_owner(
-        db, project_id, UUID(str(current_user.id))
-    )
-    if not is_owner:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only project owners can perform this action"
-        )
-
-    project = await db.get(TodoProject, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Todo project not found")
-
-    if not collaborators:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No collaborators provided"
-        )
-
-    collaborator_ids = [c.id for c in collaborators]
-
-    unique_ids, errors, users_found = await validate_collaborators_batch(
+    collaborators_data = [c.model_dump() for c in collaborators]
+    return await service.add_collaborators_to_project(
         db=db,
         project_id=project_id,
-        user_ids=collaborator_ids,
-        owner_id=UUID(str(project.owner_id)),
+        collaborators_data=collaborators_data,
+        current_user_id=UUID(str(current_user.id))
     )
-
-    if any(errors.values()):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"message": "One or more collaborators are invalid", **errors},
-        )
-
-    await create_collaborators(db=db, project_id=project_id, user_ids=unique_ids)
-
-    service_responses = build_collaborator_responses_from_users(
-        users_found, unique_ids)
-    return [
-        TodoProjectCollaboratorResponse.model_validate(r.model_dump())
-        for r in service_responses
-    ]
 
 
 @router.get(
@@ -91,21 +45,11 @@ async def list_collaborators(
     current_user: User = Depends(get_current_user),
 ):
     """List all collaborators for a todo project."""
-    # Check access
-    has_access = await can_user_access_project(
-        db, project_id, UUID(str(current_user.id))
+    return await service.list_collaborators_for_project(
+        db=db,
+        project_id=project_id,
+        current_user_id=UUID(str(current_user.id))
     )
-    if not has_access:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access to this project is forbidden"
-        )
-
-    service_responses = await list_project_collaborators(db, project_id)
-    return [
-        TodoProjectCollaboratorResponse.model_validate(r.model_dump())
-        for r in service_responses
-    ]
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -116,29 +60,9 @@ async def remove_collaborator(
     current_user: User = Depends(get_current_user),
 ):
     """Remove a collaborator from a todo project."""
-    # Check ownership
-    is_owner = await is_user_project_owner(
-        db, project_id, UUID(str(current_user.id))
+    await service.remove_collaborator_from_project(
+        db=db,
+        project_id=project_id,
+        user_id=user_id,
+        current_user_id=UUID(str(current_user.id))
     )
-    if not is_owner:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only project owners can perform this action"
-        )
-
-    user_obj = await get_user_by_id(db, user_id)
-    if not user_obj:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    collaborator = await get_collaborator_by_project_and_user(
-        db, project_id, UUID(str(user_obj.id))
-    )
-
-    if not collaborator:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Collaborator not found"
-        )
-
-    await db.delete(collaborator)
-    await db.commit()

@@ -38,6 +38,14 @@ async def get_user_by_id(db: AsyncSession, user_id: UUID) -> Optional[User]:
     return res.scalars().first()
 
 
+async def get_project_by_id(db: AsyncSession, project_id: int) -> Optional[TodoProjectModel]:
+    """Get a project by its ID."""
+    result = await db.execute(
+        select(TodoProjectModel).where(TodoProjectModel.id == project_id)
+    )
+    return result.scalars().first()
+
+
 async def create_project(db: AsyncSession, *, name: str, owner_id: UUID) -> TodoProjectModel:
     now = datetime.now()
     stmt = (

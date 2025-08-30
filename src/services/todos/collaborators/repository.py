@@ -79,3 +79,8 @@ async def get_collaborator_by_project_and_user(
         )
     )
     return res.scalars().first()
+
+
+async def delete_collaborator(db: AsyncSession, collaborator: TodoProjectCollaborator) -> None:
+    await db.delete(collaborator)
+    await db.commit()
