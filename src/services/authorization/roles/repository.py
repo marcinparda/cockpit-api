@@ -3,7 +3,7 @@
 from typing import Sequence, Optional
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
+from sqlalchemy import select
 
 from src.services.authorization.roles.models import UserRole
 

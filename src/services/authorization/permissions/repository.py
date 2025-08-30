@@ -3,12 +3,10 @@
 from typing import Sequence, Optional
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
+from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from src.services.authorization.permissions.models import Feature, Action, Permission
-from src.services.authorization.user_permissions.models import UserPermission
-from src.services.users.models import User
 
 
 async def get_feature_by_name(db: AsyncSession, feature_name: str) -> Optional[Feature]:

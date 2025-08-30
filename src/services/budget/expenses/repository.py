@@ -2,7 +2,7 @@
 
 from typing import Optional, Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
+from sqlalchemy import select
 
 from src.services.budget.expenses.models import Expense
 

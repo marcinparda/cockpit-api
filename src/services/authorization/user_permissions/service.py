@@ -1,7 +1,7 @@
 """User permission management business logic."""
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
+from typing import Sequence
 from uuid import UUID
 
 from src.services.authorization.user_permissions.models import UserPermission
@@ -12,10 +12,9 @@ from src.services.authorization.permissions.models import Permission
 async def get_user_permissions(
     db: AsyncSession,
     user_id: UUID
-) -> List[Permission]:
+) -> Sequence[Permission]:
     """Get all user permissions for a specific user."""
-    permissions = await repository.get_permissions_by_user_id(db, user_id)
-    return list(permissions)
+    return await repository.get_permissions_by_user_id(db, user_id)
 
 
 async def delete_user_permission(

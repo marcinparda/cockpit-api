@@ -42,7 +42,7 @@ class PermissionCreate(PermissionBase):
     pass
 
 
-class PermissionSchema(PermissionBase):
+class Permission(PermissionBase):
     """Complete permission schema."""
     id: UUID
     feature: Optional[Feature] = None
