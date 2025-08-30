@@ -54,31 +54,6 @@ poetry install
 
 ## Architecture Overview
 
-### Core Structure
-
-This is a FastAPI-based personal productivity API featuring a robust permissions system. The project is structured with a modular, service-oriented architecture:
-
-- **Service Modules**: Each business area (authentication, authorization, todos, budget, users, health) is implemented as an independent service module under `src/services/`
-- **Submodule Organization**: Complex services are further organized into submodules (e.g., `todos` has `projects`, `items`, `collaborators`; `authorization` has `permissions`, `roles`, `user_permissions`)
-- **Repositories**: Services that need data access include a `repository.py` file that encapsulates all database operations using SQLAlchemy's async engine
-- **Models**: SQLAlchemy models use UUID-based primary keys and automatic timestamping via `BaseModel` from `src/common/models.py`
-- **Schemas**: Pydantic models are used for request/response validation within each service
-- **Services**: Each submodule contains its own business logic in `service.py`
-- **API Endpoints**: FastAPI routers are organized by service and submodule, with a main router per service
-- **Auth System**: Role-based permissions with feature-action granularity using dependency injection
-
-### Permission System
-
-The application uses a sophisticated role-based access control (RBAC) system:
-
-- **Features**: Logical groupings of functionality (e.g., `CATEGORIES`, `EXPENSES`, `TODO_ITEMS`, `PAYMENT_METHODS`, `ROLES`, `USERS`)
-- **Actions**: Operations that can be performed (`CREATE`, `READ`, `UPDATE`, `DELETE`)
-- **Permissions**: Feature-Action pairs that define specific capabilities
-- **User Roles**: Users have roles (ADMIN, USER) that determine base permissions
-- **User Permissions**: Additional granular permissions can be assigned to individual users
-
-Admin users automatically have all permissions. Regular users must have explicit permissions assigned.
-
 ### Database Design
 
 - **Primary Keys**: All models use UUID primary keys with PostgreSQL's `uuid_generate_v4()`
@@ -87,7 +62,28 @@ Admin users automatically have all permissions. Regular users must have explicit
 - **Async Operations**: Fully async database operations using SQLAlchemy's async engine
 - **Use Mapped for models**: SQLAlchemy's `Mapped` generic type for type-safe ORM models
 
+### Core Structure
+
+This FastAPI-based API is organized with a modular, service-oriented architecture, where each service is implemented under `src/services/`. Complex services are further split into modules.
+
+### Services and Modules structure
+
+Each service follows a consistent structure:
+
+- `router.py`: FastAPI route definitions
+- `schemas.py`: Pydantic models for request/response validation
+- `models.py`: SQLAlchemy models (if applicable)
+- `services.py`: Business logic and service layer
+- `repository.py`: Data access layer (if services interact with the database)
+- `dependencies.py`: Dependency injection for service/module specific dependencies
+
 ## Development Guidelines
+
+### Router/Service/Repository Pattern
+
+1. **Router**: Defines the API endpoints and request/response schemas. No business logic here. Add handlers, dependencies if needed.
+2. **Service**: Business logic here. Here errors are raised if needed.
+3. **Repository**: Using SQLAlchemy interact with the database. Only contains writes/reads to the database no other logic.
 
 ### Database Changes
 
@@ -126,25 +122,3 @@ Development database connection:
 - DB_PASSWORD=secure_dev_password
 - DB_HOST=cockpit_db
 - DB_NAME=cockpit_db
-
-#### Key Architectural Decisions
-
-1. **Service Module Structure**: Each service in `src/services/` follows a consistent pattern:
-
-   - `router.py` - FastAPI endpoint definitions
-   - `schemas.py` - Pydantic models for request/response validation
-   - `service.py` - Business logic implementation
-   - `models.py` - SQLAlchemy database models (where applicable)
-   - `repository.py` - Data access layer (where applicable)
-
-2. **Submodule Organization**: Complex services like `todos`, `budget`, and `authorization` are organized into submodules:
-
-   - `todos`: `projects`, `items`, `collaborators`
-   - `budget`: `categories`, `expenses`, `payment_methods`
-   - `authorization`: `permissions`, `roles`, `user_permissions`
-   - `authentication`: `passwords`, `sessions`, `tokens`
-
-3. **Permission System**: Access control is handled through:
-   - Feature-based permissions defined in `src/services/authorization/permissions/enums.py`
-   - Role-based access with admin users having full permissions
-   - Dependency injection pattern for endpoint protection
