@@ -108,7 +108,7 @@ async def list_collaborators(
     ]
 
 
-@router.delete("/{user_id}", status_code=204)
+@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_collaborator(
     user_id: UUID,
     project_id: int,

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.database import get_db
 from .schemas import Category, CategoryCreate, CategoryUpdate
@@ -57,7 +57,7 @@ async def update_category_endpoint(
     return category
 
 
-@router.delete("/{category_id}", status_code=204)
+@router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_category_endpoint(
     category_id: int,
     db: AsyncSession = Depends(get_db),

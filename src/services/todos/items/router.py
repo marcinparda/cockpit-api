@@ -1,6 +1,6 @@
 from typing import Any, List
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_db
@@ -108,7 +108,7 @@ async def update_todo_item(
     return updated
 
 
-@router.delete("/{item_id}", response_model=TodoItem)
+@router.delete("/{item_id}", response_model=TodoItem, status_code=status.HTTP_204_NO_CONTENT)
 async def delete_todo_item(
     *,
     db: AsyncSession = Depends(get_db),

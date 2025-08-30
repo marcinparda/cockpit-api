@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.database import get_db
 from .schemas import Expense, ExpenseCreate, ExpenseUpdate
@@ -57,7 +57,7 @@ async def update_expense_endpoint(
     return expense
 
 
-@router.delete("/{expense_id}", status_code=204)
+@router.delete("/{expense_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_expense_endpoint(
     expense_id: int,
     db: AsyncSession = Depends(get_db),

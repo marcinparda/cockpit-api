@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, HTTPException, Path
+from fastapi import APIRouter, Depends, status, HTTPException, Path, status
 from typing import Annotated
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime
@@ -138,7 +138,7 @@ async def update_todo_project(
     )
 
 
-@router.delete("/{todo_project_id}", status_code=204)
+@router.delete("/{todo_project_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_todo_project(
     todo_project_id: Annotated[int, Path(...)],
     db: AsyncSession = Depends(get_db),

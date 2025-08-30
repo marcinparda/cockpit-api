@@ -59,7 +59,7 @@ async def update_payment_method_endpoint(
     return payment_method
 
 
-@router.delete("/{payment_method_id}", status_code=204)
+@router.delete("/{payment_method_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_payment_method_endpoint(
     payment_method_id: int,
     db: AsyncSession = Depends(get_db),
