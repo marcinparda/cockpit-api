@@ -110,6 +110,10 @@ async def protected_expense_endpoint(
     # Endpoint logic here
 ```
 
+### Imports
+
+When importing a module use absolute imports from the `src` root and import always at the top of the file, not inside functions or classes.
+
 ### Testing Strategy
 
 TODO
