@@ -112,7 +112,10 @@ async def protected_expense_endpoint(
 
 ### Imports
 
-When importing a module use absolute imports from the `src` root and import always at the top of the file, not inside functions or classes.
+- When importing a module use absolute imports from the `src` root and import always at the top of the file, not inside functions or classes.
+- When importing service/repostitories modules, import whole module, not specific functions/classes from it.
+  - Correct: `from src.services.authentication.sessions import service`
+  - Incorrect: `from src.services.authentication.sessions.service import login_user`
 
 ### Testing Strategy
 
