@@ -18,16 +18,7 @@ from src.services.authentication.tokens.repository import (
 
 
 def create_access_token_jwt(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
-    """
-    Create a JWT access token.
-
-    Args:
-        data: The payload data to encode in the token
-        expires_delta: Optional custom expiration time
-
-    Returns:
-        Encoded JWT token string
-    """
+    """Create a JWT access token."""
     to_encode = data.copy()
 
     if expires_delta:
@@ -50,16 +41,7 @@ def create_access_token_jwt(data: Dict[str, Any], expires_delta: Optional[timede
 
 
 def create_refresh_token_jwt(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
-    """
-    Create a JWT refresh token.
-
-    Args:
-        data: The payload data to encode in the token
-        expires_delta: Optional custom expiration time
-
-    Returns:
-        Encoded JWT refresh token string
-    """
+    """Create a JWT refresh token."""
     to_encode = data.copy()
 
     if expires_delta:
@@ -83,19 +65,7 @@ def create_refresh_token_jwt(data: Dict[str, Any], expires_delta: Optional[timed
 
 
 async def verify_token(token: str, db: Optional[AsyncSession] = None) -> Dict[str, Any]:
-    """
-    Verify and decode a JWT token.
-
-    Args:
-        token: The JWT token to verify
-        db: Optional database session for token validation
-
-    Returns:
-        Dictionary containing the decoded payload
-
-    Raises:
-        JWTError: If token is invalid, expired, or malformed
-    """
+    """Verify and decode a JWT token."""
     try:
         payload = jwt.decode(token, settings.JWT_SECRET_KEY,
                              algorithms=[settings.JWT_ALGORITHM])
@@ -132,16 +102,7 @@ async def verify_token(token: str, db: Optional[AsyncSession] = None) -> Dict[st
 
 
 async def invalidate_token(token: str, db: Optional[AsyncSession] = None) -> bool:
-    """
-    Invalidate a JWT token by revoking it in the database.
-
-    Args:
-        token: The JWT token to invalidate
-        db: Optional database session for token revocation
-
-    Returns:
-        True if token was successfully invalidated, False otherwise
-    """
+    """Invalidate a JWT token by revoking it in the database."""
     try:
         payload = jwt.decode(token, settings.JWT_SECRET_KEY,
                              algorithms=[settings.JWT_ALGORITHM])
@@ -154,9 +115,9 @@ async def invalidate_token(token: str, db: Optional[AsyncSession] = None) -> boo
         if db:
             token_type = payload.get("token_type", "access")
             if token_type == "refresh":
-                return await revoke_refresh_token(db, jti)
+                return await update_refresh_token_revoked_status(db, jti, True)
             else:
-                return await revoke_access_token(db, jti)
+                return await update_access_token_revoked_status(db, jti, True)
 
         return True  # Fallback to success if no database session
     except JWTError:
@@ -164,15 +125,7 @@ async def invalidate_token(token: str, db: Optional[AsyncSession] = None) -> boo
 
 
 def extract_token_id(token: str) -> Optional[str]:
-    """
-    Extract the JWT ID from a token without full verification.
-
-    Args:
-        token: The JWT token
-
-    Returns:
-        JWT ID if present, None otherwise
-    """
+    """Extract the JWT ID from a token without full verification."""
     try:
         # Decode without verification to get JTI
         payload = jwt.decode(token, settings.JWT_SECRET_KEY,
@@ -188,17 +141,7 @@ async def create_tokens_with_storage(
     email: str,
     db: AsyncSession
 ) -> Tuple[str, str]:
-    """
-    Create access and refresh tokens with database storage.
-
-    Args:
-        user_id: The user's UUID
-        email: The user's email address
-        db: Database session for token storage
-
-    Returns:
-        Tuple of (access_token, refresh_token)
-    """
+    """Create access and refresh tokens with database storage."""
     access_token_expires = timedelta(hours=settings.JWT_EXPIRE_HOURS)
     refresh_token_expires = timedelta(days=settings.JWT_REFRESH_EXPIRE_DAYS)
 
@@ -309,21 +252,10 @@ async def is_refresh_token_valid(db: AsyncSession, jti: str) -> bool:
     return True
 
 
-async def revoke_access_token(db: AsyncSession, jti: str) -> bool:
-    """Revoke an access token by JTI."""
-    return await update_access_token_revoked_status(db, jti, True)
-
-
-async def revoke_refresh_token(db: AsyncSession, jti: str) -> bool:
-    """Revoke a refresh token by JTI."""
-    return await update_refresh_token_revoked_status(db, jti, True)
-
-
 async def update_access_token_last_used_timestamp(db: AsyncSession, jti: str) -> bool:
     """Update the last_used_at timestamp for an access token."""
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     return await update_access_token_last_used(db, jti, now)
-
 
 
 async def refresh_access_token(refresh_token: str, db: AsyncSession):
