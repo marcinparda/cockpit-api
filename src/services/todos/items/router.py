@@ -1,8 +1,7 @@
 from typing import Any, List
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Path
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Annotated
 
 from src.core.database import get_db
 from src.services.users.models import User
@@ -80,10 +79,7 @@ async def create_todo_item(
 @router.get("/{item_id}", response_model=TodoItem)
 async def get_todo_item(
     *,
-    db: AsyncSession = Depends(get_db),
-    item_id: Annotated[int, Path(...)],
     item: TodoItemModel = Depends(can_access_item),
-    current_user: User = Depends(get_current_user),
     _: None = Depends(get_todo_items_permissions(Actions.READ))
 ) -> Any:
     """Get todo item by ID if the user has access to its project."""
@@ -95,20 +91,18 @@ async def get_todo_item(
 async def update_todo_item(
     *,
     db: AsyncSession = Depends(get_db),
-    item_id: Annotated[int, Path(...)],
     item_in: TodoItemUpdate,
     item: TodoItemModel = Depends(can_access_item),
-    current_user: User = Depends(get_current_user),
     _: None = Depends(get_todo_items_permissions(Actions.UPDATE))
 ) -> Any:
     """Update a todo item if the user has access to its project."""
 
     update_data = item_in.model_dump(exclude_unset=True)
-    updated = await todo_item_service.update_item(db, item_id, **update_data)
+    updated = await todo_item_service.update_item(db, item.id, **update_data)
     if not updated:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Todo item with ID {item_id} not found"
+            detail=f"Todo item with ID {item.id} not found"
         )
 
     return updated
@@ -118,18 +112,16 @@ async def update_todo_item(
 async def delete_todo_item(
     *,
     db: AsyncSession = Depends(get_db),
-    item_id: Annotated[int, Path(...)],
     item: TodoItemModel = Depends(can_access_item),
-    current_user: User = Depends(get_current_user),
     _: None = Depends(get_todo_items_permissions(Actions.DELETE))
 ) -> Any:
     """Delete a todo item if the user has access to its project."""
 
-    deleted = await todo_item_service.delete_item(db, item_id)
+    deleted = await todo_item_service.delete_item(db, item.id)
     if not deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Todo item with ID {item_id} not found"
+            detail=f"Todo item with ID {item.id} not found"
         )
 
     return deleted
