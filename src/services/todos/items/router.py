@@ -108,7 +108,7 @@ async def update_todo_item(
     return updated
 
 
-@router.delete("/{item_id}", response_model=TodoItem, status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_todo_item(
     *,
     db: AsyncSession = Depends(get_db),
