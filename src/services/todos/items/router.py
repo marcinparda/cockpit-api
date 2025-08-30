@@ -114,7 +114,7 @@ async def delete_todo_item(
     db: AsyncSession = Depends(get_db),
     item: TodoItemModel = Depends(can_access_item),
     _: None = Depends(get_todo_items_permissions(Actions.DELETE))
-) -> Any:
+) -> None:
     """Delete a todo item if the user has access to its project."""
 
     deleted = await todo_item_service.delete_item(db, item.id)
@@ -123,5 +123,3 @@ async def delete_todo_item(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Todo item with ID {item.id} not found"
         )
-
-    return deleted
