@@ -45,4 +45,4 @@ class RefreshTokenRequest(BaseModel):
 
 class SimpleRefreshResponse(BaseModel):
     """Simple response model for refresh endpoint."""
-    message: str
+    detail: str

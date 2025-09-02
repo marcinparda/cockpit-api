@@ -12,7 +12,12 @@ class LoginRequest(BaseModel):
 
 class LoginResponse(BaseModel):
     """Response model for login endpoint."""
-    message: str
+    detail: str
+
+
+class LogoutResponse(BaseModel):
+    """Response model for logout endpoint."""
+    detail: str
 
 
 class UserInfoResponse(BaseModel):

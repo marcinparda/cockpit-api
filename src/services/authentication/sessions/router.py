@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_db
 from src.services.authentication.sessions.schemas import (
-    LoginRequest, LoginResponse, UserInfoResponse
+    LoginRequest, LoginResponse, LogoutResponse, UserInfoResponse
 )
 from src.services.authentication.sessions import service
 from src.services.authentication.dependencies import get_current_user
@@ -51,7 +51,7 @@ async def get_current_user_info(
     )
 
 
-@router.post("/logout")
+@router.post("/logout", response_model=LogoutResponse)
 @logout_exception_handler
 async def logout(
     response: Response,

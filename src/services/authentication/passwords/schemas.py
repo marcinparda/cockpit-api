@@ -23,4 +23,4 @@ class PasswordChangeRequest(BaseModel):
 
 class PasswordChangeResponse(BaseModel):
     """Response model for password change endpoint."""
-    message: str
+    detail: str

@@ -7,7 +7,7 @@ from fastapi import Response, HTTPException, status
 
 from src.services.users.models import User
 from src.services.users.service import get_user_by_email
-from src.services.authentication.sessions.schemas import LoginResponse
+from src.services.authentication.sessions.schemas import LoginResponse, LogoutResponse
 from src.services.authentication.tokens.service import create_tokens_with_storage, invalidate_token
 from src.services.authentication.sessions.cookie_utils import set_auth_cookies, clear_auth_cookies
 from src.services.authentication.passwords.service import verify_password
@@ -47,10 +47,10 @@ async def login_user(db: AsyncSession, email: str, password: str, response: Opti
     if response:
         set_auth_cookies(response, access_token, refresh_token)
 
-    return LoginResponse(message="Login successful")
+    return LoginResponse(detail="Login successful")
 
 
-async def logout(response, access_token_cookie: Optional[str], refresh_token_cookie: Optional[str], db: AsyncSession) -> dict:
+async def logout(response, access_token_cookie: Optional[str], refresh_token_cookie: Optional[str], db: AsyncSession) -> LogoutResponse:
     """Logout the user by invalidating their tokens and clearing cookies."""
     if access_token_cookie:
         await invalidate_token(access_token_cookie, db)
@@ -60,7 +60,7 @@ async def logout(response, access_token_cookie: Optional[str], refresh_token_coo
 
     clear_auth_cookies(response)
 
-    return {"message": "Logout successful"}
+    return LogoutResponse(detail="Logout successful")
 
 
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> Optional[User]:
