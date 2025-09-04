@@ -67,6 +67,10 @@ def create_refresh_token_jwt(data: Dict[str, Any], expires_delta: Optional[timed
 async def verify_token(token: str, db: Optional[AsyncSession] = None) -> Dict[str, Any]:
     """Verify and decode a JWT token."""
     try:
+        # Basic format validation
+        if not token or len(token.split('.')) != 3:
+            raise JWTError("Invalid token format: not a valid JWT")
+        
         payload = jwt.decode(token, settings.JWT_SECRET_KEY,
                              algorithms=[settings.JWT_ALGORITHM])
 
@@ -99,6 +103,9 @@ async def verify_token(token: str, db: Optional[AsyncSession] = None) -> Dict[st
     except ValueError as e:
         # Handle UUID conversion errors
         raise JWTError(f"Invalid token format: {e}")
+    except Exception as e:
+        # Handle any other JWT parsing errors
+        raise JWTError(f"Token verification failed: {str(e)}")
 
 
 async def invalidate_token(token: str, db: Optional[AsyncSession] = None) -> bool:
@@ -272,26 +279,47 @@ async def refresh_access_token(refresh_token: str, db: AsyncSession):
     Raises:
         JWTError: If refresh token is invalid or expired
     """
+    from fastapi import HTTPException, status
 
     try:
         payload = await verify_token(refresh_token, db)
 
         # Verify it's a refresh token
         if payload.get("token_type") != "refresh":
-            raise JWTError("Invalid token type")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid token type - not a refresh token"
+            )
 
         user_id = payload.get("sub")
         email = payload.get("email")
 
         if not user_id or not email:
-            raise JWTError("Invalid token payload")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid token payload - missing required fields"
+            )
 
         await invalidate_token(refresh_token, db)
 
         # Create new tokens
         return await create_tokens_with_storage(UUID(user_id), email, db)
 
-    except JWTError:
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
         raise
+    except JWTError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid refresh token: {str(e)}"
+        )
     except ValueError as e:
-        raise JWTError(f"Invalid user ID format: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid user ID format: {e}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Token refresh failed: {str(e)}"
+        )

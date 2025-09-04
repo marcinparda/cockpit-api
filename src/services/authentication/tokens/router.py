@@ -28,9 +28,16 @@ async def refresh_tokens(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Refresh token required in cookie"
         )
+    
+    # Basic JWT format validation
+    if not refresh_token or len(refresh_token.split('.')) != 3:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid refresh token format"
+        )
 
     new_access_token, new_refresh_token = await refresh_access_token(refresh_token, db)
 
     set_auth_cookies(response, new_access_token, new_refresh_token)
 
-    return SimpleRefreshResponse(message="Tokens refreshed successfully")
+    return SimpleRefreshResponse(detail="Tokens refreshed successfully")
