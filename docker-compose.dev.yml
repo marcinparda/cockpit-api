@@ -45,9 +45,27 @@ services:
       - cockpit_network
     # TODO: add develop section to rebuild
 
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: cockpit_pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.pl
+      - PGADMIN_DEFAULT_PASSWORD=admin
+      - PGADMIN_CONFIG_SERVER_MODE=False
+    ports:
+      - "5050:80"
+    volumes:
+      - cockpit_pgadmin_data:/var/lib/pgadmin
+    networks:
+      - cockpit_network
+    depends_on:
+      cockpit_db:
+        condition: service_healthy
+
 networks:
   cockpit_network:
     driver: bridge
 
 volumes:
   cockpit_postgres_data:
+  cockpit_pgadmin_data:
