@@ -45,35 +45,3 @@ async def get_all_permissions(db: AsyncSession) -> Sequence[Permission]:
     return result.scalars().all()
 
 
-# async def get_user_by_id(db: AsyncSession, user_id: UUID) -> Optional[User]:
-#     """Get user by ID."""
-#     result = await db.execute(select(User).where(User.id == user_id))
-#     return result.scalars().first()
-
-
-# async def get_user_permission_by_user_and_permission(
-#     db: AsyncSession,
-#     user_id: UUID,
-#     permission_id: UUID
-# ) -> Optional[UserPermission]:
-#     """Get user permission by user ID and permission ID."""
-#     result = await db.execute(
-#         select(UserPermission).where(
-#             UserPermission.user_id == user_id,
-#             UserPermission.permission_id == permission_id
-#         )
-#     )
-#     return result.scalars().first()
-
-
-# async def get_permissions_by_user_id(
-#     db: AsyncSession,
-#     user_id: UUID
-# ) -> Sequence[Permission]:
-#     """Get all permissions for a user."""
-#     result = await db.execute(
-#         select(Permission)
-#         .join(UserPermission)
-#         .where(UserPermission.user_id == user_id)
-#     )
-#     return result.scalars().all()
