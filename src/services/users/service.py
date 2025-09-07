@@ -40,6 +40,26 @@ async def get_user_by_email(db: AsyncSession, email: str) -> Optional[User]:
     return await repository.get_user_by_email(db, email)
 
 
+async def _verify_current_password(user: User, current_password: str) -> None:
+    """Verify user's current password."""
+    if not verify_password(current_password, str(user.password_hash)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect"
+        )
+
+
+async def _validate_and_hash_new_password(new_password: str) -> str:
+    """Validate new password strength and return hash."""
+    is_valid, errors = validate_password_strength(new_password)
+    if not is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Password validation failed: {', '.join(errors)}"
+        )
+    return hash_password(new_password)
+
+
 async def change_user_password(
     db: AsyncSession,
     user_id: UUID,
@@ -61,33 +81,10 @@ async def change_user_password(
     Raises:
         HTTPException: If validation fails
     """
-    # Get user
     user = await get_user_by_id(db, user_id)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+    await _verify_current_password(user, current_password)
+    new_password_hash = await _validate_and_hash_new_password(new_password)
 
-    # Verify current password
-    if not verify_password(current_password, str(user.password_hash)):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Current password is incorrect"
-        )
-
-    # Validate new password strength
-    is_valid, errors = validate_password_strength(new_password)
-    if not is_valid:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Password validation failed: {', '.join(errors)}"
-        )
-
-    # Hash new password
-    new_password_hash = hash_password(new_password)
-
-    # Update user
     user.password_hash = new_password_hash
     user.password_changed = True
     await repository.update_user(db, user)
@@ -128,14 +125,8 @@ async def get_all_users(
     return await repository.get_all_users(db, skip, limit)
 
 
-async def create_user(
-    db: AsyncSession,
-    email: str,
-    role_id: UUID,
-    created_by_id: UUID,
-    temporary_password: Optional[str] = None
-) -> User:
-    """Create a new user (admin only)."""
+async def _validate_email_not_exists(db: AsyncSession, email: str) -> None:
+    """Validate that email is not already registered."""
     existing_user = await repository.get_user_by_email(db, email)
     if existing_user:
         raise HTTPException(
@@ -143,6 +134,9 @@ async def create_user(
             detail="Email already registered"
         )
 
+
+async def _validate_role_exists(db: AsyncSession, role_id: UUID) -> None:
+    """Validate that role exists."""
     role = await repository.get_role_by_id(db, role_id)
     if not role:
         raise HTTPException(
@@ -150,6 +144,9 @@ async def create_user(
             detail="Role not found"
         )
 
+
+async def _prepare_user_password(temporary_password: Optional[str] = None) -> str:
+    """Prepare and validate user password."""
     if not temporary_password:
         temporary_password = generate_temporary_password()
 
@@ -160,7 +157,20 @@ async def create_user(
             detail=f"Password validation failed: {', '.join(errors)}"
         )
 
-    password_hash = hash_password(temporary_password)
+    return hash_password(temporary_password)
+
+
+async def create_user(
+    db: AsyncSession,
+    email: str,
+    role_id: UUID,
+    created_by_id: UUID,
+    temporary_password: Optional[str] = None
+) -> User:
+    """Create a new user (admin only)."""
+    await _validate_email_not_exists(db, email)
+    await _validate_role_exists(db, role_id)
+    password_hash = await _prepare_user_password(temporary_password)
 
     new_user = User(
         email=email,
@@ -172,6 +182,32 @@ async def create_user(
     )
 
     return await repository.save_user(db, new_user)
+
+
+async def _validate_email_update(db: AsyncSession, user: User, new_email: str) -> None:
+    """Validate email update - ensure new email is not already taken."""
+    if new_email != user.email:
+        existing_user = await repository.get_user_by_email(db, new_email)
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered"
+            )
+
+
+async def _apply_user_updates(
+    user: User,
+    email: Optional[str] = None,
+    is_active: Optional[bool] = None,
+    role_id: Optional[UUID] = None
+) -> None:
+    """Apply updates to user object."""
+    if email is not None:
+        user.email = email
+    if is_active is not None:
+        user.is_active = is_active
+    if role_id is not None:
+        user.role_id = role_id
 
 
 async def update_user(
@@ -189,28 +225,13 @@ async def update_user(
             detail="User not found"
         )
 
-    if email and email != user.email:
-        existing_user = await repository.get_user_by_email(db, email)
-        if existing_user:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email already registered"
-            )
+    if email:
+        await _validate_email_update(db, user, email)
 
     if role_id:
-        role = await repository.get_role_by_id(db, role_id)
-        if not role:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Role not found"
-            )
+        await _validate_role_exists(db, role_id)
 
-    if email is not None:
-        user.email = email
-    if is_active is not None:
-        user.is_active = is_active
-    if role_id is not None:
-        user.role_id = role_id
+    await _apply_user_updates(user, email, is_active, role_id)
 
     return await repository.update_user(db, user)
 
@@ -267,59 +288,53 @@ async def assign_role_to_user(
     return user
 
 
-async def assign_permissions_to_user(
-    db: AsyncSession,
-    user_id: UUID,
-    permission_ids: List[UUID]
-) -> List[UserPermission]:
-    """
-    Assign permissions to user (admin only).
-
-    Args:
-        db: Database session
-        user_id: User ID
-        permission_ids: List of permission IDs to assign
-
-    Returns:
-        List of created UserPermission objects
-
-    Raises:
-        HTTPException: If user not found or permission already assigned
-    """
-    # Verify user exists
-    user = await repository.get_user_by_id(db, user_id)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-
-    # Verify all permissions exist
+async def _validate_permissions_exist(db: AsyncSession, permission_ids: List[UUID]) -> None:
+    """Validate that all permissions exist."""
     permissions = await repository.get_permissions_by_ids(db, permission_ids)
-
     if len(permissions) != len(permission_ids):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="One or more permissions not found"
         )
 
-    # Check for existing assignments
+
+async def _validate_permissions_not_assigned(
+    db: AsyncSession,
+    user_id: UUID,
+    permission_ids: List[UUID]
+) -> None:
+    """Validate that permissions are not already assigned to user."""
     existing_permissions = await repository.get_existing_user_permissions(
         db, user_id, permission_ids
     )
-
     if existing_permissions:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="One or more permissions already assigned to user"
         )
 
-    # Create new assignments
-    new_assignments = [
+
+async def _create_permission_assignments(
+    user_id: UUID,
+    permission_ids: List[UUID]
+) -> List[UserPermission]:
+    """Create UserPermission objects for assignment."""
+    return [
         UserPermission(user_id=user_id, permission_id=permission_id)
         for permission_id in permission_ids
     ]
 
+
+async def assign_permissions_to_user(
+    db: AsyncSession,
+    user_id: UUID,
+    permission_ids: List[UUID]
+) -> List[UserPermission]:
+    """Assign permissions to user (admin only)."""
+    await _validate_permissions_exist(db, permission_ids)
+    await _validate_permissions_not_assigned(db, user_id, permission_ids)
+
+    new_assignments = await _create_permission_assignments(user_id, permission_ids)
     return await repository.save_user_permissions(db, new_assignments)
 
 
@@ -354,6 +369,15 @@ async def revoke_user_permission(
     return True
 
 
+async def _create_user_general_project(db: AsyncSession, user_id: UUID) -> None:
+    """Create the user's General project (cross-aggregate business rule)."""
+    await projects_repository.create_project(
+        db,
+        name="General",
+        owner_id=user_id
+    )
+
+
 async def onboard_new_user(
     db: AsyncSession,
     email: str,
@@ -380,7 +404,6 @@ async def onboard_new_user(
     Raises:
         HTTPException: If email already exists, role not found, or validation fails
     """
-    # Create the user account
     new_user = await users_service.create_user(
         db=db,
         email=email,
@@ -389,14 +412,7 @@ async def onboard_new_user(
         temporary_password=temporary_password
     )
 
-    # Create the user's General project (cross-aggregate business rule)
-    await projects_repository.create_project(
-        db,
-        name="General",
-        owner_id=UUID(str(new_user.id))
-    )
-
-    # Load role relationship for return
+    await _create_user_general_project(db, UUID(str(new_user.id)))
     await repository.refresh_user_with_role(db, new_user)
 
     return new_user
