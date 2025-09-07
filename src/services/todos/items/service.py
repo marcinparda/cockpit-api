@@ -5,6 +5,7 @@ from datetime import datetime
 from uuid import UUID
 from sqlalchemy import asc, desc
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import HTTPException, status
 
 from src.services.todos.items import repository as repository
 from src.services.todos.items.models import TodoItem as TodoItemModel
@@ -23,14 +24,27 @@ async def list_items_for_user_projects(
     limit: int = 100,
     sort_by: str | None = None,
     order: str = "asc",
+    project_id: Optional[int] = None,
 ) -> List[TodoItemModel]:
     """Return items for projects the user has access to with pagination and sorting.
 
     user_id can be a UUID or a string convertible to UUID; service just passes it to access helper.
+    If project_id is provided, validate user access and filter to only that project.
     """
-    project_ids = await get_accessible_project_ids(db, user_id)
-    if not project_ids:
-        return []
+    if project_id is not None:
+        has_access = await can_user_access_project(
+            db, project_id, UUID(str(user_id))
+        )
+        if not has_access:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access to this project is forbidden"
+            )
+        project_ids = [project_id]
+    else:
+        project_ids = await get_accessible_project_ids(db, user_id)
+        if not project_ids:
+            return []
 
     order_by = None
     if sort_by:
