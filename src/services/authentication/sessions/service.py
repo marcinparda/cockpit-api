@@ -13,7 +13,7 @@ from src.services.authentication.sessions.cookie_utils import set_auth_cookies, 
 from src.services.authentication.passwords.service import verify_password
 
 
-async def login_user(db: AsyncSession, email: str, password: str, response: Optional[Response] = None) -> LoginResponse:
+async def login_user(db: AsyncSession, email: str, password: str, response: Response) -> LoginResponse:
     """
     Complete login flow for user authentication with tokens.
 
@@ -44,8 +44,7 @@ async def login_user(db: AsyncSession, email: str, password: str, response: Opti
         db=db
     )
 
-    if response:
-        set_auth_cookies(response, access_token, refresh_token)
+    set_auth_cookies(response, access_token, refresh_token)
 
     return LoginResponse(detail="Login successful")
 

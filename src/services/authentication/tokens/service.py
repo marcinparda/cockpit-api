@@ -101,17 +101,16 @@ async def _verify_token_in_database(
         raise JWTError("Token has been invalidated")
 
 
-async def verify_token(token: str, db: Optional[AsyncSession] = None) -> Dict[str, Any]:
+async def verify_token(token: str, db: AsyncSession) -> Dict[str, Any]:
     """Verify and decode a JWT token."""
     try:
         _validate_token_format(token)
         payload = _decode_jwt_payload(token)
         _validate_payload_claims(payload)
 
-        if db:
-            jti = payload.get("jti")
-            if jti:
-                await _verify_token_in_database(db, payload, jti)
+        jti = payload.get("jti")
+        if jti:
+            await _verify_token_in_database(db, payload, jti)
 
         return payload
 
@@ -123,7 +122,7 @@ async def verify_token(token: str, db: Optional[AsyncSession] = None) -> Dict[st
         raise JWTError(f"Token verification failed: {str(e)}")
 
 
-async def invalidate_token(token: str, db: Optional[AsyncSession] = None) -> bool:
+async def invalidate_token(token: str, db: AsyncSession) -> bool:
     """Invalidate a JWT token by revoking it in the database."""
     try:
         payload = jwt.decode(token, settings.JWT_SECRET_KEY,
@@ -134,14 +133,11 @@ async def invalidate_token(token: str, db: Optional[AsyncSession] = None) -> boo
         if not jti:
             return False
 
-        if db:
-            token_type = payload.get("token_type", "access")
-            if token_type == "refresh":
-                return await update_refresh_token_revoked_status(db, jti, True)
-            else:
-                return await update_access_token_revoked_status(db, jti, True)
-
-        return True  # Fallback to success if no database session
+        token_type = payload.get("token_type", "access")
+        if token_type == "refresh":
+            return await update_refresh_token_revoked_status(db, jti, True)
+        else:
+            return await update_access_token_revoked_status(db, jti, True)
     except JWTError:
         return False
 
@@ -156,6 +152,21 @@ def extract_token_id(token: str) -> Optional[str]:
         return payload.get("jti")
     except JWTError:
         return None
+
+
+def parse_token_payload(token: str) -> Dict[str, Any]:
+    """Parse token payload without database verification for lightweight operations."""
+    try:
+        _validate_token_format(token)
+        payload = _decode_jwt_payload(token)
+        _validate_payload_claims(payload)
+        return payload
+    except JWTError:
+        raise
+    except ValueError as e:
+        raise JWTError(f"Invalid token format: {e}")
+    except Exception as e:
+        raise JWTError(f"Token parsing failed: {str(e)}")
 
 
 def _create_token_data(user_id: UUID, email: str) -> Dict[str, str]:
