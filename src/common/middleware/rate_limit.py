@@ -6,12 +6,12 @@ from fastapi import Request, Response, status
 from starlette.middleware.base import BaseHTTPMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 
-# Import verify_token at module level to make it patchable in tests
+# Import parse_token_payload at module level to make it patchable in tests
 try:
-    from src.services.authentication.tokens.service import verify_token
+    from src.services.authentication.tokens.service import parse_token_payload
 except ImportError:
     # Handle the case where jwt module is not available during testing
-    async def verify_token(token: str, db: Optional[AsyncSession] = None) -> Dict[str, Any]:
+    def parse_token_payload(token: str) -> Dict[str, Any]:
         """Placeholder function when jwt module is not available."""
         return {}
 
@@ -248,11 +248,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
             token = auth_header.split(" ")[1]
 
-            # Use the module-level import (now async)
-            if verify_token is None:
+            # Use the module-level import
+            if parse_token_payload is None:
                 return None
 
-            payload = await verify_token(token)
+            payload = parse_token_payload(token)
             return payload.get("sub")
         except Exception:
             return None
