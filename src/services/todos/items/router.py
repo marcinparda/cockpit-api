@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -34,12 +34,14 @@ async def get_todo_items(
     sort_by: str = Query(
         "name", description="Field to sort by: id, name, created_at, updated_at, is_closed, completed_at"),
     order: str = Query("asc", description="Sort order: asc or desc"),
+    project_id: Optional[int] = Query(
+        None, description="Filter items by project ID"),
     _: None = Depends(get_todo_items_permissions(Actions.READ))
 ) -> Any:
     """Retrieve todo items from projects the user has access to."""
 
     items = await todo_item_service.list_items_for_user_projects(
-        db, current_user.id, skip=skip, limit=limit, sort_by=sort_by, order=order
+        db, current_user.id, skip=skip, limit=limit, sort_by=sort_by, order=order, project_id=project_id
     )
 
     return items
