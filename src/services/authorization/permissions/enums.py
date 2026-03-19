@@ -17,3 +17,4 @@ class Features(str, Enum):
     TODO_ITEMS = "todo_items"
     ROLES = "roles"
     USERS = "users"
+    REDIS_STORE = "redis_store"

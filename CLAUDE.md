@@ -129,3 +129,7 @@ Development database connection:
 - DB_PASSWORD=secure_dev_password
 - DB_HOST=cockpit_db
 - DB_NAME=cockpit_db
+
+Development Redis connection:
+
+- REDIS_STORE_URL=redis://:secure_redis_dev_password@cockpit_redis:6379

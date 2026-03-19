@@ -10,6 +10,7 @@ from src.services.authorization.router import router as authorization_router
 from src.services.todos.router import router as todos_router
 from src.services.users.router import router as users_router
 from src.services.budget.router import router as budget_router
+from src.services.redis_store.router import router as redis_store_router
 from src.core.config import settings
 from src.common.middleware.rate_limit import RateLimitMiddleware
 from src.common.middleware.jwt_validation import JWTValidationMiddleware
@@ -78,6 +79,8 @@ app.include_router(
     authentication_router, prefix="/api/v1/authentication")
 app.include_router(
     authorization_router, prefix="/api/v1/authorization")
+app.include_router(
+    redis_store_router, prefix="/api/v1/store")
 app.include_router(
     health_router, prefix="/health", tags=["health"])
 

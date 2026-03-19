@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_COOKIE_MAX_AGE: int = 1800  # 30 minutes
     REFRESH_TOKEN_COOKIE_MAX_AGE: int = 604800  # 7 days
 
+    # Redis Store Settings
+    REDIS_STORE_URL: str = "redis://cockpit_redis:6379"
+
     # Environment Detection
     ENVIRONMENT: str = "development"  # production, development, test
 
@@ -92,6 +95,8 @@ CORS_ORIGINS_STR = getenv(
 )
 CORS_ORIGINS = CORS_ORIGINS_STR.split(",")
 
+REDIS_STORE_URL = getenv("REDIS_STORE_URL", "redis://cockpit_redis:6379")
+
 settings = Settings(
     POSTGRES_USER=DB_USER,
     POSTGRES_PASSWORD=DB_PASSWORD,
@@ -106,5 +111,6 @@ settings = Settings(
     COOKIE_DOMAIN=COOKIE_DOMAIN,
     COOKIE_SECURE=COOKIE_SECURE,
     COOKIE_SAMESITE=COOKIE_SAMESITE,
-    ENVIRONMENT=ENVIRONMENT
+    ENVIRONMENT=ENVIRONMENT,
+    REDIS_STORE_URL=REDIS_STORE_URL
 )

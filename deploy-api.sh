@@ -31,6 +31,7 @@ required_vars=(
     "JWT_EXPIRE_HOURS"
     "BCRYPT_ROUNDS"
     "COOKIE_DOMAIN"
+    "REDIS_PASSWORD"
 )
 
 echo -e "${YELLOW}📋 Checking environment variables...${NC}"
@@ -52,8 +53,8 @@ echo -e "${GREEN}✅ Successfully logged in to GHCR${NC}"
 
 # Stop existing containers by name (no compose file needed)
 echo -e "${YELLOW}🛑 Stopping existing containers...${NC}"
-docker stop cockpit_api_prod cockpit_db_prod 2>/dev/null || echo "No existing containers to stop"
-docker rm cockpit_api_prod cockpit_db_prod 2>/dev/null || echo "No existing containers to remove"
+docker stop cockpit_api_prod cockpit_redis_prod cockpit_db_prod 2>/dev/null || echo "No existing containers to stop"
+docker rm cockpit_api_prod cockpit_redis_prod cockpit_db_prod 2>/dev/null || echo "No existing containers to remove"
 
 # Remove old images to save space
 echo -e "${YELLOW}🧹 Cleaning up old images...${NC}"
@@ -64,13 +65,26 @@ echo -e "${YELLOW}🌐 Creating Docker network...${NC}"
 docker network create cockpit_network_prod 2>/dev/null || echo "Network already exists"
 
 # Use existing volume with old production data
-echo -e "${YELLOW}💾 Using existing production volume...${NC}"
+echo -e "${YELLOW}💾 Using existing production volumes...${NC}"
 docker volume create cockpit-api_cockpit_postgres_data_prod 2>/dev/null || echo "Volume already exists"
+docker volume create cockpit-api_cockpit_redis_data_prod 2>/dev/null || echo "Redis volume already exists"
 
 # Pull the latest image
 echo -e "${YELLOW}📥 Pulling latest image from GHCR...${NC}"
 docker pull ${IMAGE_NAME}:latest
 echo -e "${GREEN}✅ Latest image pulled${NC}"
+
+# Start Redis container
+echo -e "${YELLOW}🗄️ Starting Redis container...${NC}"
+docker run -d \
+  --name cockpit_redis_prod \
+  --network cockpit_network_prod \
+  --restart always \
+  -v cockpit-api_cockpit_redis_data_prod:/data \
+  redis/redis-stack-server:latest \
+  redis-stack-server --appendonly yes --requirepass "${REDIS_PASSWORD}"
+
+echo -e "${GREEN}✅ Redis container started${NC}"
 
 # Start PostgreSQL container
 echo -e "${YELLOW}🗄️ Starting PostgreSQL container...${NC}"
@@ -118,6 +132,7 @@ docker run -d \
   -e COOKIE_DOMAIN="${COOKIE_DOMAIN}" \
   -e COOKIE_SECURE=True \
   -e ENVIRONMENT=production \
+  -e REDIS_STORE_URL="redis://:${REDIS_PASSWORD}@cockpit_redis_prod:6379" \
   ${IMAGE_NAME}:latest
 
 echo -e "${GREEN}✅ API container started${NC}"
@@ -128,7 +143,7 @@ sleep 10
 
 # Basic health check
 echo -e "${YELLOW}🏥 Performing health check...${NC}"
-if docker ps | grep -E "(cockpit_api_prod|cockpit_db_prod)" | grep -q "Up"; then
+if docker ps | grep -E "(cockpit_api_prod|cockpit_db_prod|cockpit_redis_prod)" | grep -q "Up"; then
     echo -e "${GREEN}✅ Health check passed - containers are running${NC}"
     
     # Try to connect to the API
@@ -140,11 +155,13 @@ if docker ps | grep -E "(cockpit_api_prod|cockpit_db_prod)" | grep -q "Up"; then
 else
     echo -e "${RED}❌ Health check failed - containers may not be running properly${NC}"
     echo -e "${YELLOW}📋 Container status:${NC}"
-    docker ps -a | grep -E "(cockpit_api_prod|cockpit_db_prod)"
+    docker ps -a | grep -E "(cockpit_api_prod|cockpit_db_prod|cockpit_redis_prod)"
     echo -e "${YELLOW}📋 Recent API logs:${NC}"
     docker logs --tail=20 cockpit_api_prod 2>/dev/null || echo "No API logs available"
     echo -e "${YELLOW}📋 Recent DB logs:${NC}"
     docker logs --tail=20 cockpit_db_prod 2>/dev/null || echo "No DB logs available"
+    echo -e "${YELLOW}📋 Recent Redis logs:${NC}"
+    docker logs --tail=20 cockpit_redis_prod 2>/dev/null || echo "No Redis logs available"
     exit 1
 fi
 

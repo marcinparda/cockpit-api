@@ -29,6 +29,7 @@ services:
       - .env
     environment:
       - DB_HOST=cockpit_db
+      - REDIS_STORE_URL=redis://:secure_redis_dev_password@cockpit_redis:6379
     volumes:
       - ./src:/app/src
       - ./alembic:/app/alembic
@@ -41,9 +42,22 @@ services:
     depends_on:
       cockpit_db:
         condition: service_healthy
+      cockpit_redis:
+        condition: service_started
     networks:
       - cockpit_network
     # TODO: add develop section to rebuild
+
+  cockpit_redis:
+    image: redis/redis-stack-server:latest
+    container_name: cockpit_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - cockpit_redis_data:/data
+    command: redis-stack-server --appendonly yes --requirepass secure_redis_dev_password
+    networks:
+      - cockpit_network
 
   pgadmin:
     image: dpage/pgadmin4:latest
@@ -69,3 +83,4 @@ networks:
 volumes:
   cockpit_postgres_data:
   cockpit_pgadmin_data:
+  cockpit_redis_data:

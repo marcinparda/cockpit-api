@@ -16,6 +16,7 @@
 - All new files should be added to the appropriate directories
 - Database and API is hosted via Docker, API container name is `cockpit-api` so fe. to upgrade the database run `docker compose -f docker-compose.dev.yml run --rm cockpit_api alembic upgrade head`
 - Postgres dev envs are: DB_USER=cockpit_user, DB_PASSWORD=secure_dev_password, DB_HOST=cockpit_db_host, DB_NAME=cockpit_db
+- Redis dev env: REDIS_STORE_URL=redis://:secure_redis_dev_password@cockpit_redis:6379
 - you can run tests with `poetry run pytest` instead of `docker compose -f docker-compose.dev.yml run --rm cockpit_api pytest`
 - If they are warnings in tests, address them before committing, you can do it as a last step before creating summary
 - There is no need to restart docker API container after changes, it configured to refresh automatically on code changes.

@@ -61,6 +61,7 @@ jobs:
           export COOKIE_DOMAIN='${{ secrets.COOKIE_DOMAIN }}' && \
           export COOKIE_SECURE=True && \
           export ENVIRONMENT=production && \
+          export REDIS_PASSWORD='${{ secrets.REDIS_PASSWORD }}' && \
           ./deploy-api.sh"
         shell: bash
 
