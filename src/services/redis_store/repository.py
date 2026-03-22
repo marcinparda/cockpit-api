@@ -22,3 +22,8 @@ async def delete_key(client: Redis, redis_key: str) -> bool:
 async def list_keys(client: Redis, pattern: str) -> list[str]:
     keys = await client.keys(pattern)
     return [k if isinstance(k, str) else k.decode() for k in keys]
+
+
+async def list_all_keys(client: Redis) -> list[str]:
+    keys = await client.keys("*:*:*")
+    return [k if isinstance(k, str) else k.decode() for k in keys]

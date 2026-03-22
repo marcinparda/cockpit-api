@@ -80,6 +80,42 @@ Returns `404` if the key does not exist.
 
 ---
 
+### GET `/` — List prefixes
+
+Returns a sorted list of all unique prefixes present in the store.
+
+**Example:**
+
+```http
+GET /api/v1/store/
+```
+
+**Response `200 OK`:**
+
+```json
+["base", "prod", "tenant-42"]
+```
+
+---
+
+### GET `/{prefix}` — List categories
+
+Returns a sorted list of all unique categories within a prefix.
+
+**Example:**
+
+```http
+GET /api/v1/store/base
+```
+
+**Response `200 OK`:**
+
+```json
+["feature-flags", "settings"]
+```
+
+---
+
 ### GET `/{prefix}/{category}` — List keys
 
 Returns a list of all Redis key names matching `{prefix}:{category}:*`.

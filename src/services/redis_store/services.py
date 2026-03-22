@@ -84,6 +84,16 @@ async def list_keys(client: Redis, prefix: str, category: str) -> list[str]:
     return await repository.list_keys(client, pattern)
 
 
+async def list_prefixes(client: Redis) -> list[str]:
+    keys = await repository.list_all_keys(client)
+    return sorted({k.split(":")[0] for k in keys})
+
+
+async def list_categories(client: Redis, prefix: str) -> list[str]:
+    keys = await repository.list_keys(client, f"{prefix}:*:*")
+    return sorted({k.split(":")[1] for k in keys})
+
+
 async def resolve_key(client: Redis, prefix: str, category: str, key: str) -> StoreEnvelope:
     base_redis_key = _build_redis_key("base", category, key)
     base = await repository.get_key(client, base_redis_key)

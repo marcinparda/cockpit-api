@@ -10,6 +10,23 @@ from src.services.redis_store.schemas import StoreEnvelope, StoreKeyCreate, Stor
 router = APIRouter(tags=["store"])
 
 
+@router.get("/", response_model=list[str])
+async def list_prefixes(
+    client: Redis = Depends(get_redis_client),
+    _: object = Depends(require_permission(Features.REDIS_STORE, Actions.READ)),
+) -> list[str]:
+    return await services.list_prefixes(client)
+
+
+@router.get("/{prefix}", response_model=list[str])
+async def list_categories(
+    prefix: str,
+    client: Redis = Depends(get_redis_client),
+    _: object = Depends(require_permission(Features.REDIS_STORE, Actions.READ)),
+) -> list[str]:
+    return await services.list_categories(client, prefix)
+
+
 @router.get("/resolve/{prefix}/{category}/{key}", response_model=StoreEnvelope)
 async def resolve_key(
     prefix: str,
