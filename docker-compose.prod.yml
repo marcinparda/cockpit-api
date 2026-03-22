@@ -23,7 +23,7 @@ services:
     image: redis/redis-stack-server:latest
     container_name: cockpit_redis_prod
     volumes:
-      - cockpit_redis_data_prod:/data
+      - cockpit_redis_data_prod:/var/lib/redis-stack
     command: redis-stack-server --appendonly yes --requirepass ${REDIS_PASSWORD}
     networks:
       - cockpit_network_prod

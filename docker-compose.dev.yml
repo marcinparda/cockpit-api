@@ -54,7 +54,7 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - cockpit_redis_data:/data
+      - cockpit_redis_data:/var/lib/redis-stack
     command: redis-stack-server --appendonly yes --requirepass secure_redis_dev_password
     networks:
       - cockpit_network

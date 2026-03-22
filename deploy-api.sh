@@ -80,7 +80,7 @@ docker run -d \
   --name cockpit_redis_prod \
   --network cockpit_network_prod \
   --restart always \
-  -v cockpit-api_cockpit_redis_data_prod:/data \
+  -v cockpit-api_cockpit_redis_data_prod:/var/lib/redis-stack \
   redis/redis-stack-server:latest \
   redis-stack-server --appendonly yes --requirepass "${REDIS_PASSWORD}"
 
