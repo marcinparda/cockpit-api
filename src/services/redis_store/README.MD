@@ -281,4 +281,4 @@ DELETE /api/v1/store/base/settings/theme
 
 **Response `204 No Content`**
 
-Returns `404` if the key does not exist at all.
+Returns `404` if the key does not exist.
