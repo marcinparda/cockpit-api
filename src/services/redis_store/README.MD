@@ -129,11 +129,7 @@ GET /api/v1/store/base/settings
 **Response `200 OK`:**
 
 ```json
-[
-  "base:settings:theme",
-  "base:settings:language",
-  "base:settings:max-items"
-]
+["base:settings:theme", "base:settings:language", "base:settings:max-items"]
 ```
 
 ---
@@ -155,16 +151,19 @@ GET /api/v1/store/tenant-42/settings/limits
 ```
 
 `base:settings:limits`:
+
 ```json
 { "max_items": 100, "max_size_mb": 10, "allow_export": false }
 ```
 
 `tenant-42:settings:limits`:
+
 ```json
 { "max_items": 500 }
 ```
 
 **Response `200 OK`** (merged result):
+
 ```json
 {
   "meta": { "key": "base:settings:limits", ... },
@@ -190,11 +189,11 @@ Creates the entry if it does not exist, or fully replaces it if it does. The `ve
 }
 ```
 
-| Field  | Required | Description                                   |
-|--------|----------|-----------------------------------------------|
-| `type` | yes      | A label describing the data type (free-form)  |
-| `tags` | no       | Optional list of string tags                  |
-| `data` | yes      | Any JSON value (object, array, string, etc.)  |
+| Field  | Required | Description                                  |
+| ------ | -------- | -------------------------------------------- |
+| `type` | yes      | A label describing the data type (free-form) |
+| `tags` | no       | Optional list of string tags                 |
+| `data` | yes      | Any JSON value (object, array, string, etc.) |
 
 **Example:**
 
@@ -282,4 +281,4 @@ DELETE /api/v1/store/base/settings/theme
 
 **Response `204 No Content`**
 
-Returns `404` if the key does not exist.
+Returns `404` if the key does not exist at all.
