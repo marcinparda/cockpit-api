@@ -1,8 +1,14 @@
 # Cockpit API
 
-Cockpit API is the backend service for a personal productivity platform that leverages AI to enhance task management, planning, and workflow automation. This API provides secure, robust, and extensible endpoints for your frontend application, enabling features such as intelligent scheduling, AI-assisted note-taking, and productivity analytics.
+Cockpit API is the backend service for a personal productivity platform. Built with [FastAPI](https://fastapi.tiangolo.com/), it provides high performance, modern Python type safety, and automatic OpenAPI documentation.
 
-Built with [FastAPI](https://fastapi.tiangolo.com/), Cockpit API ensures high performance, modern Python type safety, and automatic OpenAPI documentation. It is designed to be the core data and intelligence layer for your productivity tools, integrating AI-driven features seamlessly into your daily workflow.
+### Services
+
+- **Budget** — expense tracking and budget management
+- **Todos** — task and project management
+- **Redis Store** — generic key-value store (`/api/v1/store/{prefix}/{category}/{key}`) backed by Redis, used by the CV app to store CV sections and preset registries
+- **Authentication** — JWT-based sessions with cookie transport
+- **Authorization** — role and permission management
 
 ## Getting Started
 
@@ -39,6 +45,7 @@ To use alembic migrations:
 
 ```bash
 docker compose -f docker-compose.dev.yml run --rm cockpit_api alembic upgrade head
+```
 
 The API will be available at [http://localhost:8000](http://localhost:8000).
 
