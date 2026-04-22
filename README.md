@@ -17,28 +17,27 @@ Handles CV tailoring via an agentic LLM loop. All routes require authentication 
 
 **Routes**
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/v1/agent/models` | List available LLM models |
-| `GET` | `/api/v1/agent/conversations` | List user's conversations |
-| `POST` | `/api/v1/agent/conversations` | Create conversation |
-| `PATCH` | `/api/v1/agent/conversations/{id}` | Rename conversation |
-| `DELETE` | `/api/v1/agent/conversations/{id}` | Delete conversation |
-| `GET` | `/api/v1/agent/conversations/{id}/messages` | Get message history |
-| `POST` | `/api/v1/agent/conversations/{id}/messages` | Send message → SSE stream |
+| Method   | Path                                        | Description               |
+| -------- | ------------------------------------------- | ------------------------- |
+| `GET`    | `/api/v1/agent/models`                      | List available LLM models |
+| `GET`    | `/api/v1/agent/conversations`               | List user's conversations |
+| `POST`   | `/api/v1/agent/conversations`               | Create conversation       |
+| `PATCH`  | `/api/v1/agent/conversations/{id}`          | Rename conversation       |
+| `DELETE` | `/api/v1/agent/conversations/{id}`          | Delete conversation       |
+| `GET`    | `/api/v1/agent/conversations/{id}/messages` | Get message history       |
+| `POST`   | `/api/v1/agent/conversations/{id}/messages` | Send message → SSE stream |
 
 **Agent tools (MVP)**
 
-| Tool | Action |
-|------|--------|
-| `search_company` | POST to Serper API, returns top 5 organic results |
-| `get_cv_base_preset` | Reads all 8 CV sections from `base:cv:*` in Redis |
-| `create_cv_preset` | Proposes preset — emits `confirm_required` SSE, writes on next "yes" message |
+| Tool                 | Action                                                                       |
+| -------------------- | ---------------------------------------------------------------------------- |
+| `search_company`     | POST to Serper API, returns top 5 organic results                            |
+| `get_cv_base_preset` | Reads all 8 CV sections from `base:cv:*` in Redis                            |
+| `create_cv_preset`   | Proposes preset — emits `confirm_required` SSE, writes on next "yes" message |
 
 **Environment variables required**
 
 ```bash
-ANTHROPIC_API_KEY=   # from console.anthropic.com
 SERPER_API_KEY=      # from serper.dev
 ```
 
@@ -106,5 +105,7 @@ Contributions are not welcome yet! This project is currently in its early stages
 ## License
 
 This project is licensed under the MIT License.
+
+```
 
 ```
