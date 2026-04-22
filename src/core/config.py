@@ -39,6 +39,10 @@ class Settings(BaseSettings):
     # Redis Store Settings
     REDIS_STORE_URL: str = "redis://cockpit_redis:6379"
 
+    # Agent Settings
+    OPEN_ROUTER_KEY: str = ""
+    SERPER_API_KEY: str = ""
+
     # Environment Detection
     ENVIRONMENT: str = "development"  # production, development, test
 
@@ -96,6 +100,8 @@ CORS_ORIGINS_STR = getenv(
 CORS_ORIGINS = CORS_ORIGINS_STR.split(",")
 
 REDIS_STORE_URL = getenv("REDIS_STORE_URL", "redis://cockpit_redis:6379")
+OPEN_ROUTER_KEY = getenv("OPEN_ROUTER_KEY", "")
+SERPER_API_KEY = getenv("SERPER_API_KEY", "")
 
 settings = Settings(
     POSTGRES_USER=DB_USER,
@@ -112,5 +118,7 @@ settings = Settings(
     COOKIE_SECURE=COOKIE_SECURE,
     COOKIE_SAMESITE=COOKIE_SAMESITE,
     ENVIRONMENT=ENVIRONMENT,
-    REDIS_STORE_URL=REDIS_STORE_URL
+    REDIS_STORE_URL=REDIS_STORE_URL,
+    OPEN_ROUTER_KEY=OPEN_ROUTER_KEY,
+    SERPER_API_KEY=SERPER_API_KEY,
 )

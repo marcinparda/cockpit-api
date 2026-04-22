@@ -23,7 +23,7 @@ WORKDIR /app
 COPY pyproject.toml poetry.lock* ./
 
 # Install dependencies
-RUN poetry install --no-root
+RUN poetry lock && poetry install --no-root
 
 # Production stage
 FROM python:3.12-slim as production

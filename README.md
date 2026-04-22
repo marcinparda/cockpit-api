@@ -4,11 +4,57 @@ Cockpit API is the backend service for a personal productivity platform. Built w
 
 ### Services
 
+- **Agent** — AI agent for CV tailoring; agentic loop with SSE streaming, LiteLLM (Claude), Serper web search, Redis CV read/write (`/api/v1/agent/`)
 - **Budget** — expense tracking and budget management
 - **Todos** — task and project management
 - **Redis Store** — generic key-value store (`/api/v1/store/{prefix}/{category}/{key}`) backed by Redis, used by the CV app to store CV sections and preset registries
 - **Authentication** — JWT-based sessions with cookie transport
 - **Authorization** — role and permission management
+
+### Agent service
+
+Handles CV tailoring via an agentic LLM loop. All routes require authentication (`Features.AGENT` permission).
+
+**Routes**
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/v1/agent/models` | List available LLM models |
+| `GET` | `/api/v1/agent/conversations` | List user's conversations |
+| `POST` | `/api/v1/agent/conversations` | Create conversation |
+| `PATCH` | `/api/v1/agent/conversations/{id}` | Rename conversation |
+| `DELETE` | `/api/v1/agent/conversations/{id}` | Delete conversation |
+| `GET` | `/api/v1/agent/conversations/{id}/messages` | Get message history |
+| `POST` | `/api/v1/agent/conversations/{id}/messages` | Send message → SSE stream |
+
+**Agent tools (MVP)**
+
+| Tool | Action |
+|------|--------|
+| `search_company` | POST to Serper API, returns top 5 organic results |
+| `get_cv_base_preset` | Reads all 8 CV sections from `base:cv:*` in Redis |
+| `create_cv_preset` | Proposes preset — emits `confirm_required` SSE, writes on next "yes" message |
+
+**Environment variables required**
+
+```bash
+ANTHROPIC_API_KEY=   # from console.anthropic.com
+SERPER_API_KEY=      # from serper.dev
+```
+
+**Module layout**
+
+```
+src/services/agent/
+├── router.py          # FastAPI routes
+├── schemas.py         # Pydantic request/response models
+├── models.py          # SQLAlchemy: Conversation, Message
+├── services.py        # Agentic loop + SSE generator
+├── llm.py             # LiteLLM streaming wrapper + model list
+├── tools.py           # Tool definitions (JSON schema for Claude)
+├── tools_executor.py  # Executes tool calls, returns results
+└── repository.py      # DB access for conversations/messages
+```
 
 ## Getting Started
 
