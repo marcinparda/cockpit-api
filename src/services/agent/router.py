@@ -31,12 +31,15 @@ async def list_models(
     _: User = Depends(require_permission(Features.AGENT, Actions.READ)),
 ) -> ModelListResponse:
     model_labels = {
+        # Meta Llama
+        "meta-llama/llama-3.1-8b-instruct": "Llama 3.1 8B Instruct | price: very low | speed: very high | quality: medium",
         # Anthropic
         "anthropic/claude-opus-4-7": "Claude Opus 4.7 | price: high | speed: medium | quality: very high",
         "anthropic/claude-sonnet-4-6": "Claude Sonnet 4.6 | price: medium | speed: high | quality: high",
         "anthropic/claude-haiku-4-5": "Claude Haiku 4.5 | price: low | speed: very high | quality: medium",
         # OpenAI GPT-5
         "openai/gpt-5": "GPT-5 | price: very high | speed: medium | quality: very high",
+        "openai/gpt-5.4": "GPT-5.4 | price: high | speed: medium | quality: very high",
         "openai/gpt-5-mini": "GPT-5 Mini | price: medium | speed: high | quality: high",
         # OpenAI GPT-4.1
         "openai/gpt-4.1": "GPT-4.1 | price: medium | speed: high | quality: high",

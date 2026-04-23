@@ -11,6 +11,34 @@ from src.services.redis_store import repository as redis_repo
 from src.services.redis_store.schemas import StoreEnvelope, StoreKeyCreate
 
 
+def _coerce_str_list(val: Any) -> list[str]:
+    if isinstance(val, list):
+        return [str(item) for item in val if item is not None]
+    if isinstance(val, str) and val.strip():
+        return [val]
+    return []
+
+
+def _sanitize_sections(sections: dict[str, Any]) -> dict[str, Any]:
+    result = {}
+    for key, data in sections.items():
+        if key in ("summary", "courses"):
+            result[key] = _coerce_str_list(data)
+        elif key in ("experience", "projects"):
+            items = data if isinstance(data, list) else []
+            result[key] = [
+                {**item, "description": _coerce_str_list(item.get("description", []))}
+                if isinstance(item, dict)
+                else item
+                for item in items
+            ]
+        elif key in ("skills", "achievements", "education"):
+            result[key] = data if isinstance(data, list) else []
+        else:
+            result[key] = data
+    return result
+
+
 async def execute_tool(name: str, args: dict[str, Any], redis_client: Redis) -> Any:
     if name == "search_company":
         return await _search_company(args["query"])
@@ -23,6 +51,7 @@ async def execute_tool(name: str, args: dict[str, Any], redis_client: Redis) -> 
 
 async def write_cv_preset(name: str, sections: dict[str, Any], redis_client: Redis) -> None:
     preset_id = _name_to_id(name)
+    sections = _sanitize_sections(sections)
 
     for section_key, data in sections.items():
         if section_key not in CV_SECTIONS:
@@ -76,7 +105,7 @@ def _build_confirm_required(name: str, sections: dict[str, Any]) -> dict[str, An
     return {
         "confirm_required": True,
         "preset_name": name,
-        "sections": sections,
+        "sections": _sanitize_sections(sections),
     }
 
 

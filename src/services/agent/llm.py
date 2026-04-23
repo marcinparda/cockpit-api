@@ -6,12 +6,15 @@ from openai.types.chat import ChatCompletionChunk
 from src.core.config import settings
 
 AVAILABLE_MODELS = [
+    # Meta Llama
+    "meta-llama/llama-3.1-8b-instruct",
     # Anthropic
     "anthropic/claude-opus-4-7",
     "anthropic/claude-sonnet-4-6",
     "anthropic/claude-haiku-4-5",
     # OpenAI GPT-5
     "openai/gpt-5",
+    "openai/gpt-5.4",
     "openai/gpt-5-mini",
     # OpenAI GPT-4.1
     "openai/gpt-4.1",
@@ -25,7 +28,7 @@ AVAILABLE_MODELS = [
     "openai/o4-mini",
 ]
 
-DEFAULT_MODEL = "anthropic/claude-sonnet-4-6"
+DEFAULT_MODEL = "meta-llama/llama-3.1-8b-instruct"
 
 _client = AsyncOpenAI(
     api_key=settings.OPEN_ROUTER_KEY,

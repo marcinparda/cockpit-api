@@ -48,10 +48,108 @@ TOOLS = [
                     },
                     "sections": {
                         "type": "object",
-                        "description": (
-                            "CV sections to include. Keys: header, summary, skills, achievements, "
-                            "experience, education, projects, courses. Omit sections to exclude them."
-                        ),
+                        "description": "CV sections to include. Omit sections to exclude them.",
+                        "properties": {
+                            "header": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {"type": "string"},
+                                    "title": {"type": "string"},
+                                    "phone": {"type": "string"},
+                                    "email": {"type": "string"},
+                                    "linkedin": {
+                                        "type": "object",
+                                        "properties": {
+                                            "url": {"type": "string"},
+                                            "text": {"type": "string"},
+                                        },
+                                    },
+                                    "location": {"type": "string"},
+                                },
+                            },
+                            "summary": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "List of summary paragraphs. MUST be an array of strings, never a plain string.",
+                            },
+                            "skills": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "name": {"type": "string"},
+                                        "years": {"type": "number"},
+                                        "description": {"type": "string"},
+                                    },
+                                    "required": ["name", "years", "description"],
+                                },
+                            },
+                            "achievements": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "title": {"type": "string"},
+                                        "description": {"type": "string"},
+                                    },
+                                    "required": ["title", "description"],
+                                },
+                            },
+                            "experience": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "title": {"type": "string"},
+                                        "company": {"type": "string"},
+                                        "details": {"type": "string"},
+                                        "date": {"type": "string"},
+                                        "location": {"type": "string"},
+                                        "description": {
+                                            "type": "array",
+                                            "items": {"type": "string"},
+                                            "description": "Bullet points. MUST be array of strings.",
+                                        },
+                                    },
+                                    "required": ["title", "company", "date", "location", "description"],
+                                },
+                            },
+                            "education": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "degree": {"type": "string"},
+                                        "university": {"type": "string"},
+                                        "years": {"type": "string"},
+                                    },
+                                    "required": ["degree", "university", "years"],
+                                },
+                            },
+                            "projects": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "name": {"type": "string"},
+                                        "liveUrl": {"type": "string"},
+                                        "code": {"type": "string"},
+                                        "date": {"type": "string"},
+                                        "description": {
+                                            "type": "array",
+                                            "items": {"type": "string"},
+                                            "description": "Bullet points. MUST be array of strings.",
+                                        },
+                                    },
+                                    "required": ["name", "liveUrl", "code", "date", "description"],
+                                },
+                            },
+                            "courses": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "List of course names. MUST be an array of strings.",
+                            },
+                        },
                     },
                 },
                 "required": ["name", "sections"],
