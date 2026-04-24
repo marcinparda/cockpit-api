@@ -329,12 +329,15 @@ async def _vikunja_get_tasks(args: dict[str, Any]) -> Any:
         if args.get(key) is not None:
             params[key] = args[key]
     async with make_vikunja_client(token) as c:
-        if args.get("project_id") is not None:
-            resp = await c.get(f"/projects/{args['project_id']}/tasks", params=params)
-        else:
-            resp = await c.get("/tasks", params=params)
-        resp.raise_for_status()
-        return resp.json()
+        try:
+            if args.get("project_id") is not None:
+                resp = await c.get(f"/projects/{args['project_id']}/tasks", params=params)
+            else:
+                resp = await c.get("/tasks", params=params)
+            resp.raise_for_status()
+            return resp.json()
+        except httpx.HTTPStatusError as e:
+            return {"error": f"Vikunja API error {e.response.status_code}", "detail": str(e)}
 
 
 async def _vikunja_create_task(args: dict[str, Any]) -> Any:
