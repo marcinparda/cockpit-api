@@ -36,6 +36,7 @@ required_vars=(
     "VIKUNJA_PASSWORD"
     "ACTUAL_HTTP_API_KEY"
     "ACTUAL_BUDGET_SYNC_ID"
+    "ACTUAL_SERVER_URL"
 )
 
 echo -e "${YELLOW}📋 Checking environment variables...${NC}"
@@ -147,6 +148,25 @@ docker run -d \
   ${IMAGE_NAME}:latest
 
 echo -e "${GREEN}✅ API container started${NC}"
+
+# Deploy actual-http-api
+echo -e "${YELLOW}🔄 Deploying actual-http-api...${NC}"
+docker network create actual_network 2>/dev/null || true
+docker network connect actual_network actual 2>/dev/null || true
+docker stop actual-http-api 2>/dev/null || true
+docker rm actual-http-api 2>/dev/null || true
+docker volume create actual_http_api_data 2>/dev/null || true
+docker run -d \
+  --name actual-http-api \
+  --network actual_network \
+  --restart always \
+  -p 5007:5007 \
+  -v actual_http_api_data:/data \
+  -e ACTUAL_SERVER_URL="${ACTUAL_SERVER_URL}" \
+  -e API_KEY="${ACTUAL_HTTP_API_KEY}" \
+  -e ACTUAL_DATA_DIR=/data \
+  jhonderson/actual-http-api:latest
+echo -e "${GREEN}✅ actual-http-api deployed${NC}"
 
 # Connect to external service networks so container hostnames resolve
 echo -e "${YELLOW}🔗 Connecting to external networks...${NC}"
