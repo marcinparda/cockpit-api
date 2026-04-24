@@ -67,8 +67,6 @@ docker image prune -f || true
 echo -e "${YELLOW}🌐 Creating Docker network...${NC}"
 docker network create cockpit_network_prod 2>/dev/null || echo "Network already exists"
 
-# Use Pi LAN IP — reachable from any Docker network, bypasses iptables cross-bridge issues
-PI_HOST_IP=$(ip route get 1 | awk '{print $7; exit}')
 
 # Use existing volume with old production data
 echo -e "${YELLOW}💾 Using existing production volumes...${NC}"
@@ -139,14 +137,20 @@ docker run -d \
   -e COOKIE_SECURE=True \
   -e ENVIRONMENT=production \
   -e REDIS_STORE_URL="redis://:${REDIS_PASSWORD}@cockpit_redis_prod:6379" \
-  -e VIKUNJA_BASE_URL="http://${PI_HOST_IP}:3456/api/v1" \
+  -e VIKUNJA_BASE_URL="http://vikunja:3456/api/v1" \
   -e VIKUNJA_USERNAME="${VIKUNJA_USERNAME}" \
   -e VIKUNJA_PASSWORD="${VIKUNJA_PASSWORD}" \
-  -e ACTUAL_HTTP_API_URL="http://${PI_HOST_IP}:5007" \
+  -e ACTUAL_HTTP_API_URL="http://actual-http-api:5007" \
   -e ACTUAL_HTTP_API_KEY="${ACTUAL_HTTP_API_KEY}" \
   ${IMAGE_NAME}:latest
 
 echo -e "${GREEN}✅ API container started${NC}"
+
+# Connect to external service networks so container hostnames resolve
+echo -e "${YELLOW}🔗 Connecting to external networks...${NC}"
+docker network connect vikunja_default cockpit_api_prod
+docker network connect cockpit_network_prod actual-http-api 2>/dev/null || true
+echo -e "${GREEN}✅ Connected to external networks${NC}"
 
 # Wait a moment for services to start
 echo -e "${YELLOW}⏳ Waiting for services to start...${NC}"
