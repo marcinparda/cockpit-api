@@ -67,6 +67,9 @@ docker image prune -f || true
 echo -e "${YELLOW}🌐 Creating Docker network...${NC}"
 docker network create cockpit_network_prod 2>/dev/null || echo "Network already exists"
 
+# Resolve host gateway from the container's own network (not docker0)
+HOST_GATEWAY=$(docker network inspect cockpit_network_prod --format '{{range .IPAM.Config}}{{.Gateway}}{{end}}')
+
 # Use existing volume with old production data
 echo -e "${YELLOW}💾 Using existing production volumes...${NC}"
 docker volume create cockpit-api_cockpit_postgres_data_prod 2>/dev/null || echo "Volume already exists"
@@ -141,7 +144,7 @@ docker run -d \
   -e VIKUNJA_PASSWORD="${VIKUNJA_PASSWORD}" \
   -e ACTUAL_HTTP_API_URL="http://host.docker.internal:5007" \
   -e ACTUAL_HTTP_API_KEY="${ACTUAL_HTTP_API_KEY}" \
-  --add-host host.docker.internal:host-gateway \
+  --add-host host.docker.internal:${HOST_GATEWAY} \
   ${IMAGE_NAME}:latest
 
 echo -e "${GREEN}✅ API container started${NC}"
