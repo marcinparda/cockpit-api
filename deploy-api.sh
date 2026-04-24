@@ -67,8 +67,8 @@ docker image prune -f || true
 echo -e "${YELLOW}🌐 Creating Docker network...${NC}"
 docker network create cockpit_network_prod 2>/dev/null || echo "Network already exists"
 
-# Resolve host gateway from the container's own network (not docker0)
-HOST_GATEWAY=$(docker network inspect cockpit_network_prod --format '{{range .IPAM.Config}}{{.Gateway}}{{end}}')
+# Use Pi LAN IP — reachable from any Docker network, bypasses iptables cross-bridge issues
+PI_HOST_IP=$(ip route get 1 | awk '{print $7; exit}')
 
 # Use existing volume with old production data
 echo -e "${YELLOW}💾 Using existing production volumes...${NC}"
@@ -139,12 +139,11 @@ docker run -d \
   -e COOKIE_SECURE=True \
   -e ENVIRONMENT=production \
   -e REDIS_STORE_URL="redis://:${REDIS_PASSWORD}@cockpit_redis_prod:6379" \
-  -e VIKUNJA_BASE_URL="http://host.docker.internal:3456/api/v1" \
+  -e VIKUNJA_BASE_URL="http://${PI_HOST_IP}:3456/api/v1" \
   -e VIKUNJA_USERNAME="${VIKUNJA_USERNAME}" \
   -e VIKUNJA_PASSWORD="${VIKUNJA_PASSWORD}" \
-  -e ACTUAL_HTTP_API_URL="http://host.docker.internal:5007" \
+  -e ACTUAL_HTTP_API_URL="http://${PI_HOST_IP}:5007" \
   -e ACTUAL_HTTP_API_KEY="${ACTUAL_HTTP_API_KEY}" \
-  --add-host host.docker.internal:${HOST_GATEWAY} \
   ${IMAGE_NAME}:latest
 
 echo -e "${GREEN}✅ API container started${NC}"
