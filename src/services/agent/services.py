@@ -1,31 +1,88 @@
 import json
 from collections.abc import AsyncGenerator
+from datetime import date, timedelta
 from uuid import UUID
 
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.services.agent import repository
-from src.services.agent.llm import DEFAULT_MODEL, stream_agent_response
-from src.services.agent.tools import TOOL_STATUS_MESSAGES, TOOLS
+from src.services.agent.llm import DEFAULT_MODEL, classify_domain, stream_agent_response
+from src.services.agent.tools import BUDGET_TOOLS, CV_TOOLS, TASK_TOOLS, TOOL_STATUS_MESSAGES
 from src.services.agent.tools_executor import execute_tool, write_cv_preset
 
-SYSTEM_PROMPT = """You are an AI assistant specialized in tailoring CVs for specific job offers.
+# ── Domain system prompts ──────────────────────────────────────────────────────
+
+_CV_SYSTEM_PROMPT = """You are a CV tailoring assistant.
 
 When the user provides a job offer (text or URL):
-1. Extract the company name from the job offer.
-2. Call search_company to learn about the company's culture, values, and tech stack.
+1. Extract the company name.
+2. Call search_company to learn about culture, values, and tech stack.
 3. Call get_cv_base_preset to read the user's full CV.
-4. Analyze the job requirements and the CV.
-5. Call create_cv_preset with a tailored version — reduce experience bullets to 3 most relevant per role, drop irrelevant skills, include only relevant sections.
+4. Call create_cv_preset with a tailored version:
+   - 3 most relevant experience bullets per role
+   - Drop irrelevant skills
+   - Include only relevant sections
+   - Preset name format: "{Company} - {Role} YYYY-MM-DD"
 
 Rules:
-- Always read the base CV before tailoring.
-- Never modify the base preset.
-- Preset name format: "{Company} - {Role} {YYYY-MM-DD}".
-- After create_cv_preset is called, wait for the user to confirm before proceeding.
-- If user says "yes" or "confirm" after a confirmation request, the preset will be saved automatically.
-- If user says "no" or "cancel", acknowledge and offer to adjust."""
+- Always read the base CV before tailoring. Never modify the base preset.
+- After create_cv_preset is called, wait for user confirmation before saving.
+- "yes"/"confirm" → saves automatically. "no"/"cancel" → acknowledge and offer to adjust."""
+
+
+def _budget_system_prompt() -> str:
+    today = date.today().isoformat()
+    return f"""You are a budget management assistant for Actual Budget. Today is {today}.
+
+Amount format: milliunits integer. 1000 = $1.00. Expenses negative (-10500 = -$10.50). Income positive.
+
+Bank import workflow (user pastes bank statement lines):
+1. actual_list_accounts — get account IDs.
+2. actual_list_categories — know available categories.
+3. actual_list_payees — check existing payees to reuse IDs.
+4. Categorize each item intelligently from payee name and amount.
+5. actual_batch_create_transactions with learn_categories=true.
+6. Report what was imported; flag uncertain categorizations.
+
+For single transactions: actual_create_transaction.
+For finding transactions: actual_search_transactions (requires account_id + since_date).
+For fixing category: actual_update_transaction."""
+
+
+def _task_system_prompt() -> str:
+    today = date.today()
+    week_end = today + timedelta(days=(6 - today.weekday()))
+    month_end = (today.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+    return f"""You are a task management assistant for Vikunja. Today is {today.isoformat()}.
+
+Filter syntax for vikunja_get_tasks: field comparator value, joined with &&.
+Useful date constants:
+  - Today: {today.isoformat()}
+  - End of week: {week_end.isoformat()}
+  - End of month: {month_end.isoformat()}
+
+Common filter patterns:
+  - Due today or overdue: filter='due_date<={today.isoformat()}&&done=false', sort_by='due_date', order_by='asc'
+  - Due this week: filter='due_date<={week_end.isoformat()}&&done=false', sort_by='due_date', order_by='asc'
+  - Due this month: filter='due_date<={month_end.isoformat()}&&done=false', sort_by='due_date', order_by='asc'
+  - All open: filter='done=false'
+
+Task creation with assignees:
+1. vikunja_list_projects → get project_id.
+2. vikunja_list_users → find user_id by name if needed.
+3. vikunja_create_task with assignees=[user_id, ...].
+
+For summaries: fetch tasks with the date filter, group by project or due date in your response."""
+
+
+_DOMAIN_CONFIGS: dict[str, tuple] = {
+    "cv": (lambda: _CV_SYSTEM_PROMPT, CV_TOOLS),
+    "budget": (_budget_system_prompt, BUDGET_TOOLS),
+    "tasks": (_task_system_prompt, TASK_TOOLS),
+}
+
+# ── Confirmation phrases (CV-specific) ────────────────────────────────────────
 
 _CONFIRM_PHRASES = {"yes", "y", "ok", "confirm", "do it", "yes please", "go ahead", "save it", "save"}
 _CANCEL_PHRASES = {"no", "n", "cancel", "stop", "don't", "abort", "nope"}
@@ -34,6 +91,8 @@ _CANCEL_PHRASES = {"no", "n", "cancel", "stop", "don't", "abort", "nope"}
 def _sse(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data)}\n\n"
 
+
+# ── Main entry point ───────────────────────────────────────────────────────────
 
 async def stream_message(
     db: AsyncSession,
@@ -50,16 +109,13 @@ async def stream_message(
 
     await repository.save_message(db, conversation_id, "user", user_content)
 
-    # Check for pending confirmation from previous turn
-    last_msg = await repository.get_last_message(db, conversation_id)
+    # Check for pending CV confirmation from previous turn
     pending = None
-    if last_msg and last_msg.role == "user":
-        # Look at the message before user's — the previous assistant message
-        all_msgs = await repository.get_messages(db, conversation_id)
-        for msg in reversed(all_msgs[:-1]):  # skip just-saved user message
-            if msg.role == "assistant" and msg.extra_data and msg.extra_data.get("pending_preset"):
-                pending = msg.extra_data["pending_preset"]
-                break
+    all_msgs = await repository.get_messages(db, conversation_id)
+    for msg in reversed(all_msgs[:-1]):  # skip just-saved user message
+        if msg.role == "assistant" and msg.extra_data and msg.extra_data.get("pending_preset"):
+            pending = msg.extra_data["pending_preset"]
+            break
 
     if pending:
         lower = user_content.strip().lower()
@@ -77,18 +133,30 @@ async def stream_message(
     model = conversation.model
     if "/" not in model:
         model = f"anthropic/{model}"
-    async for chunk in _run_agent_loop(db, redis_client, conversation_id, model):
+
+    # Classify intent using last few messages for context
+    recent = [{"role": m.role, "content": m.content} for m in all_msgs[-3:] if m.role in ("user", "assistant")]
+    domain = await classify_domain(recent, model)
+
+    prompt_fn, domain_tools = _DOMAIN_CONFIGS[domain]
+    system_prompt = prompt_fn()
+
+    async for chunk in _run_agent_loop(db, redis_client, conversation_id, model, system_prompt, domain_tools):
         yield chunk
 
+
+# ── Agent loop ─────────────────────────────────────────────────────────────────
 
 async def _run_agent_loop(
     db: AsyncSession,
     redis_client: Redis,
     conversation_id: UUID,
     model: str,
+    system_prompt: str,
+    tools: list,
 ) -> AsyncGenerator[str, None]:
     db_messages = await repository.get_messages(db, conversation_id)
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    messages = [{"role": "system", "content": system_prompt}]
     for m in db_messages:
         messages.append({"role": m.role, "content": m.content})
 
@@ -100,7 +168,7 @@ async def _run_agent_loop(
         finish_reason = None
 
         try:
-            async for chunk in stream_agent_response(model, messages, TOOLS):
+            async for chunk in stream_agent_response(model, messages, tools):
                 choice = chunk.choices[0]
                 if choice.finish_reason:
                     finish_reason = choice.finish_reason

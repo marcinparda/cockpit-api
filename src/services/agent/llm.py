@@ -36,6 +36,35 @@ _client = AsyncOpenAI(
 )
 
 
+_CLASSIFIER_SYSTEM = """Classify the user's intent into exactly one domain.
+Reply with exactly one word — no punctuation, no explanation.
+
+Domains:
+- cv: CV tailoring, resume editing, job applications, company research for a job offer
+- budget: expenses, transactions, accounts, categories, payees, money, bank statement, spending
+- tasks: tasks, todos, deadlines, projects, assignments, schedule, due dates, what to do"""
+
+_DOMAIN_FALLBACK = "tasks"
+
+
+async def classify_domain(recent_messages: list[dict], model: str) -> str:
+    messages = [
+        {"role": "system", "content": _CLASSIFIER_SYSTEM},
+        *recent_messages,
+    ]
+    response = await _client.chat.completions.create(
+        model=model,
+        messages=messages,
+        stream=False,
+        max_tokens=5,
+    )
+    text = (response.choices[0].message.content or "").strip().lower()
+    for domain in ("cv", "budget", "tasks"):
+        if domain in text:
+            return domain
+    return _DOMAIN_FALLBACK
+
+
 async def stream_agent_response(
     model: str,
     messages: list,
