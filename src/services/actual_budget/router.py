@@ -5,9 +5,14 @@ import httpx
 from src.services.authorization.permissions.dependencies import require_permission
 from src.services.authorization.permissions.enums import Actions, Features
 from src.services.users.models import User
+from src.core.config import settings
 from src.services.actual_budget import client
 
 router = APIRouter(tags=["actual_budget"])
+
+
+def _budget_path(path: str) -> str:
+    return f"/v1/budgets/{settings.ACTUAL_BUDGET_SYNC_ID}{path}"
 
 
 @router.get("/accounts")
@@ -16,7 +21,7 @@ async def list_accounts(
 ):
     try:
         async with client.make_actual_client() as c:
-            resp = await c.get("/accounts")
+            resp = await c.get(_budget_path("/accounts"))
             resp.raise_for_status()
             return resp.json()
     except httpx.HTTPStatusError as e:
@@ -42,7 +47,7 @@ async def list_transactions(
 
     try:
         async with client.make_actual_client() as c:
-            resp = await c.get("/transactions", params=params)
+            resp = await c.get(_budget_path("/transactions"), params=params)
             resp.raise_for_status()
             return resp.json()
     except httpx.HTTPStatusError as e:

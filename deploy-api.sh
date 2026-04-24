@@ -35,6 +35,7 @@ required_vars=(
     "VIKUNJA_USERNAME"
     "VIKUNJA_PASSWORD"
     "ACTUAL_HTTP_API_KEY"
+    "ACTUAL_BUDGET_SYNC_ID"
 )
 
 echo -e "${YELLOW}📋 Checking environment variables...${NC}"
@@ -142,6 +143,7 @@ docker run -d \
   -e VIKUNJA_PASSWORD="${VIKUNJA_PASSWORD}" \
   -e ACTUAL_HTTP_API_URL="http://actual-http-api:5007" \
   -e ACTUAL_HTTP_API_KEY="${ACTUAL_HTTP_API_KEY}" \
+  -e ACTUAL_BUDGET_SYNC_ID="${ACTUAL_BUDGET_SYNC_ID}" \
   ${IMAGE_NAME}:latest
 
 echo -e "${GREEN}✅ API container started${NC}"

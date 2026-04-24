@@ -51,6 +51,7 @@ class Settings(BaseSettings):
     # Actual Budget (actual-http-api) Settings
     ACTUAL_HTTP_API_URL: str = "http://localhost:5007"
     ACTUAL_HTTP_API_KEY: str = ""
+    ACTUAL_BUDGET_SYNC_ID: str = ""
 
     # Environment Detection
     ENVIRONMENT: str = "development"  # production, development, test
@@ -118,6 +119,7 @@ VIKUNJA_PASSWORD = getenv("VIKUNJA_PASSWORD", "")
 
 ACTUAL_HTTP_API_URL = getenv("ACTUAL_HTTP_API_URL", "http://localhost:5007")
 ACTUAL_HTTP_API_KEY = getenv("ACTUAL_HTTP_API_KEY", "")
+ACTUAL_BUDGET_SYNC_ID = getenv("ACTUAL_BUDGET_SYNC_ID", "")
 
 settings = Settings(
     POSTGRES_USER=DB_USER,
@@ -142,4 +144,5 @@ settings = Settings(
     VIKUNJA_PASSWORD=VIKUNJA_PASSWORD,
     ACTUAL_HTTP_API_URL=ACTUAL_HTTP_API_URL,
     ACTUAL_HTTP_API_KEY=ACTUAL_HTTP_API_KEY,
+    ACTUAL_BUDGET_SYNC_ID=ACTUAL_BUDGET_SYNC_ID,
 )

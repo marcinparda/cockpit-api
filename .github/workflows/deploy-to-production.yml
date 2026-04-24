@@ -66,6 +66,7 @@ jobs:
           export VIKUNJA_USERNAME='${{ secrets.VIKUNJA_USERNAME }}' && \
           export VIKUNJA_PASSWORD='${{ secrets.VIKUNJA_PASSWORD }}' && \
           export ACTUAL_HTTP_API_KEY='${{ secrets.ACTUAL_HTTP_API_KEY }}' && \
+          export ACTUAL_BUDGET_SYNC_ID='${{ secrets.ACTUAL_BUDGET_SYNC_ID }}' && \
           ./deploy-api.sh"
         shell: bash
 
