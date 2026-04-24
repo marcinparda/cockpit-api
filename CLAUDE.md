@@ -1,8 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
-## Important Development Rules
+This file provides guidance to Claude Code (claude.ai/code) when working with code in cockpit-api repository.
 
 ## Development Commands
 
@@ -52,6 +50,21 @@ poetry run pytest --cov=src
 poetry install
 ```
 
+## Upstream API Documentation
+
+Upstream API specs are in `docs/`:
+
+- `docs/actual-budget.openapi.json` — Actual HTTP API full OpenAPI 3.1.0 spec (fetched from live raspberry instance)
+- `docs/vikunja.openapi.json` — Vikunja full Swagger 2.0 spec (fetched from GitHub main)
+- `docs/UPSTREAM_APIS.md` — quick endpoint index for both APIs
+
+When proxying a new endpoint: check `docs/UPSTREAM_APIS.md` for the endpoint, then read the OpenAPI JSON for exact request/response schemas.
+
+To refresh specs when upstream updates:
+```bash
+./docs/update-upstream-docs.sh
+```
+
 ## Architecture Overview
 
 ### Database Design
@@ -61,29 +74,6 @@ poetry install
 - **Relationships**: Proper SQLAlchemy relationships with cascade delete where appropriate
 - **Async Operations**: Fully async database operations using SQLAlchemy's async engine
 - **Use Mapped for models**: SQLAlchemy's `Mapped` generic type for type-safe ORM models
-
-### Core Structure
-
-This FastAPI-based API is organized with a modular, service-oriented architecture, where each service is implemented under `src/services/`. Complex services are further split into modules.
-
-### Services and Modules structure
-
-Each service follows a consistent structure:
-
-- `router.py`: FastAPI route definitions
-- `schemas.py`: Pydantic models for request/response validation
-- `models.py`: SQLAlchemy models (if applicable)
-- `services.py`: Business logic and service layer
-- `repository.py`: Data access layer (if services interact with the database)
-- `dependencies.py`: Dependency injection for service/module specific dependencies
-
-## Development Guidelines
-
-### Router/Service/Repository Pattern
-
-1. **Router**: Defines the API endpoints and request/response schemas. No business logic here. Add handlers, dependencies if needed.
-2. **Service**: Business logic here. Here errors are raised if needed.
-3. **Repository**: Using SQLAlchemy interact with the database. Only contains writes/reads to the database no other logic.
 
 ### Database Changes
 
@@ -112,24 +102,6 @@ async def protected_endpoint(
 
 ### Imports
 
-- When importing a module use absolute imports from the `src` root and import always at the top of the file, not inside functions or classes.
-- When importing service/repostitories modules, import whole module, not specific functions/classes from it.
+- When importing service/repostitories modules
   - Correct: `from src.services.authentication.sessions import service`
   - Incorrect: `from src.services.authentication.sessions.service import login_user`
-
-### Testing Strategy
-
-TODO
-
-### Environment Configuration
-
-Development database connection:
-
-- DB_USER=cockpit_user
-- DB_PASSWORD=secure_dev_password
-- DB_HOST=cockpit_db
-- DB_NAME=cockpit_db
-
-Development Redis connection:
-
-- REDIS_STORE_URL=redis://:secure_redis_dev_password@cockpit_redis:6379
