@@ -37,6 +37,7 @@ required_vars=(
     "ACTUAL_HTTP_API_KEY"
     "ACTUAL_BUDGET_SYNC_ID"
     "ACTUAL_SERVER_URL"
+    "ACTUAL_SERVER_PASSWORD"
 )
 
 echo -e "${YELLOW}📋 Checking environment variables...${NC}"
@@ -163,6 +164,7 @@ docker run -d \
   -p 5007:5007 \
   -v actual_http_api_data:/data \
   -e ACTUAL_SERVER_URL="${ACTUAL_SERVER_URL}" \
+  -e ACTUAL_SERVER_PASSWORD="${ACTUAL_SERVER_PASSWORD}" \
   -e API_KEY="${ACTUAL_HTTP_API_KEY}" \
   -e ACTUAL_DATA_DIR=/data \
   jhonderson/actual-http-api:latest
