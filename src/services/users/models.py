@@ -13,8 +13,6 @@ if TYPE_CHECKING:
     from src.services.authorization.roles.models import UserRole
     from src.services.authorization.user_permissions.models import UserPermission
     from src.services.authentication.tokens.models import AccessToken, RefreshToken
-    from src.services.todos.projects.models import TodoProject
-    from src.services.todos.collaborators.models import TodoProjectCollaborator
 
 
 class User(BaseModel):
@@ -44,11 +42,6 @@ class User(BaseModel):
         "AccessToken", back_populates="user", cascade="all, delete-orphan")
     refresh_tokens = relationship(
         "RefreshToken", back_populates="user", cascade="all, delete-orphan")
-    todo_projects = relationship(
-        "TodoProject", back_populates="owner", cascade="all, delete-orphan")
-    todo_collaborations = relationship(
-        "TodoProjectCollaborator", back_populates="user", cascade="all, delete-orphan")
-
     # Self-referential relationship for created_by
     creator = relationship("User", remote_side=[id], backref="created_users")
 

@@ -32,6 +32,9 @@ required_vars=(
     "BCRYPT_ROUNDS"
     "COOKIE_DOMAIN"
     "REDIS_PASSWORD"
+    "VIKUNJA_USERNAME"
+    "VIKUNJA_PASSWORD"
+    "ACTUAL_HTTP_API_KEY"
 )
 
 echo -e "${YELLOW}📋 Checking environment variables...${NC}"
@@ -133,6 +136,12 @@ docker run -d \
   -e COOKIE_SECURE=True \
   -e ENVIRONMENT=production \
   -e REDIS_STORE_URL="redis://:${REDIS_PASSWORD}@cockpit_redis_prod:6379" \
+  -e VIKUNJA_BASE_URL="http://host.docker.internal:3456/api/v1" \
+  -e VIKUNJA_USERNAME="${VIKUNJA_USERNAME}" \
+  -e VIKUNJA_PASSWORD="${VIKUNJA_PASSWORD}" \
+  -e ACTUAL_HTTP_API_URL="http://host.docker.internal:5007" \
+  -e ACTUAL_HTTP_API_KEY="${ACTUAL_HTTP_API_KEY}" \
+  --add-host host.docker.internal:host-gateway \
   ${IMAGE_NAME}:latest
 
 echo -e "${GREEN}✅ API container started${NC}"

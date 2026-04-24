@@ -5,8 +5,8 @@ Cockpit API is the backend service for a personal productivity platform. Built w
 ### Services
 
 - **Agent** — AI agent for CV tailoring; agentic loop with SSE streaming, LiteLLM (Claude), Serper web search, Redis CV read/write (`/api/v1/agent/`)
-- **Budget** — expense tracking and budget management
-- **Todos** — task and project management
+- **Vikunja** — proxy to self-hosted Vikunja task manager; JWT auth per request (`/api/v1/vikunja/`)
+- **Actual Budget** — proxy to self-hosted Actual Budget via `actual-http-api` wrapper; API key auth (`/api/v1/actual/`)
 - **Redis Store** — generic key-value store (`/api/v1/store/{prefix}/{category}/{key}`) backed by Redis, used by the CV app to store CV sections and preset registries
 - **Authentication** — JWT-based sessions with cookie transport
 - **Authorization** — role and permission management

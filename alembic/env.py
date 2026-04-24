@@ -12,13 +12,6 @@ from src.services.authentication.tokens.models import *
 from src.services.authorization.roles.models import *
 from src.services.authorization.permissions.models import *
 from src.services.authorization.user_permissions.models import *
-from src.services.budget.categories.models import *
-from src.services.budget.expenses.models import *
-from src.services.budget.payment_methods.models import *
-# Import todo models to resolve relationships
-from src.services.todos.projects.models import *
-from src.services.todos.items.models import *
-from src.services.todos.collaborators.models import *
 from src.core.database import Base
 
 # Alembic Config object, provides access to .ini values

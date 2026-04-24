@@ -12,7 +12,6 @@ from src.services.users import repository
 from src.services.authorization.user_permissions.models import UserPermission
 from src.services.authentication.passwords.service import hash_password, verify_password, validate_password_strength
 from src.services.users import service as users_service
-from src.services.todos.projects import repository as projects_repository
 
 
 async def get_user_by_id(db: AsyncSession, user_id: UUID) -> User:
@@ -369,15 +368,6 @@ async def revoke_user_permission(
     return True
 
 
-async def _create_user_general_project(db: AsyncSession, user_id: UUID) -> None:
-    """Create the user's General project (cross-aggregate business rule)."""
-    await projects_repository.create_project(
-        db,
-        name="General",
-        owner_id=user_id
-    )
-
-
 async def onboard_new_user(
     db: AsyncSession,
     email: str,
@@ -385,25 +375,6 @@ async def onboard_new_user(
     created_by_id: UUID,
     temporary_password: Optional[str] = None
 ) -> User:
-    """
-    Onboard a new user by creating their account and setting up their workspace.
-
-    This domain service handles the cross-aggregate business rule that every new user
-    must have a General project created for their todo management.
-
-    Args:
-        db: Database session
-        email: User's email address
-        role_id: Role to assign to user
-        created_by_id: ID of admin creating the user
-        temporary_password: Optional password (generated if not provided)
-
-    Returns:
-        Created User object with role relationship loaded
-
-    Raises:
-        HTTPException: If email already exists, role not found, or validation fails
-    """
     new_user = await users_service.create_user(
         db=db,
         email=email,
@@ -412,7 +383,6 @@ async def onboard_new_user(
         temporary_password=temporary_password
     )
 
-    await _create_user_general_project(db, UUID(str(new_user.id)))
     await repository.refresh_user_with_role(db, new_user)
 
     return new_user

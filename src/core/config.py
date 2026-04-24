@@ -43,6 +43,15 @@ class Settings(BaseSettings):
     OPEN_ROUTER_KEY: str = ""
     SERPER_API_KEY: str = ""
 
+    # Vikunja (TwoDo) Settings
+    VIKUNJA_BASE_URL: str = "http://localhost:3456/api/v1"
+    VIKUNJA_USERNAME: str = ""
+    VIKUNJA_PASSWORD: str = ""
+
+    # Actual Budget (actual-http-api) Settings
+    ACTUAL_HTTP_API_URL: str = "http://localhost:5007"
+    ACTUAL_HTTP_API_KEY: str = ""
+
     # Environment Detection
     ENVIRONMENT: str = "development"  # production, development, test
 
@@ -103,6 +112,13 @@ REDIS_STORE_URL = getenv("REDIS_STORE_URL", "redis://cockpit_redis:6379")
 OPEN_ROUTER_KEY = getenv("OPEN_ROUTER_KEY", "")
 SERPER_API_KEY = getenv("SERPER_API_KEY", "")
 
+VIKUNJA_BASE_URL = getenv("VIKUNJA_BASE_URL", "http://localhost:3456/api/v1")
+VIKUNJA_USERNAME = getenv("VIKUNJA_USERNAME", "")
+VIKUNJA_PASSWORD = getenv("VIKUNJA_PASSWORD", "")
+
+ACTUAL_HTTP_API_URL = getenv("ACTUAL_HTTP_API_URL", "http://localhost:5007")
+ACTUAL_HTTP_API_KEY = getenv("ACTUAL_HTTP_API_KEY", "")
+
 settings = Settings(
     POSTGRES_USER=DB_USER,
     POSTGRES_PASSWORD=DB_PASSWORD,
@@ -121,4 +137,9 @@ settings = Settings(
     REDIS_STORE_URL=REDIS_STORE_URL,
     OPEN_ROUTER_KEY=OPEN_ROUTER_KEY,
     SERPER_API_KEY=SERPER_API_KEY,
+    VIKUNJA_BASE_URL=VIKUNJA_BASE_URL,
+    VIKUNJA_USERNAME=VIKUNJA_USERNAME,
+    VIKUNJA_PASSWORD=VIKUNJA_PASSWORD,
+    ACTUAL_HTTP_API_URL=ACTUAL_HTTP_API_URL,
+    ACTUAL_HTTP_API_KEY=ACTUAL_HTTP_API_KEY,
 )
