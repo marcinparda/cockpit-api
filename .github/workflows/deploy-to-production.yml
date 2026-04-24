@@ -62,6 +62,9 @@ jobs:
           export COOKIE_SECURE=True && \
           export ENVIRONMENT=production && \
           export REDIS_PASSWORD='${{ secrets.REDIS_PASSWORD }}' && \
+          export VIKUNJA_USERNAME='${{ secrets.VIKUNJA_USERNAME }}' && \
+          export VIKUNJA_PASSWORD='${{ secrets.VIKUNJA_PASSWORD }}' && \
+          export ACTUAL_HTTP_API_KEY='${{ secrets.ACTUAL_HTTP_API_KEY }}' && \
           ./deploy-api.sh"
         shell: bash
 
