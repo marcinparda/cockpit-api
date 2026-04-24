@@ -136,7 +136,12 @@ async def stream_message(
 
     # Classify intent using last few messages for context
     recent = [{"role": m.role, "content": m.content} for m in all_msgs[-3:] if m.role in ("user", "assistant")]
-    domain = await classify_domain(recent, model)
+    try:
+        domain = await classify_domain(recent, model)
+    except Exception as e:
+        yield _sse("error", {"text": str(e)})
+        yield _sse("done", {})
+        return
 
     prompt_fn, domain_tools = _DOMAIN_CONFIGS[domain]
     system_prompt = prompt_fn()
@@ -176,6 +181,7 @@ async def _run_agent_loop(
 
                 if delta.content:
                     accumulated_content += delta.content
+                    yield _sse("chunk", {"text": delta.content})
 
                 if delta.tool_calls:
                     for tc in delta.tool_calls:
@@ -249,7 +255,6 @@ async def _run_agent_loop(
         else:
             final_text = accumulated_content or ""
             await repository.save_message(db, conversation_id, "assistant", final_text)
-            yield _sse("chunk", {"text": final_text})
             yield _sse("done", {})
             return
 

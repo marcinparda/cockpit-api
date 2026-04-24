@@ -38,6 +38,8 @@ required_vars=(
     "ACTUAL_BUDGET_SYNC_ID"
     "ACTUAL_SERVER_URL"
     "ACTUAL_SERVER_PASSWORD"
+    "OPEN_ROUTER_KEY"
+    "SERPER_API_KEY"
 )
 
 echo -e "${YELLOW}📋 Checking environment variables...${NC}"
@@ -146,6 +148,8 @@ docker run -d \
   -e ACTUAL_HTTP_API_URL="http://actual-http-api:5007" \
   -e ACTUAL_HTTP_API_KEY="${ACTUAL_HTTP_API_KEY}" \
   -e ACTUAL_BUDGET_SYNC_ID="${ACTUAL_BUDGET_SYNC_ID}" \
+  -e OPEN_ROUTER_KEY="${OPEN_ROUTER_KEY}" \
+  -e SERPER_API_KEY="${SERPER_API_KEY}" \
   ${IMAGE_NAME}:latest
 
 echo -e "${GREEN}✅ API container started${NC}"
