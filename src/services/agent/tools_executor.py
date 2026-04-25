@@ -1,3 +1,4 @@
+import asyncio
 import json
 from datetime import date
 from typing import Any
@@ -234,10 +235,32 @@ async def _actual_search_transactions(args: dict[str, Any]) -> Any:
     params: dict[str, Any] = {"since_date": args["since_date"]}
     if args.get("until_date"):
         params["until_date"] = args["until_date"]
+
     async with make_actual_client() as c:
-        resp = await c.get(_budget_path(f"/accounts/{account_id}/transactions"), params=params)
-        resp.raise_for_status()
-        return resp.json()
+        txn_resp, cat_resp = await asyncio.gather(
+            c.get(_budget_path(f"/accounts/{account_id}/transactions"), params=params),
+            c.get(_budget_path("/categories")),
+        )
+        txn_resp.raise_for_status()
+        cat_resp.raise_for_status()
+
+    txn_data = txn_resp.json()
+    cat_data = cat_resp.json()
+
+    category_map: dict[str, str] = {
+        cat["id"]: cat["name"] for cat in cat_data.get("data", [])
+    }
+
+    transactions = txn_data.get("data", txn_data)
+    for txn in transactions:
+        cid = txn.get("category")
+        if cid and cid in category_map:
+            txn["category"] = category_map[cid]
+
+    if isinstance(txn_data, dict):
+        txn_data["data"] = transactions
+        return txn_data
+    return transactions
 
 
 async def _actual_create_transaction(args: dict[str, Any]) -> Any:
