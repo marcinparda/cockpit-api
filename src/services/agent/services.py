@@ -7,87 +7,67 @@ from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.services.agent import repository
-from src.services.agent.llm import DEFAULT_MODEL, classify_domain, stream_agent_response
-from src.services.agent.tools import BUDGET_TOOLS, CV_TOOLS, TASK_TOOLS, TOOL_STATUS_MESSAGES
+from src.services.agent.llm import stream_agent_response
+from src.services.agent.tools import TOOLS, TOOL_STATUS_MESSAGES
 from src.services.agent.tools_executor import execute_tool, write_cv_preset
 
-# ── Domain system prompts ──────────────────────────────────────────────────────
+# ── Planner system prompt ──────────────────────────────────────────────────────
 
-_CV_SYSTEM_PROMPT = """You are a CV tailoring assistant.
-
-When the user provides a job offer (text or URL):
-1. Extract the company name.
-2. Call search_company to learn about culture, values, and tech stack.
-3. Call get_cv_base_preset to read the user's full CV.
-4. Call create_cv_preset with a tailored version:
-   - 3 most relevant experience bullets per role
-   - Drop irrelevant skills
-   - Include only relevant sections
-   - Preset name format: "{Company} - {Role} YYYY-MM-DD"
-
-Rules:
-- Always read the base CV before tailoring. Never modify the base preset.
-- After create_cv_preset is called, wait for user confirmation before saving.
-- "yes"/"confirm" → saves automatically. "no"/"cancel" → acknowledge and offer to adjust."""
-
-
-def _budget_system_prompt() -> str:
-    today = date.today().isoformat()
-    return f"""You are a budget management assistant for Actual Budget. Today is {today}.
-
-Amount format: milliunits integer. 1000 = $1.00. Expenses negative (-10500 = -$10.50). Income positive.
-
-Bank import workflow (user pastes bank statement lines):
-1. actual_list_accounts — get account IDs.
-2. actual_list_categories — know available categories.
-3. actual_list_payees — check existing payees to reuse IDs.
-4. Categorize each item intelligently from payee name and amount.
-5. actual_batch_create_transactions with learn_categories=true.
-6. Report what was imported; flag uncertain categorizations.
-
-For single transactions: actual_create_transaction.
-For finding transactions: actual_search_transactions (requires account_id + since_date).
-For fixing category: actual_update_transaction.
-
-For queries about existing data (accounts, transactions, spending, balances):
-1. actual_list_accounts — find account ID by name.
-2. actual_search_transactions with account_id + since_date.
-Never tell the user you cannot access their data — always use tools first."""
-
-
-def _task_system_prompt() -> str:
+def _planner_system_prompt() -> str:
     today = date.today()
     tomorrow = today + timedelta(days=1)
     week_end = today + timedelta(days=(6 - today.weekday()))
     week_end_excl = week_end + timedelta(days=1)
     month_end = (today.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
     month_end_excl = month_end + timedelta(days=1)
-    return f"""You are a task management assistant for Vikunja. Today is {today.isoformat()}.
+    return f"""You are a personal assistant with tools for three systems:
+- Actual Budget (personal finance): accounts, transactions, categories, payees
+- Vikunja (task management): projects, tasks, users, assignments
+- CV tailoring: resume presets, company research
 
-Filter syntax for vikunja_get_tasks: field comparator value, joined with &&.
-Note: Vikunja date filters are exclusive of time — use the next day's date to include all tasks due on a given day.
+Today: {today.isoformat()}
 
-Common filter patterns:
-  - Due today (all tasks due on {today.isoformat()}): filter='due_date<={tomorrow.isoformat()}&&done=false', sort_by='due_date', order_by='asc'
-  - Due this week (all tasks due by {week_end.strftime("%A, %Y-%m-%d")}): filter='due_date<={week_end_excl.isoformat()}&&done=false', sort_by='due_date', order_by='asc'
-  - Due this month (all tasks due by {month_end.isoformat()}): filter='due_date<={month_end_excl.isoformat()}&&done=false', sort_by='due_date', order_by='asc'
-  - All open: filter='done=false'
+## Workflow — follow for every request
 
-When user asks for tasks "today", "this week", or "this month": use the filter above — include all tasks due up to and including the last moment of that period.
+### Step 1: PLAN
+Before calling any tool, output a short plan:
+<plan>
+1. tool_name — reason
+2. tool_name — reason (parallel with 1 / after 1)
+</plan>
+If no tool can fulfill the request, say so immediately without a plan.
 
-Task creation with assignees:
-1. vikunja_list_projects → get project_id.
-2. vikunja_list_users → find user_id by name if needed.
-3. vikunja_create_task with assignees=[user_id, ...].
+### Step 2: EXECUTE
+Run the plan. Call independent tools in parallel. For dependent steps (need result from a prior step), wait.
 
-For summaries: fetch tasks with the date filter, group by project or due date in your response."""
+### Step 3: VERIFY
+After all tools complete:
+- Success → present results clearly.
+- Partial failure → diagnose, retry with corrected args if fixable without user input.
+- Missing tool → say "I can't do X — I don't have a tool for it."
 
+---
 
-_DOMAIN_CONFIGS: dict[str, tuple] = {
-    "cv": (lambda: _CV_SYSTEM_PROMPT, CV_TOOLS),
-    "budget": (_budget_system_prompt, BUDGET_TOOLS),
-    "tasks": (_task_system_prompt, TASK_TOOLS),
-}
+## Domain knowledge
+
+### Actual Budget
+Amount format: milliunits integer. 1000 = $1.00. Expenses negative (-10500 = -$10.50). Income positive.
+Finding transactions: actual_list_accounts first (get account_id by name), then actual_search_transactions.
+Bank import (user pastes statement lines): actual_list_accounts → actual_list_categories → actual_list_payees → actual_batch_create_transactions (learn_categories=true) → report imported items, flag uncertain categories.
+Single transaction: actual_create_transaction. Update/fix category: actual_update_transaction.
+
+### Vikunja
+Filter syntax for vikunja_get_tasks: field comparator value joined with &&.
+Date filters are exclusive of time — use next day's date to include tasks due on a given day.
+  - Due today: filter='due_date<={tomorrow.isoformat()}&&done=false', sort_by='due_date', order_by='asc'
+  - Due this week: filter='due_date<={week_end_excl.isoformat()}&&done=false', sort_by='due_date', order_by='asc'
+  - Due this month: filter='due_date<={month_end_excl.isoformat()}&&done=false', sort_by='due_date', order_by='asc'
+Task with assignees: vikunja_list_projects → vikunja_list_users → vikunja_create_task with assignees=[user_id].
+
+### CV tailoring
+Always call get_cv_base_preset before tailoring. Never modify the base preset.
+After create_cv_preset: wait for user confirmation ("yes"/"confirm") before saving.
+Preset name format: "{{Company}} - {{Role}} YYYY-MM-DD"."""
 
 # ── Confirmation phrases (CV-specific) ────────────────────────────────────────
 
@@ -141,19 +121,7 @@ async def stream_message(
     if "/" not in model:
         model = f"anthropic/{model}"
 
-    # Classify intent using last few messages for context
-    recent = [{"role": m.role, "content": m.content} for m in all_msgs[-3:] if m.role in ("user", "assistant")]
-    try:
-        domain = await classify_domain(recent, model)
-    except Exception as e:
-        yield _sse("error", {"text": str(e)})
-        yield _sse("done", {})
-        return
-
-    prompt_fn, domain_tools = _DOMAIN_CONFIGS[domain]
-    system_prompt = prompt_fn()
-
-    async for chunk in _run_agent_loop(db, redis_client, conversation_id, model, system_prompt, domain_tools):
+    async for chunk in _run_agent_loop(db, redis_client, conversation_id, model, _planner_system_prompt(), TOOLS):
         yield chunk
 
 
