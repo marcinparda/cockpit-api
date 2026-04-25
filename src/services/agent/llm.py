@@ -41,7 +41,7 @@ Reply with exactly one word — no punctuation, no explanation.
 
 Domains:
 - cv: CV tailoring, resume editing, job applications, company research for a job offer
-- budget: expenses, transactions, accounts, categories, payees, money, bank statement, spending
+- budget: expenses, transactions, accounts, categories, payees, money, bank statement, spending, overspend, budget, finance, financial, income, savings, balance
 - tasks: tasks, todos, deadlines, projects, assignments, schedule, due dates, what to do"""
 
 _DOMAIN_FALLBACK = "tasks"

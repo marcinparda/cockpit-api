@@ -47,7 +47,12 @@ Bank import workflow (user pastes bank statement lines):
 
 For single transactions: actual_create_transaction.
 For finding transactions: actual_search_transactions (requires account_id + since_date).
-For fixing category: actual_update_transaction."""
+For fixing category: actual_update_transaction.
+
+For queries about existing data (accounts, transactions, spending, balances):
+1. actual_list_accounts — find account ID by name.
+2. actual_search_transactions with account_id + since_date.
+Never tell the user you cannot access their data — always use tools first."""
 
 
 def _task_system_prompt() -> str:
