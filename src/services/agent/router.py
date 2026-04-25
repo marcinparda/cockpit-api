@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.database import get_db
 from src.services.agent import repository, services
 from src.services.agent.llm import AVAILABLE_MODELS, DEFAULT_MODEL
+from src.services.agent.services import _abort_key
 from src.services.agent.schemas import (
     ConversationCreate,
     ConversationResponse,
@@ -116,6 +117,19 @@ async def get_messages(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
     messages = await repository.get_messages(db, conversation_id)
     return [MessageResponse.model_validate(m) for m in messages]
+
+
+@router.post("/conversations/{conversation_id}/stop", status_code=status.HTTP_204_NO_CONTENT)
+async def stop_generation(
+    conversation_id: UUID,
+    current_user: User = Depends(require_permission(Features.AGENT, Actions.CREATE)),
+    db: AsyncSession = Depends(get_db),
+    redis_client: Redis = Depends(get_redis_client),
+) -> None:
+    conversation = await repository.get_conversation(db, conversation_id, current_user.id)
+    if conversation is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
+    await redis_client.set(_abort_key(conversation_id), "1")
 
 
 @router.post("/conversations/{conversation_id}/messages")

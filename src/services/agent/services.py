@@ -7,9 +7,15 @@ from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.services.agent import repository
-from src.services.agent.llm import stream_agent_response
+from src.services.agent.llm import calculate_cost, stream_agent_response
 from src.services.agent.tools import TOOLS, TOOL_STATUS_MESSAGES
 from src.services.agent.tools_executor import execute_tool, write_cv_preset
+
+BUDGET_LIMIT_USD = 0.10
+
+
+def _abort_key(conversation_id: UUID) -> str:
+    return f"agent:abort:{conversation_id}"
 
 # ── Planner system prompt ──────────────────────────────────────────────────────
 
@@ -51,9 +57,11 @@ After all tools complete:
 ## Domain knowledge
 
 ### Actual Budget
-Amount format: milliunits integer. 1000 = $1.00. Expenses negative (-10500 = -$10.50). Income positive.
+Amount format: milliunits integer. 1000 = 1.00 PLN. Expenses negative (-10500 = -10.50 PLN). Income positive.
+Polish CSV format: comma is decimal separator, space is thousands separator. Convert steps: (1) remove spaces, (2) replace comma with dot, (3) parse float, (4) multiply by 1000, (5) round to integer. Examples: "-21,50 PLN" → -21500; "-1 890,62 PLN" → -1890620; "-149,00 PLN" → -149000.
 Finding transactions: actual_list_accounts first (get account_id by name), then actual_search_transactions.
-Bank import (user pastes statement lines): actual_list_accounts → actual_list_categories → actual_list_payees → actual_batch_create_transactions (learn_categories=true) → report imported items, flag uncertain categories.
+Bank import (user pastes statement lines): actual_list_accounts → actual_list_categories → actual_list_payees → actual_batch_create_transactions (learn_categories=true, payee_name="AI Agent" for all transactions) → report imported items, flag uncertain categories.
+Payee rule: always set payee_name="AI Agent" on all imported/created transactions. Never use real merchant/payee names.
 Single transaction: actual_create_transaction. Update/fix category: actual_update_transaction.
 
 ### Vikunja
@@ -141,14 +149,43 @@ async def _run_agent_loop(
         messages.append({"role": m.role, "content": m.content})
 
     max_iterations = 8
+    total_cost = 0.0
 
     for _ in range(max_iterations):
+        if await redis_client.get(_abort_key(conversation_id)):
+            await redis_client.delete(_abort_key(conversation_id))
+            yield _sse("error", {"text": "Stopped by user."})
+            yield _sse("done", {})
+            return
+
+        if total_cost >= BUDGET_LIMIT_USD:
+            yield _sse("error", {"text": f"Budget exceeded. Cost so far: ${total_cost:.4f} (limit: ${BUDGET_LIMIT_USD:.2f})."})
+            yield _sse("done", {})
+            return
+
         accumulated_content = ""
         accumulated_tool_calls: dict[int, dict] = {}
         finish_reason = None
+        aborted = False
 
         try:
+            chunk_count = 0
             async for chunk in stream_agent_response(model, messages, tools):
+                if not chunk.choices:
+                    if chunk.usage:
+                        total_cost += calculate_cost(
+                            model,
+                            chunk.usage.prompt_tokens,
+                            chunk.usage.completion_tokens,
+                        )
+                    continue
+
+                chunk_count += 1
+                if chunk_count % 10 == 0 and await redis_client.get(_abort_key(conversation_id)):
+                    await redis_client.delete(_abort_key(conversation_id))
+                    aborted = True
+                    break
+
                 choice = chunk.choices[0]
                 if choice.finish_reason:
                     finish_reason = choice.finish_reason
@@ -176,6 +213,11 @@ async def _run_agent_loop(
                                 accumulated_tool_calls[idx]["function"]["arguments"] += tc.function.arguments
         except Exception as e:
             yield _sse("error", {"text": str(e)})
+            yield _sse("done", {})
+            return
+
+        if aborted:
+            yield _sse("error", {"text": "Stopped by user."})
             yield _sse("done", {})
             return
 
