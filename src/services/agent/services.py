@@ -52,23 +52,23 @@ For fixing category: actual_update_transaction."""
 
 def _task_system_prompt() -> str:
     today = date.today()
+    tomorrow = today + timedelta(days=1)
     week_end = today + timedelta(days=(6 - today.weekday()))
+    week_end_excl = week_end + timedelta(days=1)
     month_end = (today.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+    month_end_excl = month_end + timedelta(days=1)
     return f"""You are a task management assistant for Vikunja. Today is {today.isoformat()}.
 
 Filter syntax for vikunja_get_tasks: field comparator value, joined with &&.
-Useful date constants:
-  - Today: {today.isoformat()}
-  - End of week: {week_end.isoformat()}
-  - End of month: {month_end.isoformat()}
+Note: Vikunja date filters are exclusive of time — use the next day's date to include all tasks due on a given day.
 
 Common filter patterns:
-  - Due today (all tasks due by 23:59:59 today, including overdue): filter='due_date<={today.isoformat()}&&done=false', sort_by='due_date', order_by='asc'
-  - Due this week (all tasks due by 23:59:59 on {week_end.strftime("%A, %Y-%m-%d")}): filter='due_date<={week_end.isoformat()}&&done=false', sort_by='due_date', order_by='asc'
-  - Due this month (all tasks due by 23:59:59 on {month_end.isoformat()}): filter='due_date<={month_end.isoformat()}&&done=false', sort_by='due_date', order_by='asc'
+  - Due today (all tasks due on {today.isoformat()}): filter='due_date<={tomorrow.isoformat()}&&done=false', sort_by='due_date', order_by='asc'
+  - Due this week (all tasks due by {week_end.strftime("%A, %Y-%m-%d")}): filter='due_date<={week_end_excl.isoformat()}&&done=false', sort_by='due_date', order_by='asc'
+  - Due this month (all tasks due by {month_end.isoformat()}): filter='due_date<={month_end_excl.isoformat()}&&done=false', sort_by='due_date', order_by='asc'
   - All open: filter='done=false'
 
-When user asks for tasks "today", "this week", or "this month": use the full end-of-period filter above — include all tasks due up to and including the last moment of that period, not just overdue ones.
+When user asks for tasks "today", "this week", or "this month": use the filter above — include all tasks due up to and including the last moment of that period.
 
 Task creation with assignees:
 1. vikunja_list_projects → get project_id.
