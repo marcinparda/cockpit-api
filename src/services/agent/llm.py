@@ -56,7 +56,7 @@ async def classify_domain(recent_messages: list[dict], model: str) -> str:
         model=model,
         messages=messages,
         stream=False,
-        max_tokens=5,
+        max_tokens=16,
     )
     text = (response.choices[0].message.content or "").strip().lower()
     for domain in ("cv", "budget", "tasks"):
