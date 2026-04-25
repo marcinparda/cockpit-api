@@ -151,7 +151,7 @@ async def _run_agent_loop(
     for m in db_messages:
         messages.append({"role": m.role, "content": m.content})
 
-    max_iterations = 8
+    max_iterations = 1000
     total_cost = 0.0
 
     for _ in range(max_iterations):
