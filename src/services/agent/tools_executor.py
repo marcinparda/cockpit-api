@@ -77,21 +77,21 @@ async def execute_tool(name: str, args: dict[str, Any], redis_client: Redis) -> 
 
     # Vikunja tools
     if name == "vikunja_list_projects":
-        return await _vikunja_list_projects()
+        return await _vikunja_list_projects(redis_client)
     if name == "vikunja_get_tasks":
-        return await _vikunja_get_tasks(args)
+        return await _vikunja_get_tasks(args, redis_client)
     if name == "vikunja_create_task":
-        return await _vikunja_create_task(args)
+        return await _vikunja_create_task(args, redis_client)
     if name == "vikunja_update_task":
-        return await _vikunja_update_task(args)
+        return await _vikunja_update_task(args, redis_client)
     if name == "vikunja_delete_task":
-        return await _vikunja_delete_task(args["task_id"])
+        return await _vikunja_delete_task(args["task_id"], redis_client)
     if name == "vikunja_list_users":
-        return await _vikunja_list_users(args.get("s"))
+        return await _vikunja_list_users(args.get("s"), redis_client)
     if name == "vikunja_assign_user_to_task":
-        return await _vikunja_assign_user_to_task(args["task_id"], args["user_id"])
+        return await _vikunja_assign_user_to_task(args["task_id"], args["user_id"], redis_client)
     if name == "vikunja_remove_assignee":
-        return await _vikunja_remove_assignee(args["task_id"], args["user_id"])
+        return await _vikunja_remove_assignee(args["task_id"], args["user_id"], redis_client)
 
     raise ValueError(f"Unknown tool: {name}")
 
@@ -337,16 +337,16 @@ async def _actual_delete_transaction(transaction_id: str) -> Any:
 
 # ── Vikunja helpers ────────────────────────────────────────────────────────────
 
-async def _vikunja_list_projects() -> Any:
-    token = await get_vikunja_token()
+async def _vikunja_list_projects(redis_client: Redis) -> Any:
+    token = await get_vikunja_token(redis_client)
     async with make_vikunja_client(token) as c:
         resp = await c.get("/projects")
         resp.raise_for_status()
         return resp.json()
 
 
-async def _vikunja_get_tasks(args: dict[str, Any]) -> Any:
-    token = await get_vikunja_token()
+async def _vikunja_get_tasks(args: dict[str, Any], redis_client: Redis) -> Any:
+    token = await get_vikunja_token(redis_client)
     params: dict[str, Any] = {}
     for key in ("filter", "s", "sort_by", "order_by", "page", "per_page"):
         if args.get(key) is not None:
@@ -363,8 +363,8 @@ async def _vikunja_get_tasks(args: dict[str, Any]) -> Any:
             return {"error": f"Vikunja API error {e.response.status_code}", "detail": str(e)}
 
 
-async def _vikunja_create_task(args: dict[str, Any]) -> Any:
-    token = await get_vikunja_token()
+async def _vikunja_create_task(args: dict[str, Any], redis_client: Redis) -> Any:
+    token = await get_vikunja_token(redis_client)
     project_id = args["project_id"]
     task: dict[str, Any] = {"title": args["title"]}
     if args.get("description"):
@@ -381,8 +381,8 @@ async def _vikunja_create_task(args: dict[str, Any]) -> Any:
         return resp.json()
 
 
-async def _vikunja_update_task(args: dict[str, Any]) -> Any:
-    token = await get_vikunja_token()
+async def _vikunja_update_task(args: dict[str, Any], redis_client: Redis) -> Any:
+    token = await get_vikunja_token(redis_client)
     task_id = args["task_id"]
     task: dict[str, Any] = {}
     for key in ("title", "description", "done", "due_date", "priority"):
@@ -394,16 +394,16 @@ async def _vikunja_update_task(args: dict[str, Any]) -> Any:
         return resp.json()
 
 
-async def _vikunja_delete_task(task_id: int) -> Any:
-    token = await get_vikunja_token()
+async def _vikunja_delete_task(task_id: int, redis_client: Redis) -> Any:
+    token = await get_vikunja_token(redis_client)
     async with make_vikunja_client(token) as c:
         resp = await c.delete(f"/tasks/{task_id}")
         resp.raise_for_status()
         return {"success": True, "task_id": task_id}
 
 
-async def _vikunja_list_users(s: str | None = None) -> Any:
-    token = await get_vikunja_token()
+async def _vikunja_list_users(s: str | None = None, redis_client: Redis | None = None) -> Any:
+    token = await get_vikunja_token(redis_client)
     params: dict[str, Any] = {}
     if s:
         params["s"] = s
@@ -413,16 +413,16 @@ async def _vikunja_list_users(s: str | None = None) -> Any:
         return resp.json()
 
 
-async def _vikunja_assign_user_to_task(task_id: int, user_id: int) -> Any:
-    token = await get_vikunja_token()
+async def _vikunja_assign_user_to_task(task_id: int, user_id: int, redis_client: Redis) -> Any:
+    token = await get_vikunja_token(redis_client)
     async with make_vikunja_client(token) as c:
         resp = await c.put(f"/tasks/{task_id}/assignees", json={"user_id": user_id})
         resp.raise_for_status()
         return resp.json()
 
 
-async def _vikunja_remove_assignee(task_id: int, user_id: int) -> Any:
-    token = await get_vikunja_token()
+async def _vikunja_remove_assignee(task_id: int, user_id: int, redis_client: Redis) -> Any:
+    token = await get_vikunja_token(redis_client)
     async with make_vikunja_client(token) as c:
         resp = await c.delete(f"/tasks/{task_id}/assignees/{user_id}")
         resp.raise_for_status()
