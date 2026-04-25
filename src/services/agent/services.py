@@ -63,10 +63,12 @@ Useful date constants:
   - End of month: {month_end.isoformat()}
 
 Common filter patterns:
-  - Due today or overdue: filter='due_date<={today.isoformat()}&&done=false', sort_by='due_date', order_by='asc'
-  - Due this week: filter='due_date<={week_end.isoformat()}&&done=false', sort_by='due_date', order_by='asc'
-  - Due this month: filter='due_date<={month_end.isoformat()}&&done=false', sort_by='due_date', order_by='asc'
+  - Due today (all tasks due by 23:59:59 today, including overdue): filter='due_date<={today.isoformat()}&&done=false', sort_by='due_date', order_by='asc'
+  - Due this week (all tasks due by 23:59:59 on {week_end.strftime("%A, %Y-%m-%d")}): filter='due_date<={week_end.isoformat()}&&done=false', sort_by='due_date', order_by='asc'
+  - Due this month (all tasks due by 23:59:59 on {month_end.isoformat()}): filter='due_date<={month_end.isoformat()}&&done=false', sort_by='due_date', order_by='asc'
   - All open: filter='done=false'
+
+When user asks for tasks "today", "this week", or "this month": use the full end-of-period filter above — include all tasks due up to and including the last moment of that period, not just overdue ones.
 
 Task creation with assignees:
 1. vikunja_list_projects → get project_id.

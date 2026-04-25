@@ -28,7 +28,7 @@ AVAILABLE_MODELS = [
     "openai/o4-mini",
 ]
 
-DEFAULT_MODEL = "meta-llama/llama-3.1-8b-instruct"
+DEFAULT_MODEL = "openai/gpt-5-mini"
 
 _client = AsyncOpenAI(
     api_key=settings.OPEN_ROUTER_KEY,
