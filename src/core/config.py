@@ -53,6 +53,10 @@ class Settings(BaseSettings):
     ACTUAL_HTTP_API_KEY: str = ""
     ACTUAL_BUDGET_SYNC_ID: str = ""
 
+    # Brain Settings
+    BRAIN_NOTES_PATH: str = "/data/notes"
+    BRAIN_GIT_REMOTE: str = ""
+
     # Environment Detection
     ENVIRONMENT: str = "development"  # production, development, test
 
@@ -121,6 +125,9 @@ ACTUAL_HTTP_API_URL = getenv("ACTUAL_HTTP_API_URL", "http://localhost:5007")
 ACTUAL_HTTP_API_KEY = getenv("ACTUAL_HTTP_API_KEY", "")
 ACTUAL_BUDGET_SYNC_ID = getenv("ACTUAL_BUDGET_SYNC_ID", "")
 
+BRAIN_NOTES_PATH = getenv("BRAIN_NOTES_PATH", "/data/notes")
+BRAIN_GIT_REMOTE = getenv("BRAIN_GIT_REMOTE", "")
+
 settings = Settings(
     POSTGRES_USER=DB_USER,
     POSTGRES_PASSWORD=DB_PASSWORD,
@@ -145,4 +152,6 @@ settings = Settings(
     ACTUAL_HTTP_API_URL=ACTUAL_HTTP_API_URL,
     ACTUAL_HTTP_API_KEY=ACTUAL_HTTP_API_KEY,
     ACTUAL_BUDGET_SYNC_ID=ACTUAL_BUDGET_SYNC_ID,
+    BRAIN_NOTES_PATH=BRAIN_NOTES_PATH,
+    BRAIN_GIT_REMOTE=BRAIN_GIT_REMOTE,
 )

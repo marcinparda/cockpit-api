@@ -36,6 +36,7 @@ services:
       - ./alembic.ini:/app/alembic.ini
       - ./pyproject.toml:/app/pyproject.toml
       - ./poetry.lock:/app/poetry.lock
+      - brain_notes_data:/data/notes
     ports:
       - "8000:8000"
     command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
@@ -84,3 +85,4 @@ volumes:
   cockpit_postgres_data:
   cockpit_pgadmin_data:
   cockpit_redis_data:
+  brain_notes_data:

@@ -61,6 +61,7 @@ Upstream API specs are in `docs/`:
 When proxying a new endpoint: check `docs/UPSTREAM_APIS.md` for the endpoint, then read the OpenAPI JSON for exact request/response schemas.
 
 To refresh specs when upstream updates:
+
 ```bash
 ./docs/update-upstream-docs.sh
 ```
@@ -105,3 +106,7 @@ async def protected_endpoint(
 - When importing service/repostitories modules
   - Correct: `from src.services.authentication.sessions import service`
   - Incorrect: `from src.services.authentication.sessions.service import login_user`
+
+### Creating a plans
+
+When creating a implementation/refactor plan save it under .ai/[plan_name].md

@@ -12,6 +12,7 @@ from src.services.redis_store.router import router as redis_store_router
 from src.services.agent.router import router as agent_router
 from src.services.vikunja.router import router as vikunja_router
 from src.services.actual_budget.router import router as actual_budget_router
+from src.services.brain.router import router as brain_router
 from src.core.config import settings
 from src.common.middleware.rate_limit import RateLimitMiddleware
 from src.common.middleware.jwt_validation import JWTValidationMiddleware
@@ -84,6 +85,8 @@ app.include_router(
     vikunja_router, prefix="/api/v1/vikunja")
 app.include_router(
     actual_budget_router, prefix="/api/v1/actual")
+app.include_router(
+    brain_router, prefix="/api/v1/brain")
 app.include_router(
     health_router, prefix="/health", tags=["health"])
 
