@@ -41,7 +41,7 @@ services:
       - DB_HOST=cockpit_db
       - REDIS_STORE_URL=redis://:${REDIS_PASSWORD}@cockpit_redis:6379
     volumes:
-      - brain_notes_data:/data/notes
+      - /data/notes:/data/notes
     ports:
       - '8000:8000'
     depends_on:
@@ -60,4 +60,3 @@ networks:
 volumes:
   cockpit_postgres_data_prod:
   cockpit_redis_data_prod:
-  brain_notes_data:
