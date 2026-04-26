@@ -13,6 +13,7 @@ from src.services.agent.router import router as agent_router
 from src.services.vikunja.router import router as vikunja_router
 from src.services.actual_budget.router import router as actual_budget_router
 from src.services.brain.router import router as brain_router
+from src.services.brain import search as brain_search
 from src.core.config import settings
 from src.common.middleware.rate_limit import RateLimitMiddleware
 from src.common.middleware.jwt_validation import JWTValidationMiddleware
@@ -30,6 +31,7 @@ async def lifespan(app: FastAPI):
     logger.info("Starting up FastAPI application")
     try:
         await task_scheduler.start()
+        await brain_search.init_index(settings.BRAIN_NOTES_PATH)
         logger.info("Application startup completed")
     except Exception as e:
         logger.error(f"Failed to start application: {str(e)}", exc_info=True)

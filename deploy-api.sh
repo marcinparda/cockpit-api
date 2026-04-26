@@ -40,6 +40,7 @@ required_vars=(
     "ACTUAL_SERVER_PASSWORD"
     "OPEN_ROUTER_KEY"
     "SERPER_API_KEY"
+    "BRAIN_NOTES_PATH"
 )
 
 echo -e "${YELLOW}📋 Checking environment variables...${NC}"
@@ -150,6 +151,9 @@ docker run -d \
   -e ACTUAL_BUDGET_SYNC_ID="${ACTUAL_BUDGET_SYNC_ID}" \
   -e OPEN_ROUTER_KEY="${OPEN_ROUTER_KEY}" \
   -e SERPER_API_KEY="${SERPER_API_KEY}" \
+  -e BRAIN_NOTES_PATH="${BRAIN_NOTES_PATH}" \
+  -e BRAIN_GIT_REMOTE="${BRAIN_GIT_REMOTE}" \
+  -v "${BRAIN_NOTES_PATH}:${BRAIN_NOTES_PATH}" \
   ${IMAGE_NAME}:latest
 
 echo -e "${GREEN}✅ API container started${NC}"
