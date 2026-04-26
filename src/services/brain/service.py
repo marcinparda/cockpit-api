@@ -152,6 +152,21 @@ async def search_notes(notes_path: str, query: str, type_filter: str | None, tag
     return results
 
 
+async def rebuild_search_index(notes_path: str) -> None:
+    base = Path(notes_path)
+    notes = []
+    for f in base.rglob("*.md"):
+        if ".index" in f.parts:
+            continue
+        try:
+            note = _parse_note(notes_path, f)
+            notes.append({"path": note.path, "title": note.title, "body": note.body, "tags": note.tags, "type": note.type})
+        except Exception as e:
+            logger.warning("Skipping %s during index rebuild: %s", f, e)
+    await search_index.rebuild_index(notes_path, notes)
+    logger.info("Search index rebuilt with %d notes", len(notes))
+
+
 async def list_folders(notes_path: str) -> list[str]:
     base = Path(notes_path)
     folders = set()
