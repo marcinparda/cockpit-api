@@ -52,10 +52,30 @@ def register_task_tools(mcp: FastMCP) -> None:
             try:
                 if project_id is not None:
                     resp = await c.get(f"/projects/{project_id}/tasks", params=params)
-                else:
-                    resp = await c.get("/tasks", params=params)
-                resp.raise_for_status()
-                return resp.json()
+                    resp.raise_for_status()
+                    return resp.json()
+
+                # Vikunja doesn't expose a global /tasks endpoint — collect across all projects
+                projects_resp = await c.get("/projects")
+                projects_resp.raise_for_status()
+                projects = projects_resp.json()
+                if not isinstance(projects, list):
+                    projects = [projects]
+
+                all_tasks: list[Any] = []
+                for project in projects:
+                    pid = project.get("id")
+                    if not pid:
+                        continue
+                    try:
+                        t_resp = await c.get(f"/projects/{pid}/tasks", params=params)
+                        t_resp.raise_for_status()
+                        tasks = t_resp.json()
+                        if isinstance(tasks, list):
+                            all_tasks.extend(tasks)
+                    except httpx.HTTPStatusError:
+                        continue
+                return all_tasks
             except httpx.HTTPStatusError as e:
                 return {"error": f"Vikunja API error {e.response.status_code}", "detail": str(e)}
 
