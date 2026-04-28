@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     # Redis Store Settings
     REDIS_STORE_URL: str = "redis://cockpit_redis:6379"
 
+    # MCP Settings
+    MCP_API_KEY: str = ""
+
     # Agent Settings
     OPEN_ROUTER_KEY: str = ""
     SERPER_API_KEY: str = ""
@@ -114,6 +117,7 @@ CORS_ORIGINS_STR = getenv(
 CORS_ORIGINS = CORS_ORIGINS_STR.split(",")
 
 REDIS_STORE_URL = getenv("REDIS_STORE_URL", "redis://cockpit_redis:6379")
+MCP_API_KEY = getenv("MCP_API_KEY", "")
 OPEN_ROUTER_KEY = getenv("OPEN_ROUTER_KEY", "")
 SERPER_API_KEY = getenv("SERPER_API_KEY", "")
 
@@ -144,6 +148,7 @@ settings = Settings(
     COOKIE_SAMESITE=COOKIE_SAMESITE,
     ENVIRONMENT=ENVIRONMENT,
     REDIS_STORE_URL=REDIS_STORE_URL,
+    MCP_API_KEY=MCP_API_KEY,
     OPEN_ROUTER_KEY=OPEN_ROUTER_KEY,
     SERPER_API_KEY=SERPER_API_KEY,
     VIKUNJA_BASE_URL=VIKUNJA_BASE_URL,

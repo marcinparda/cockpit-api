@@ -41,6 +41,7 @@ required_vars=(
     "OPEN_ROUTER_KEY"
     "SERPER_API_KEY"
     "BRAIN_NOTES_PATH"
+    "MCP_API_KEY"
 )
 
 echo -e "${YELLOW}📋 Checking environment variables...${NC}"
@@ -153,6 +154,7 @@ docker run -d \
   -e SERPER_API_KEY="${SERPER_API_KEY}" \
   -e BRAIN_NOTES_PATH="${BRAIN_NOTES_PATH}" \
   -e BRAIN_GIT_REMOTE="${BRAIN_GIT_REMOTE}" \
+  -e MCP_API_KEY="${MCP_API_KEY}" \
   -v "${BRAIN_NOTES_PATH}:${BRAIN_NOTES_PATH}" \
   ${IMAGE_NAME}:latest
 
@@ -183,6 +185,24 @@ echo -e "${YELLOW}🔗 Connecting to external networks...${NC}"
 docker network connect vikunja_default cockpit_api_prod
 docker network connect cockpit_network_prod actual-http-api 2>/dev/null || true
 echo -e "${GREEN}✅ Connected to external networks${NC}"
+
+# Deploy Open WebUI
+echo -e "${YELLOW}🤖 Deploying Open WebUI...${NC}"
+docker stop open-webui 2>/dev/null || true
+docker rm open-webui 2>/dev/null || true
+docker volume create open_webui_data 2>/dev/null || echo "Volume already exists"
+docker pull ghcr.io/open-webui/open-webui:main
+docker run -d \
+  --name open-webui \
+  --network cockpit_network_prod \
+  --restart always \
+  -p 4206:8080 \
+  -v open_webui_data:/app/backend/data \
+  -e OPENAI_API_BASE_URL="https://openrouter.ai/api/v1" \
+  -e OPENAI_API_KEY="${OPEN_ROUTER_KEY}" \
+  -e ENABLE_SIGNUP=true \
+  ghcr.io/open-webui/open-webui:main
+echo -e "${GREEN}✅ Open WebUI deployed on port 4206${NC}"
 
 # Wait a moment for services to start
 echo -e "${YELLOW}⏳ Waiting for services to start...${NC}"

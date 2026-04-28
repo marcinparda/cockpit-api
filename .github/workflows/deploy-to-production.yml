@@ -73,6 +73,7 @@ jobs:
           export SERPER_API_KEY='${{ secrets.SERPER_API_KEY }}' && \
           export BRAIN_NOTES_PATH='${{ secrets.BRAIN_NOTES_PATH }}' && \
           export BRAIN_GIT_REMOTE='${{ secrets.BRAIN_GIT_REMOTE }}' && \
+          export MCP_API_KEY='${{ secrets.MCP_API_KEY }}' && \
           ./deploy-api.sh"
         shell: bash
 
