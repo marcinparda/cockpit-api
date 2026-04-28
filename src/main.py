@@ -29,13 +29,12 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifespan events."""
-    # Startup
+    from redis.asyncio import from_url
+    from src.services.mcp import server as mcp_server
+
     logger.info("Starting up FastAPI application")
     try:
-        from redis.asyncio import from_url
-        from src.services.mcp import server as mcp_server
         mcp_server.redis_client = from_url(settings.REDIS_STORE_URL, encoding="utf-8", decode_responses=False)
-
         await task_scheduler.start()
         await brain_search.init_index(settings.BRAIN_NOTES_PATH)
         await brain_service.rebuild_search_index(settings.BRAIN_NOTES_PATH)
@@ -44,12 +43,11 @@ async def lifespan(app: FastAPI):
         logger.error(f"Failed to start application: {str(e)}", exc_info=True)
         raise
 
-    yield
+    async with mcp_server.mcp.session_manager.run():
+        yield
 
-    # Shutdown
     logger.info("Shutting down FastAPI application")
     try:
-        from src.services.mcp import server as mcp_server
         if mcp_server.redis_client is not None:
             await mcp_server.redis_client.aclose()
         await task_scheduler.stop()
