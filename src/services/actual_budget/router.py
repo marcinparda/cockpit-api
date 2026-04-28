@@ -17,7 +17,7 @@ def _budget_path(path: str) -> str:
 
 @router.get("/accounts")
 async def list_accounts(
-    _: User = Depends(require_permission(Features.AGENT, Actions.READ)),
+    _: User = Depends(require_permission(Features.ACTUAL_BUDGET, Actions.READ)),
 ):
     try:
         async with client.make_actual_client() as c:
@@ -35,7 +35,7 @@ async def list_transactions(
     account_id: str,
     since_date: str = Query(..., description="Start date, e.g. 2024-01-01"),
     until_date: str | None = Query(default=None),
-    _: User = Depends(require_permission(Features.AGENT, Actions.READ)),
+    _: User = Depends(require_permission(Features.ACTUAL_BUDGET, Actions.READ)),
 ):
     params: dict = {"since_date": since_date}
     if until_date:

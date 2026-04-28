@@ -23,7 +23,7 @@ async def _get_token() -> str:
 
 @router.get("/projects")
 async def list_projects(
-    _: User = Depends(require_permission(Features.AGENT, Actions.READ)),
+    _: User = Depends(require_permission(Features.VIKUNJA, Actions.READ)),
 ):
     token = await _get_token()
     try:
@@ -40,7 +40,7 @@ async def list_projects(
 @router.get("/projects/{project_id}/tasks")
 async def list_tasks(
     project_id: int,
-    _: User = Depends(require_permission(Features.AGENT, Actions.READ)),
+    _: User = Depends(require_permission(Features.VIKUNJA, Actions.READ)),
 ):
     token = await _get_token()
     try:
@@ -57,7 +57,7 @@ async def list_tasks(
 @router.post("/tasks", status_code=201)
 async def create_task(
     body: CreateTaskRequest,
-    _: User = Depends(require_permission(Features.AGENT, Actions.CREATE)),
+    _: User = Depends(require_permission(Features.VIKUNJA, Actions.CREATE)),
 ):
     token = await _get_token()
     try:
@@ -75,7 +75,7 @@ async def create_task(
 async def update_task(
     task_id: int,
     body: UpdateTaskRequest,
-    _: User = Depends(require_permission(Features.AGENT, Actions.UPDATE)),
+    _: User = Depends(require_permission(Features.VIKUNJA, Actions.UPDATE)),
 ):
     token = await _get_token()
     try:
