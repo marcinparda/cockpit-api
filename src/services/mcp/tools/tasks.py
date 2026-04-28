@@ -175,7 +175,7 @@ def register_task_tools(mcp: FastMCP) -> None:
 
     @mcp.tool()
     async def vikunja_assign_user_to_task(task_id: int, user_id: int) -> Any:
-        """Assign a user to a task.
+        """Assign a user to a task. Use vikunja_list_users to find user_id.
 
         Args:
             task_id: Task ID

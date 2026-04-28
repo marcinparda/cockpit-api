@@ -12,7 +12,7 @@ def register_budget_tools(mcp: FastMCP) -> None:
 
     @mcp.tool()
     async def actual_list_accounts() -> Any:
-        """List all Actual Budget accounts. Call first to get account IDs needed for transaction operations."""
+        """List all Actual Budget accounts. Returns list of {id, name} objects. Call first to get account IDs needed for transaction operations."""
         async with make_actual_client() as c:
             resp = await c.get(_budget_path("/accounts"))
             resp.raise_for_status()
@@ -207,7 +207,7 @@ def register_budget_tools(mcp: FastMCP) -> None:
 
     @mcp.tool()
     async def actual_delete_transaction(transaction_id: str) -> Any:
-        """Delete a transaction by ID.
+        """Permanently delete a transaction by ID. Cannot be undone.
 
         Args:
             transaction_id: Transaction ID to delete
