@@ -168,6 +168,10 @@ docker stop hermes 2>/dev/null || true
 docker rm hermes 2>/dev/null || true
 mkdir -p "${HOME}/.hermes"
 cat > "${HOME}/.hermes/cli-config.yaml" << EOF
+model:
+  default: "${HERMES_MODEL:-openai/gpt-5-mini}"
+  provider: "openrouter"
+
 mcp_servers:
   cockpit:
     url: http://cockpit_api_prod:8000/mcp
