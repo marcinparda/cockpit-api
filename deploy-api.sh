@@ -81,10 +81,11 @@ echo -e "${YELLOW}💾 Using existing production volumes...${NC}"
 docker volume create cockpit-api_cockpit_postgres_data_prod 2>/dev/null || echo "Volume already exists"
 docker volume create cockpit-api_cockpit_redis_data_prod 2>/dev/null || echo "Redis volume already exists"
 
-# Pull the latest image
-echo -e "${YELLOW}📥 Pulling latest image from GHCR...${NC}"
+# Pull all images up front before starting any containers
+echo -e "${YELLOW}📥 Pulling latest images...${NC}"
 docker pull ${IMAGE_NAME}:latest
-echo -e "${GREEN}✅ Latest image pulled${NC}"
+docker pull nousresearch/hermes-agent:latest
+echo -e "${GREEN}✅ Latest images pulled${NC}"
 
 # Start Redis container
 echo -e "${YELLOW}🗄️ Starting Redis container...${NC}"
@@ -165,7 +166,6 @@ echo -e "${GREEN}✅ API container started${NC}"
 echo -e "${YELLOW}🤖 Deploying Hermes Agent...${NC}"
 docker stop hermes 2>/dev/null || true
 docker rm hermes 2>/dev/null || true
-docker pull nousresearch/hermes-agent:latest
 mkdir -p "${HOME}/.hermes"
 cat > "${HOME}/.hermes/cli-config.yaml" << EOF
 mcp_servers:

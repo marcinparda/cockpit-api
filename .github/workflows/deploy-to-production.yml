@@ -35,6 +35,8 @@ jobs:
             User ${{ secrets.RASPBERRY_PI_USERNAME }}
             IdentityFile ~/.ssh/id_ed25519
             ProxyCommand cloudflared access ssh --hostname %h
+            ServerAliveInterval 60
+            ServerAliveCountMax 30
           EOF
           chmod 600 ~/.ssh/config
         shell: bash
