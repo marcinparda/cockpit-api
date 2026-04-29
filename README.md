@@ -55,6 +55,53 @@ src/services/agent/
 └── repository.py      # DB access for conversations/messages
 ```
 
+## Production Deployment (Raspberry Pi)
+
+### Architecture
+
+```
+Raspberry Pi
+├── cockpit_api_prod      — FastAPI app, port 8000
+├── cockpit_db_prod       — PostgreSQL 15
+├── cockpit_redis_prod    — Redis Stack
+├── actual-http-api       — Actual Budget HTTP wrapper, port 5007
+├── open-webui            — Open WebUI, port 4206
+└── vikunja               — Task manager (external, vikunja_default network)
+```
+
+### MCP Server
+
+Cockpit API exposes an MCP server at `/mcp` (Streamable HTTP transport).
+
+- **URL**: `http://<raspberry-ip>:8000/mcp`
+- **Auth**: `Authorization: Bearer <MCP_API_KEY>`
+- **Tools**: budget (Actual Budget), tasks (Vikunja), cv (Redis presets), brain (notes)
+
+Open WebUI connects to this MCP endpoint so AI models can call cockpit tools directly.
+
+### Open WebUI
+
+- **Port**: 4206
+- **LLM backend**: OpenRouter (`OPEN_ROUTER_KEY`)
+- **MCP**: connected to cockpit `/mcp` endpoint
+
+### Deploying
+
+```bash
+# Run on Raspberry Pi — reads all vars from environment
+./deploy-api.sh
+```
+
+Required env vars are listed at the top of `deploy-api.sh`. Key ones:
+
+| Variable | Purpose |
+|---|---|
+| `MCP_API_KEY` | Bearer token for `/mcp` endpoint |
+| `OPEN_ROUTER_KEY` | OpenRouter API key (used by both API and Open WebUI) |
+| `BRAIN_NOTES_PATH` | Host path mounted into container for notes |
+| `VIKUNJA_USERNAME` / `VIKUNJA_PASSWORD` | Service account for Vikunja |
+| `ACTUAL_HTTP_API_KEY` | API key for actual-http-api sidecar |
+
 ## Getting Started
 
 ### Prerequisites

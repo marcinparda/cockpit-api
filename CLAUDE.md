@@ -110,3 +110,26 @@ async def protected_endpoint(
 ### Creating a plans
 
 When creating a implementation/refactor plan save it under .ai/[plan_name].md
+
+## MCP Server
+
+MCP server mounted at `/mcp` (Streamable HTTP). Auth: `Authorization: Bearer <MCP_API_KEY>`.
+
+Tools registered in `src/services/mcp/tools/`: `budget`, `tasks`, `cv`, `brain`.
+Resources registered in `src/services/mcp/resources/`: `brain`.
+
+When adding MCP tools: add a `register_*_tools(mcp)` call in `src/services/mcp/server.py`.
+
+## Production Stack (Raspberry Pi)
+
+Deployed via `./deploy-api.sh`. No compose file used in prod — containers started with `docker run` directly.
+
+| Container | Port | Notes |
+|---|---|---|
+| `cockpit_api_prod` | 8000 | main API + MCP |
+| `cockpit_db_prod` | — | PostgreSQL 15, internal only |
+| `cockpit_redis_prod` | — | Redis Stack, internal only |
+| `actual-http-api` | 5007 | Actual Budget HTTP wrapper |
+| `open-webui` | 4206 | Open WebUI, uses OpenRouter + cockpit MCP |
+
+`open-webui` connects to cockpit MCP at `http://cockpit_api_prod:8000/mcp` within `cockpit_network_prod`.

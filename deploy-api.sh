@@ -42,6 +42,7 @@ required_vars=(
     "SERPER_API_KEY"
     "BRAIN_NOTES_PATH"
     "MCP_API_KEY"
+    "HERMES_API_KEY"
 )
 
 echo -e "${YELLOW}📋 Checking environment variables...${NC}"
@@ -160,6 +161,35 @@ docker run -d \
 
 echo -e "${GREEN}✅ API container started${NC}"
 
+# Deploy Hermes Agent
+echo -e "${YELLOW}🤖 Deploying Hermes Agent...${NC}"
+docker stop hermes 2>/dev/null || true
+docker rm hermes 2>/dev/null || true
+docker pull nousresearch/hermes-agent:latest
+mkdir -p "${HOME}/.hermes"
+cat > "${HOME}/.hermes/cli-config.yaml" << EOF
+mcp_servers:
+  cockpit:
+    url: http://cockpit_api_prod:8000/mcp
+    headers:
+      Authorization: "Bearer ${MCP_API_KEY}"
+EOF
+docker run -d \
+  --name hermes \
+  --network cockpit_network_prod \
+  --restart always \
+  -p 8642:8642 \
+  -v "${HOME}/.hermes:/opt/data" \
+  -e HERMES_UID=$(id -u) \
+  -e HERMES_GID=$(id -g) \
+  -e API_SERVER_HOST=0.0.0.0 \
+  -e API_SERVER_PORT=8642 \
+  -e API_SERVER_KEY="${HERMES_API_KEY}" \
+  -e OPENROUTER_API_KEY="${OPEN_ROUTER_KEY}" \
+  nousresearch/hermes-agent:latest \
+  gateway run
+echo -e "${GREEN}✅ Hermes Agent deployed on port 8642${NC}"
+
 # Deploy actual-http-api
 echo -e "${YELLOW}🔄 Deploying actual-http-api...${NC}"
 docker network create actual_network 2>/dev/null || true
@@ -198,8 +228,8 @@ docker run -d \
   --restart always \
   -p 4206:8080 \
   -v open_webui_data:/app/backend/data \
-  -e OPENAI_API_BASE_URL="https://openrouter.ai/api/v1" \
-  -e OPENAI_API_KEY="${OPEN_ROUTER_KEY}" \
+  -e OPENAI_API_BASE_URLS="https://openrouter.ai/api/v1;http://hermes:8642/v1" \
+  -e OPENAI_API_KEYS="${OPEN_ROUTER_KEY};${HERMES_API_KEY}" \
   -e ENABLE_SIGNUP=true \
   ghcr.io/open-webui/open-webui:main
 echo -e "${GREEN}✅ Open WebUI deployed on port 4206${NC}"
