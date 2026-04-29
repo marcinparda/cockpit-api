@@ -157,7 +157,10 @@ docker run -d \
   -e BRAIN_NOTES_PATH="${BRAIN_NOTES_PATH}" \
   -e BRAIN_GIT_REMOTE="${BRAIN_GIT_REMOTE}" \
   -e MCP_API_KEY="${MCP_API_KEY}" \
+  -e HERMES_CONFIG_PATH="/opt/hermes/cli-config.yaml" \
   -v "${BRAIN_NOTES_PATH}:${BRAIN_NOTES_PATH}" \
+  -v "${HOME}/.hermes:/opt/hermes" \
+  -v /var/run/docker.sock:/var/run/docker.sock \
   ${IMAGE_NAME}:latest
 
 echo -e "${GREEN}✅ API container started${NC}"
@@ -167,11 +170,14 @@ echo -e "${YELLOW}🤖 Deploying Hermes Agent...${NC}"
 docker stop hermes 2>/dev/null || true
 docker rm hermes 2>/dev/null || true
 mkdir -p "${HOME}/.hermes"
-cat > "${HOME}/.hermes/cli-config.yaml" << EOF
+cat > "${HOME}/.hermes/config.yaml" << EOF
 model:
   default: "${HERMES_MODEL:-openai/gpt-5-mini}"
-  provider: "openrouter"
+  provider: "auto"
+  base_url: "https://openrouter.ai/api/v1"
+EOF
 
+cat > "${HOME}/.hermes/cli-config.yaml" << EOF
 mcp_servers:
   cockpit:
     url: http://cockpit_api_prod:8000/mcp

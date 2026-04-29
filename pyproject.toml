@@ -27,7 +27,8 @@ dependencies = [
     "python-frontmatter (>=1.1.0)",
     "gitpython (>=3.1.0)",
     "aiosqlite (>=0.20.0)",
-    "mcp[cli] (>=1.9.0)"
+    "mcp[cli] (>=1.9.0)",
+    "docker (>=7.0.0)"
 ]
 
 [tool.poetry]
