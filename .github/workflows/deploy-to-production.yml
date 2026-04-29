@@ -46,6 +46,13 @@ jobs:
           scp -o StrictHostKeyChecking=no deploy-api.sh ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }}:~/deploy-api.sh
           ssh -o StrictHostKeyChecking=no ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }} "chmod +x ~/deploy-api.sh"
 
+      - name: Pre-pull large images on Pi
+        continue-on-error: true
+        timeout-minutes: 20
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }} "\
+          docker pull nousresearch/hermes-agent:latest || true"
+
       - name: Deploy to Production
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }} "\
