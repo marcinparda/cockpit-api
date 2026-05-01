@@ -83,8 +83,8 @@ docker volume create cockpit-api_cockpit_redis_data_prod 2>/dev/null || echo "Re
 
 # Pull all images up front before starting any containers
 echo -e "${YELLOW}📥 Pulling latest images...${NC}"
-docker pull --progress=plain ${IMAGE_NAME}:latest
-docker pull --progress=plain nousresearch/hermes-agent:latest
+docker pull ${IMAGE_NAME}:latest
+docker pull nousresearch/hermes-agent:latest
 echo -e "${GREEN}✅ Latest images pulled${NC}"
 
 # Start Redis container
@@ -231,7 +231,7 @@ echo -e "${YELLOW}🤖 Deploying Open WebUI...${NC}"
 docker stop open-webui 2>/dev/null || true
 docker rm open-webui 2>/dev/null || true
 docker volume create open_webui_data 2>/dev/null || echo "Volume already exists"
-docker pull --progress=plain ghcr.io/open-webui/open-webui:main
+docker pull ghcr.io/open-webui/open-webui:main
 docker run -d \
   --name open-webui \
   --network cockpit_network_prod \
