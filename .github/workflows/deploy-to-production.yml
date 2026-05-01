@@ -79,8 +79,10 @@ jobs:
           export MCP_API_KEY='${{ secrets.MCP_API_KEY }}'
           export HERMES_API_KEY='${{ secrets.HERMES_API_KEY }}'
           nohup bash -c 'cd ~ && ./deploy-api.sh > /tmp/deploy.log 2>&1; echo \$? > /tmp/deploy.exit' &
-          echo \"Deploy launched with PID: \$!\"
-          "
+          disown
+          sleep 2
+          echo \"Deploy launched\"
+          " || true
         shell: bash
 
       - name: Wait for deployment
@@ -88,6 +90,7 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }} "
           for i in \$(seq 1 30); do [ -f /tmp/deploy.log ] && break; sleep 2; done
+          if [ ! -f /tmp/deploy.log ]; then echo 'Deploy log not found - deploy did not launch'; exit 1; fi
           tail -f /tmp/deploy.log &
           TAIL_PID=\$!
           while [ ! -f /tmp/deploy.exit ]; do sleep 5; done
