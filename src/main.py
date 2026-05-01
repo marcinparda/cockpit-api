@@ -12,6 +12,7 @@ from src.services.redis_store.router import router as redis_store_router
 from src.services.vikunja.router import router as vikunja_router
 from src.services.actual_budget.router import router as actual_budget_router
 from src.services.brain.router import router as brain_router
+from src.services.oauth.router import router as oauth_router
 from src.services.brain import search as brain_search
 from src.services.brain import service as brain_service
 from src.services.mcp.server import mcp_asgi
@@ -97,6 +98,7 @@ app.include_router(
     brain_router, prefix="/api/v1/brain")
 app.include_router(
     health_router, prefix="/health", tags=["health"])
+app.include_router(oauth_router, tags=["oauth"])
 
 app.mount("/mcp", MCPAPIKeyMiddleware(mcp_asgi, settings.MCP_API_KEY))
 

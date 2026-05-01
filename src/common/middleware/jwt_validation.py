@@ -30,7 +30,11 @@ class JWTValidationMiddleware(BaseHTTPMiddleware):
                 "/api/v1/health/cleanup",
                 "/api/v1/health/tokens/statistics",
                 "/api/v1/health/cleanup/manual",
-                "/api/v1/health/cleanup/dry-run"
+                "/api/v1/health/cleanup/dry-run",
+                "/.well-known/oauth-authorization-server",
+                "/oauth/authorize",
+                "/oauth/token",
+                "/oauth/clients",
             ]
             if len(exclude_paths) == 0 else exclude_paths
         )

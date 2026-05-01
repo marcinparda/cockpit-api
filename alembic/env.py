@@ -8,6 +8,7 @@ from alembic import context
 from src.core.config import settings
 # Import all models from their new domain locations
 from src.services.authentication.tokens.models import *
+from src.services.oauth.models import *
 # Import authorization models from their new submodule locations
 from src.services.authorization.roles.models import *
 from src.services.authorization.permissions.models import *
