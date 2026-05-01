@@ -1,253 +1,188 @@
 # Deployment Workflows
 
-This document describes the automated deployment system for the Cockpit API application, which follows a three-stage approach: **Checks** → **Build & Push** → **Deploy**.
-
-## Overview
-
-The deployment system is designed to:
-
-- Ensure code quality through automated testing
-- Build and publish Docker images to GitHub Container Registry (GHCR)
-- Deploy to Raspberry Pi infrastructure using containerized applications
-- Provide rollback capabilities and deployment visibility
+Automated deployment pipeline: **Checks → Build & Push → Deploy to Pi**.
 
 ## Workflow Structure
 
-### 1. Checks Workflow (`checks.yml`)
+### 1. `checks.yml`
 
-**Triggers:**
+**Triggers:** Pull requests to `master`, called by other workflows.
 
-- Pull requests to `master` branch
-- Called by other workflows
+- Sets up Python 3.12 + Poetry
+- Runs full pytest suite
 
-**Responsibilities:**
+### 2. `deploy.yml`
 
-- Sets up Python 3.12 environment
-- Installs Poetry and project dependencies
-- Runs the complete test suite using pytest
-- Validates code quality before deployment
+**Triggers:** Push to `master`.
 
-**Key Steps:**
+- Runs checks first
+- Builds Docker image for `linux/arm64` (Raspberry Pi)
+- Pushes to GitHub Container Registry (GHCR) with tags:
+  - `ghcr.io/marcinparda/cockpit-api:latest`
+  - `ghcr.io/marcinparda/cockpit-api:master`
+  - `ghcr.io/marcinparda/cockpit-api:sha-<commit>`
+- Uses GHA layer cache for faster builds
 
-```yaml
-- Checkout repository
-- Set up Python 3.12
-- Install Poetry
-- Install dependencies (including dev dependencies)
-- Run pytest with verbose output
-```
+### 3. `deploy-to-production.yml`
 
-### 2. Deploy Workflow (`deploy.yml`)
+**Triggers:** Successful `deploy.yml` on `master`, or manual `workflow_dispatch`.
 
-**Triggers:**
+**Process:**
 
-- Push to `master` branch
-
-**Responsibilities:**
-
-- Runs checks workflow first
-- Builds Docker image for `linux/arm64` (Raspberry Pi compatible)
-- Pushes image to GitHub Container Registry with multiple tags
-- Triggers production deployment
-
-**Image Tagging Strategy:**
-
-- `ghcr.io/marcinparda/cockpit-api:latest` - Latest version from master
-- `ghcr.io/marcinparda/cockpit-api:sha-<commit-sha>` - Specific commit version
-- `ghcr.io/marcinparda/cockpit-api:master` - Branch-based tag
-
-**Key Features:**
-
-- Multi-platform build support (optimized for ARM64)
-- Docker layer caching for faster builds
-- Automated metadata extraction
-- Build summary generation
-
-### 3. Deploy to Production Workflow (`deploy-to-propipduction.yml`)
-
-**Triggers:**
-
-- Successful completion of Deploy workflow on `master` branch
-
-**Responsibilities:**
-
-- Connects to Raspberry Pi via Cloudflare Tunnel and SSH
-- Executes deployment script on target server
-- Provides deployment status feedback
-
-**Security Features:**
-
-- Uses Cloudflare Tunnel for secure SSH access
-- Environment variables passed securely through GitHub Secrets
-- SSH key-based authentication
+1. Install cloudflared via `AnimMouse/setup-cloudflared@v2`
+2. Configure SSH to Pi through Cloudflare Tunnel
+3. Write secrets to `/tmp/deploy.env` on Pi via SCP (never inline in commands)
+4. Launch `deploy-api.sh` on Pi via `nohup` — detached from SSH connection
+5. Poll `/tmp/deploy.exit` every 10s via short-lived SSH connections — avoids cloudflared idle timeout
+6. On failure: fetch last 50 lines of `/tmp/deploy.log` for debugging
 
 ## Deployment Script (`deploy-api.sh`)
 
-The deployment script handles the actual application deployment on the Raspberry Pi:
+Runs on the Raspberry Pi. Uses `docker run` directly — no compose file.
 
-### Key Functions:
+**Process flow:**
 
-1. **Environment Validation** - Checks all required environment variables
-2. **GHCR Authentication** - Logs into GitHub Container Registry
-3. **Configuration Management** - Creates `.env` file with production settings
-4. **Container Orchestration** - Updates and restarts Docker containers
-5. **Health Checks** - Verifies successful deployment
-
-### Process Flow:
-
-```bash
-1. Validate environment variables
-2. Create production .env file
-3. Login to GHCR using GitHub token
-4. Stop existing containers
-5. Update docker-compose.prod.yml to use GHCR image
-6. Pull latest image from registry
-7. Start services with docker-compose
-8. Perform health checks
-9. Report deployment status
 ```
+1.  Validate all required environment variables
+2.  Login to GHCR
+3.  Tag cockpit_api:latest → cockpit_api:previous  (rollback safety)
+4.  Pull ALL images (cockpit_api, hermes-agent, open-webui, actual-http-api)
+    ↑ done BEFORE stopping containers to minimize downtime
+5.  Stop and remove old containers
+6.  Create network + volumes (idempotent)
+7.  Start: cockpit_redis_prod, cockpit_db_prod (wait for ready)
+8.  Start: cockpit_api_prod
+9.  Start: hermes, actual-http-api
+10. Connect cockpit_api_prod to vikunja_default network
+11. Start: open-webui
+12. Poll GET /health until ready (30 retries × 3s)
+13. Verify all core containers are in running state
+14. docker image prune (cleanup only after successful deploy)
+```
+
+**Running containers after deploy:**
+
+| Container | Port | Image |
+|---|---|---|
+| `cockpit_api_prod` | 8000 | `ghcr.io/marcinparda/cockpit-api:latest` |
+| `cockpit_db_prod` | — | `postgres:15-alpine` |
+| `cockpit_redis_prod` | — | `redis/redis-stack-server:latest` |
+| `hermes` | 8642 | `nousresearch/hermes-agent:latest` |
+| `actual-http-api` | 5007 | `jhonderson/actual-http-api:latest` |
+| `open-webui` | 4206 | `ghcr.io/open-webui/open-webui:main` |
 
 ## Required GitHub Secrets
 
-### SSH and Infrastructure:
+### SSH / Infrastructure
 
-- `RASPBERRY_PI_SSH_KEY` - Private SSH key for Pi access
-- `SSH_KNOWN_HOSTS` - Known hosts for SSH security
-- `CLOUDFLARE_TUNNEL_DOMAIN` - Cloudflare tunnel hostname
-- `RASPBERRY_PI_USERNAME` - SSH username for Pi
+| Secret | Description |
+|---|---|
+| `RASPBERRY_PI_SSH_KEY` | Private SSH key for Pi |
+| `SSH_KNOWN_HOSTS` | Known hosts for SSH verification |
+| `CLOUDFLARE_TUNNEL_DOMAIN` | Cloudflare tunnel hostname |
+| `RASPBERRY_PI_USERNAME` | SSH username |
 
-### Database Configuration:
+### Database
 
-- `DB_USER` - PostgreSQL username
-- `DB_PASSWORD` - PostgreSQL password
-- `DB_HOST` - Database host (internal Docker network name)
-- `DB_NAME` - Database name
-- `DB_PORT` - Database port
+| Secret | Description |
+|---|---|
+| `DB_USER` | PostgreSQL username |
+| `DB_PASSWORD` | PostgreSQL password |
+| `DB_HOST` | Database host |
+| `DB_NAME` | Database name |
+| `DB_PORT` | Database port |
 
-### Application Configuration:
+### Application
 
-- `CORS_ORIGINS` - Allowed CORS origins for API
-- `JWT_SECRET_KEY` - Secret key for JWT token signing
-- `JWT_ALGORITHM` - JWT signing algorithm
-- `JWT_EXPIRE_HOURS` - Token expiration time
-- `BCRYPT_ROUNDS` - Password hashing rounds
-- `COOKIE_DOMAIN` - Domain for session cookies
+| Secret | Description |
+|---|---|
+| `CORS_ORIGINS` | Allowed CORS origins |
+| `JWT_SECRET_KEY` | JWT signing key |
+| `JWT_ALGORITHM` | JWT algorithm |
+| `JWT_EXPIRE_HOURS` | Token expiry |
+| `BCRYPT_ROUNDS` | Password hashing rounds |
+| `COOKIE_DOMAIN` | Session cookie domain |
+| `REDIS_PASSWORD` | Redis auth password |
+| `OAUTH_SERVER_URL` | OAuth server base URL |
 
-### Registry Access:
+### External Services
 
-- `GITHUB_TOKEN` - Automatically provided by GitHub Actions
+| Secret | Description |
+|---|---|
+| `VIKUNJA_USERNAME` | Vikunja login |
+| `VIKUNJA_PASSWORD` | Vikunja password |
+| `ACTUAL_HTTP_API_KEY` | Actual Budget HTTP API key |
+| `ACTUAL_BUDGET_SYNC_ID` | Actual Budget sync ID |
+| `ACTUAL_SERVER_URL` | Actual Budget server URL |
+| `ACTUAL_SERVER_PASSWORD` | Actual Budget server password |
+| `OPEN_ROUTER_KEY` | OpenRouter API key |
+| `SERPER_API_KEY` | Serper search API key |
+| `BRAIN_NOTES_PATH` | Path to brain notes on Pi |
+| `BRAIN_GIT_REMOTE` | Git remote for brain notes |
+| `MCP_API_KEY` | MCP server auth key |
+| `HERMES_API_KEY` | Hermes Agent API key |
+
+`GITHUB_TOKEN` is provided automatically by GitHub Actions.
 
 ## Manual Deployment
 
-For manual deployments or troubleshooting:
-
-### Building Image Locally:
+SSH to Pi through cloudflared, set env vars, run the script:
 
 ```bash
-docker build -t cockpit-api:local --target production .
-```
+# From local machine
+cloudflared access ssh --hostname your-tunnel-domain
 
-### Manual Deployment to Pi:
-
-```bash
-# SSH to Raspberry Pi
-ssh username@your-pi-hostname
-
-# Navigate to project directory
-cd ~/cockpit-api
-
-# Pull latest code
-git pull origin master
-
-# Set environment variables and run deployment
-export GITHUB_TOKEN="your-token"
-export GITHUB_ACTOR="your-username"
-# ... set other required variables ...
+# On Pi — set required vars then run
+export GITHUB_TOKEN="..." GITHUB_ACTOR="..." DB_USER="..." # etc.
+cd ~
 ./deploy-api.sh
 ```
 
-### Rollback Procedure:
+## Rollback
+
+The deploy script tags the previous image before pulling. To roll back:
 
 ```bash
 # SSH to Pi
-ssh username@your-pi-hostname
-cd ~/cockpit-api
+docker rm -f cockpit_api_prod
+docker run -d --name cockpit_api_prod \
+  --network cockpit_network_prod \
+  --restart always \
+  -p 8000:8000 \
+  # ... same env flags as in deploy-api.sh ...
+  ghcr.io/marcinparda/cockpit-api:previous
+```
 
-# Pull specific version
-docker pull ghcr.io/marcinparda/cockpit-api:sha-<previous-commit>
+Or pull a specific SHA tag:
 
-# Update compose file to use specific tag
-# Edit docker-compose.prod.yml to change image tag
-
-# Restart services
-docker compose -f docker-compose.prod.yml up -d
+```bash
+docker pull ghcr.io/marcinparda/cockpit-api:sha-<commit>
 ```
 
 ## Monitoring and Troubleshooting
 
-### Health Check Endpoints:
+**Health endpoint:** `http://localhost:8000/health`
 
-- **API Health**: `http://localhost:8000/health`
-- **Database**: Automatic health checks in docker-compose
-
-### Common Issues:
-
-1. **Image Pull Failures**: Verify GHCR authentication and network connectivity
-2. **Container Start Failures**: Check environment variables and docker logs
-3. **Database Connection Issues**: Verify database container health and credentials
-4. **SSH Connection Problems**: Check Cloudflare tunnel status and SSH keys
-
-### Viewing Logs:
+**View container logs:**
 
 ```bash
-# All service logs
-docker compose -f docker-compose.prod.yml logs
-
-# Specific service logs
-docker compose -f docker-compose.prod.yml logs cockpit_api
-
-# Real-time logs
-docker compose -f docker-compose.prod.yml logs -f
+docker logs cockpit_api_prod
+docker logs --tail=50 cockpit_api_prod
+docker logs -f cockpit_api_prod          # follow
 ```
 
-## Architecture Decisions
+**Check deploy log (during/after CI run):**
 
-### Why GHCR (GitHub Container Registry)?
+```bash
+cat /tmp/deploy.log
+cat /tmp/deploy.exit   # exit code
+```
 
-- Integrated with GitHub ecosystem
-- Free for public repositories
-- Excellent integration with GitHub Actions
-- Supports multi-architecture images
+**Common issues:**
 
-### Why Separate Workflows?
-
-- **Separation of Concerns**: Build vs Deploy responsibilities
-- **Reusability**: Checks can be used in PRs and deployments
-- **Visibility**: Clear deployment pipeline stages
-- **Rollback**: Can redeploy without rebuilding
-
-### Why Raspberry Pi?
-
-- Cost-effective production hosting
-- ARM64 architecture support
-- Full container orchestration capabilities
-- Suitable for personal/small-scale applications
-
-## Migration from Legacy Workflows
-
-- ✅ Better separation of concerns
-- ✅ Container registry integration
-- ✅ Improved deployment visibility
-- ✅ Enhanced security through GHCR
-- ✅ Easier rollback capabilities
-- ✅ More maintainable deployment scripts
-
-## Future Enhancements
-
-Potential improvements to consider:
-
-- **Blue/Green Deployments**: Zero-downtime deployments
-- **Automated Rollback**: On health check failures
-- **Multi-Environment**: Staging environment support
-- **Monitoring Integration**: Application performance monitoring
-- **Database Migrations**: Automated Alembic migration runs
+| Issue | Check |
+|---|---|
+| SSH timeout in CI | Cloudflare tunnel status; polling loop handles transient drops |
+| Image pull fails | `docker login ghcr.io` manually; verify `GITHUB_TOKEN` |
+| API not healthy | `docker logs cockpit_api_prod`; check DB container is up |
+| Container won't start | `docker ps -a`; inspect logs for the failed container |

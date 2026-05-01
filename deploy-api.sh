@@ -55,39 +55,39 @@ for var in "${required_vars[@]}"; do
 done
 echo -e "${GREEN}✅ All environment variables are set${NC}"
 
-# All environment variables are passed directly to containers - no .env file needed
-echo -e "${YELLOW}📝 Environment variables will be passed directly to containers${NC}"
-
 # Login to GitHub Container Registry
 echo -e "${YELLOW}🔐 Logging into GitHub Container Registry...${NC}"
 echo "${GITHUB_TOKEN}" | docker login ${REGISTRY} -u ${GITHUB_ACTOR} --password-stdin
 echo -e "${GREEN}✅ Successfully logged in to GHCR${NC}"
 
-# Stop existing containers by name (no compose file needed)
+# Tag current image as :previous before pulling new one (rollback safety)
+echo -e "${YELLOW}🏷️  Tagging current image as :previous...${NC}"
+docker tag ${IMAGE_NAME}:latest ${IMAGE_NAME}:previous 2>/dev/null \
+    && echo -e "${GREEN}✅ Previous image tagged for rollback${NC}" \
+    || echo -e "${YELLOW}⚠️  No existing image to tag (first deploy)${NC}"
+
+# Pull ALL images BEFORE stopping any containers to minimize downtime
+echo -e "${YELLOW}📥 Pulling all images (containers still running)...${NC}"
+docker pull ${IMAGE_NAME}:latest
+docker pull nousresearch/hermes-agent:latest
+docker pull ghcr.io/open-webui/open-webui:main
+docker pull jhonderson/actual-http-api:latest
+echo -e "${GREEN}✅ All images pulled${NC}"
+
+# Stop existing containers
 echo -e "${YELLOW}🛑 Stopping existing containers...${NC}"
-for container in cockpit_api_prod cockpit_redis_prod cockpit_db_prod; do
+for container in cockpit_api_prod cockpit_redis_prod cockpit_db_prod hermes actual-http-api open-webui; do
     docker rm -f "$container" 2>/dev/null || true
 done
-
-# Remove old images to save space
-echo -e "${YELLOW}🧹 Cleaning up old images...${NC}"
-docker image prune -f || true
 
 # Create Docker network if it doesn't exist
 echo -e "${YELLOW}🌐 Creating Docker network...${NC}"
 docker network create cockpit_network_prod 2>/dev/null || echo "Network already exists"
 
-
-# Use existing volume with old production data
-echo -e "${YELLOW}💾 Using existing production volumes...${NC}"
+# Ensure volumes exist
+echo -e "${YELLOW}💾 Ensuring production volumes exist...${NC}"
 docker volume create cockpit-api_cockpit_postgres_data_prod 2>/dev/null || echo "Volume already exists"
 docker volume create cockpit-api_cockpit_redis_data_prod 2>/dev/null || echo "Redis volume already exists"
-
-# Pull all images up front before starting any containers
-echo -e "${YELLOW}📥 Pulling latest images...${NC}"
-docker pull ${IMAGE_NAME}:latest
-docker pull nousresearch/hermes-agent:latest
-echo -e "${GREEN}✅ Latest images pulled${NC}"
 
 # Start Redis container
 echo -e "${YELLOW}🗄️ Starting Redis container...${NC}"
@@ -98,7 +98,6 @@ docker run -d \
   -v cockpit-api_cockpit_redis_data_prod:/var/lib/redis-stack \
   redis/redis-stack-server:latest \
   redis-stack-server --appendonly yes --requirepass "${REDIS_PASSWORD}"
-
 echo -e "${GREEN}✅ Redis container started${NC}"
 
 # Start PostgreSQL container
@@ -116,7 +115,6 @@ docker run -d \
   --health-timeout=5s \
   --health-retries=5 \
   postgres:15-alpine
-
 echo -e "${GREEN}✅ PostgreSQL container started${NC}"
 
 # Wait for database to be ready
@@ -165,13 +163,10 @@ docker run -d \
   -v "${HOME}/.hermes:/opt/hermes" \
   -v /var/run/docker.sock:/var/run/docker.sock \
   ${IMAGE_NAME}:latest
-
 echo -e "${GREEN}✅ API container started${NC}"
 
 # Deploy Hermes Agent
 echo -e "${YELLOW}🤖 Deploying Hermes Agent...${NC}"
-docker stop hermes 2>/dev/null || true
-docker rm hermes 2>/dev/null || true
 mkdir -p "${HOME}/.hermes"
 cat > "${HOME}/.hermes/config.yaml" << EOF
 model:
@@ -207,8 +202,6 @@ echo -e "${GREEN}✅ Hermes Agent deployed on port 8642${NC}"
 echo -e "${YELLOW}🔄 Deploying actual-http-api...${NC}"
 docker network create actual_network 2>/dev/null || true
 docker network connect actual_network actual 2>/dev/null || true
-docker stop actual-http-api 2>/dev/null || true
-docker rm actual-http-api 2>/dev/null || true
 docker volume create actual_http_api_data 2>/dev/null || true
 docker run -d \
   --name actual-http-api \
@@ -231,10 +224,7 @@ echo -e "${GREEN}✅ Connected to external networks${NC}"
 
 # Deploy Open WebUI
 echo -e "${YELLOW}🤖 Deploying Open WebUI...${NC}"
-docker stop open-webui 2>/dev/null || true
-docker rm open-webui 2>/dev/null || true
 docker volume create open_webui_data 2>/dev/null || echo "Volume already exists"
-docker pull ghcr.io/open-webui/open-webui:main
 docker run -d \
   --name open-webui \
   --network cockpit_network_prod \
@@ -247,34 +237,41 @@ docker run -d \
   ghcr.io/open-webui/open-webui:main
 echo -e "${GREEN}✅ Open WebUI deployed on port 4206${NC}"
 
-# Wait a moment for services to start
-echo -e "${YELLOW}⏳ Waiting for services to start...${NC}"
-sleep 10
-
-# Basic health check
-echo -e "${YELLOW}🏥 Performing health check...${NC}"
-if docker ps | grep -E "(cockpit_api_prod|cockpit_db_prod|cockpit_redis_prod)" | grep -q "Up"; then
-    echo -e "${GREEN}✅ Health check passed - containers are running${NC}"
-    
-    # Try to connect to the API
-    if curl -f http://localhost:8000/health >/dev/null 2>&1; then
-        echo -e "${GREEN}✅ API health check passed${NC}"
-    else
-        echo -e "${YELLOW}⚠️  API health endpoint not responding yet (this is normal for initial startup)${NC}"
+# Wait for API to be ready (real readiness check)
+echo -e "${YELLOW}🏥 Waiting for API to be ready...${NC}"
+for i in $(seq 1 30); do
+    if curl -sf http://localhost:8000/health >/dev/null 2>&1; then
+        echo -e "${GREEN}✅ API health check passed (attempt $i)${NC}"
+        break
     fi
-else
-    echo -e "${RED}❌ Health check failed - containers may not be running properly${NC}"
-    echo -e "${YELLOW}📋 Container status:${NC}"
-    docker ps -a | grep -E "(cockpit_api_prod|cockpit_db_prod|cockpit_redis_prod)"
-    echo -e "${YELLOW}📋 Recent API logs:${NC}"
-    docker logs --tail=20 cockpit_api_prod 2>/dev/null || echo "No API logs available"
-    echo -e "${YELLOW}📋 Recent DB logs:${NC}"
-    docker logs --tail=20 cockpit_db_prod 2>/dev/null || echo "No DB logs available"
-    echo -e "${YELLOW}📋 Recent Redis logs:${NC}"
-    docker logs --tail=20 cockpit_redis_prod 2>/dev/null || echo "No Redis logs available"
-    exit 1
-fi
+    if [ "$i" -eq 30 ]; then
+        echo -e "${RED}❌ API failed to become healthy after 90 seconds${NC}"
+        echo -e "${YELLOW}📋 Recent API logs:${NC}"
+        docker logs --tail=30 cockpit_api_prod 2>/dev/null || true
+        exit 1
+    fi
+    echo -e "${YELLOW}⏳ Waiting for API... attempt $i/30${NC}"
+    sleep 3
+done
+
+# Verify core containers are running
+echo -e "${YELLOW}🔍 Verifying all core containers are up...${NC}"
+failed=0
+for container in cockpit_api_prod cockpit_db_prod cockpit_redis_prod; do
+    if docker ps --filter "name=${container}" --filter "status=running" | grep -q "${container}"; then
+        echo -e "${GREEN}✅ ${container} is running${NC}"
+    else
+        echo -e "${RED}❌ ${container} is not running${NC}"
+        docker logs --tail=20 "${container}" 2>/dev/null || true
+        failed=1
+    fi
+done
+[ "$failed" -eq 1 ] && exit 1
+
+# Clean up old images now that deploy succeeded
+echo -e "${YELLOW}🧹 Cleaning up old images...${NC}"
+docker image prune -f || true
 
 echo -e "${GREEN}🎉 Deployment completed successfully!${NC}"
-echo -e "${GREEN}📍 Application is available at: http://localhost:8000${NC}"
-echo -e "${GREEN}📍 Health check endpoint: http://localhost:8000/health${NC}"
+echo -e "${GREEN}📍 API available at: http://localhost:8000${NC}"
+echo -e "${GREEN}📍 Health check: http://localhost:8000/health${NC}"

@@ -17,11 +17,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Cloudflared
-        run: |
-          sudo mkdir -p --mode=0755 /usr/share/keyrings
-          curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | sudo tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
-          echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared jammy main' | sudo tee /etc/apt/sources.list.d/cloudflared.list
-          sudo apt-get update && sudo apt-get install cloudflared
+        uses: AnimMouse/setup-cloudflared@v2
 
       - name: Setup SSH
         run: |
@@ -35,21 +31,15 @@ jobs:
             User ${{ secrets.RASPBERRY_PI_USERNAME }}
             IdentityFile ~/.ssh/id_ed25519
             ProxyCommand cloudflared access ssh --hostname %h
-            ServerAliveInterval 60
-            ServerAliveCountMax 30
+            ServerAliveInterval 30
+            ServerAliveCountMax 5
           EOF
           chmod 600 ~/.ssh/config
         shell: bash
 
-      - name: Copy deploy script to server
+      - name: Copy deploy script and env to Pi
         run: |
-          scp -o StrictHostKeyChecking=no deploy-api.sh ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }}:~/deploy-api.sh
-          ssh -o StrictHostKeyChecking=no ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }} "chmod +x ~/deploy-api.sh"
-
-      - name: Launch deploy on Pi
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }} "
-          rm -f /tmp/deploy.log /tmp/deploy.exit
+          cat > /tmp/deploy.env << 'EOF'
           export GITHUB_TOKEN='${{ secrets.GITHUB_TOKEN }}'
           export GITHUB_ACTOR='${{ github.actor }}'
           export DB_USER='${{ secrets.DB_USER }}'
@@ -79,38 +69,49 @@ jobs:
           export MCP_API_KEY='${{ secrets.MCP_API_KEY }}'
           export HERMES_API_KEY='${{ secrets.HERMES_API_KEY }}'
           export OAUTH_SERVER_URL='${{ secrets.OAUTH_SERVER_URL }}'
-          nohup bash -c 'cd ~ && ./deploy-api.sh > /tmp/deploy.log 2>&1; echo \$? > /tmp/deploy.exit' &
+          EOF
+          chmod 600 /tmp/deploy.env
+          scp deploy-api.sh ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }}:~/deploy-api.sh
+          scp /tmp/deploy.env ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }}:/tmp/deploy.env
+          ssh ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }} "chmod +x ~/deploy-api.sh && chmod 600 /tmp/deploy.env"
+          rm /tmp/deploy.env
+        shell: bash
+
+      - name: Launch deploy on Pi
+        run: |
+          ssh ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }} "
+          rm -f /tmp/deploy.log /tmp/deploy.exit
+          nohup bash -c 'cd ~ && source /tmp/deploy.env && ./deploy-api.sh > /tmp/deploy.log 2>&1; echo \$? > /tmp/deploy.exit; rm -f /tmp/deploy.env' > /dev/null 2>&1 &
           disown
           sleep 2
-          echo \"Deploy launched\"
-          " || true
+          echo 'Deploy launched'
+          "
         shell: bash
 
       - name: Wait for deployment
         timeout-minutes: 30
         run: |
-          echo "Waiting for Pi to be reachable..."
-          for attempt in $(seq 1 20); do
-            if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }} "echo ok" 2>/dev/null; then
-              echo "SSH reachable after $attempt attempt(s)"
-              break
-            fi
-            echo "Attempt $attempt failed, retrying in 15s..."
-            sleep 15
+          HOST="${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }}"
+          echo "Polling deploy status every 10s (max 30 min)..."
+          for i in $(seq 1 180); do
+            result=$(ssh -o ConnectTimeout=10 "$HOST" \
+              "[ -f /tmp/deploy.exit ] && echo done:\$(cat /tmp/deploy.exit) || echo running" 2>/dev/null || echo unreachable)
+            echo "[$i/180] $result"
+            case "$result" in
+              done:0)
+                echo "Deploy succeeded"
+                exit 0
+                ;;
+              done:*)
+                echo "Deploy failed — last 50 lines of log:"
+                ssh "$HOST" "tail -50 /tmp/deploy.log" 2>/dev/null || true
+                exit 1
+                ;;
+            esac
+            sleep 10
           done
-
-          ssh -o StrictHostKeyChecking=no ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }} "
-          for i in \$(seq 1 30); do [ -f /tmp/deploy.log ] && break; sleep 2; done
-          if [ ! -f /tmp/deploy.log ]; then echo 'Deploy log not found - deploy did not launch'; exit 1; fi
-          tail -f /tmp/deploy.log &
-          TAIL_PID=\$!
-          while [ ! -f /tmp/deploy.exit ]; do sleep 5; done
-          sleep 1
-          kill \$TAIL_PID 2>/dev/null || true
-          EXIT_CODE=\$(cat /tmp/deploy.exit)
-          echo \"Deploy finished with exit code: \$EXIT_CODE\"
-          exit \$EXIT_CODE
-          "
+          echo "Timed out after 30 minutes"
+          exit 1
         shell: bash
 
       - name: Generate deployment summary
