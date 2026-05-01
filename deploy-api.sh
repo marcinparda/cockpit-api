@@ -65,8 +65,9 @@ echo -e "${GREEN}✅ Successfully logged in to GHCR${NC}"
 
 # Stop existing containers by name (no compose file needed)
 echo -e "${YELLOW}🛑 Stopping existing containers...${NC}"
-docker stop cockpit_api_prod cockpit_redis_prod cockpit_db_prod 2>/dev/null || echo "No existing containers to stop"
-docker rm cockpit_api_prod cockpit_redis_prod cockpit_db_prod 2>/dev/null || echo "No existing containers to remove"
+for container in cockpit_api_prod cockpit_redis_prod cockpit_db_prod; do
+    docker rm -f "$container" 2>/dev/null || true
+done
 
 # Remove old images to save space
 echo -e "${YELLOW}🧹 Cleaning up old images...${NC}"
