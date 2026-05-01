@@ -38,3 +38,9 @@ class OAuthServerMetadata(BaseModel):
     grant_types_supported: List[str] = ["authorization_code", "refresh_token"]
     code_challenge_methods_supported: List[str] = ["S256"]
     token_endpoint_auth_methods_supported: List[str] = ["none"]
+
+
+class ProtectedResourceMetadata(BaseModel):
+    resource: str
+    authorization_servers: List[str]
+    bearer_methods_supported: List[str] = ["header"]

@@ -12,6 +12,7 @@ from src.services.oauth.schemas import (
     ClientRegistrationRequest,
     ClientRegistrationResponse,
     OAuthServerMetadata,
+    ProtectedResourceMetadata,
     TokenResponse,
 )
 
@@ -89,6 +90,15 @@ async def oauth_server_metadata() -> OAuthServerMetadata:
         authorization_endpoint=f"{base}/oauth/authorize",
         token_endpoint=f"{base}/oauth/token",
         registration_endpoint=f"{base}/oauth/clients",
+    )
+
+
+@router.get("/.well-known/oauth-protected-resource", response_model=ProtectedResourceMetadata)
+async def oauth_protected_resource_metadata() -> ProtectedResourceMetadata:
+    base = settings.OAUTH_SERVER_URL.rstrip("/")
+    return ProtectedResourceMetadata(
+        resource=f"{base}/mcp/mcp",
+        authorization_servers=[base],
     )
 
 

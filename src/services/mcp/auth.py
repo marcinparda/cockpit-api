@@ -4,6 +4,8 @@ from datetime import datetime, timezone
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
+from src.core.config import settings
+
 logger = logging.getLogger(__name__)
 
 
@@ -60,9 +62,11 @@ class MCPAPIKeyMiddleware:
             return False
 
     async def _send_401(self, scope: Scope, receive: Receive, send: Send) -> None:
+        base = settings.OAUTH_SERVER_URL.rstrip("/")
+        resource_metadata_url = f"{base}/.well-known/oauth-protected-resource"
         response = JSONResponse(
             {"detail": "Unauthorized"},
             status_code=401,
-            headers={"WWW-Authenticate": "Bearer"},
+            headers={"WWW-Authenticate": f'Bearer resource_metadata="{resource_metadata_url}"'},
         )
         await response(scope, receive, send)

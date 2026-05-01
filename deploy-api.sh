@@ -43,6 +43,7 @@ required_vars=(
     "BRAIN_NOTES_PATH"
     "MCP_API_KEY"
     "HERMES_API_KEY"
+    "OAUTH_SERVER_URL"
 )
 
 echo -e "${YELLOW}📋 Checking environment variables...${NC}"
@@ -157,6 +158,7 @@ docker run -d \
   -e BRAIN_NOTES_PATH="${BRAIN_NOTES_PATH}" \
   -e BRAIN_GIT_REMOTE="${BRAIN_GIT_REMOTE}" \
   -e MCP_API_KEY="${MCP_API_KEY}" \
+  -e OAUTH_SERVER_URL="${OAUTH_SERVER_URL}" \
   -e HERMES_CONFIG_PATH="/opt/hermes/cli-config.yaml" \
   -v "${BRAIN_NOTES_PATH}:${BRAIN_NOTES_PATH}" \
   -v "${HOME}/.hermes:/opt/hermes" \
