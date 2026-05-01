@@ -102,12 +102,12 @@ def register_budget_tools(mcp: FastMCP) -> None:
         notes: str | None = None,
         cleared: bool = False,
     ) -> Any:
-        """Create a single transaction. Amount in milliunits: 1000 = $1.00, negative = expense (-10500 = -$10.50).
+        """Create a single transaction. Amount in integer cents: 100 = $1.00, negative = expense (-1050 = -$10.50).
 
         Args:
             account_id: Account ID
             date: YYYY-MM-DD
-            amount: Milliunits. Negative = expense, positive = income.
+            amount: Integer cents (value * 100). Negative = expense, positive = income. Example: $2.70 = 270, -$10.50 = -1050.
             payee_name: Merchant name (creates payee if new)
             category_id: Category ID (optional)
             notes: Optional notes
@@ -136,11 +136,11 @@ def register_budget_tools(mcp: FastMCP) -> None:
         transactions: list[dict[str, Any]],
         learn_categories: bool = True,
     ) -> Any:
-        """Create multiple transactions at once. Use for bank statement imports. Amount in milliunits, negative = expense.
+        """Create multiple transactions at once. Use for bank statement imports. Amount in integer cents (value * 100), negative = expense.
 
         Args:
             account_id: Account ID for all transactions
-            transactions: List of transactions, each with date (YYYY-MM-DD), amount (milliunits), optional payee_name, category_id, notes
+            transactions: List of transactions, each with date (YYYY-MM-DD), amount (integer cents, e.g. $2.70 = 270), optional payee_name, category_id, notes
             learn_categories: Let Actual learn from payee patterns
         """
         txns = []
@@ -181,7 +181,7 @@ def register_budget_tools(mcp: FastMCP) -> None:
             notes: New notes
             cleared: New cleared status
             date: New date YYYY-MM-DD
-            amount: New amount in milliunits
+            amount: New amount in integer cents (value * 100, e.g. $2.70 = 270)
         """
         transaction: dict[str, Any] = {}
         if category_id is not None:
