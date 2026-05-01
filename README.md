@@ -94,13 +94,13 @@ Open WebUI connects to this MCP endpoint so AI models can call cockpit tools dir
 
 Required env vars are listed at the top of `deploy-api.sh`. Key ones:
 
-| Variable | Purpose |
-|---|---|
-| `MCP_API_KEY` | Bearer token for `/mcp` endpoint |
-| `OPEN_ROUTER_KEY` | OpenRouter API key (used by both API and Open WebUI) |
-| `BRAIN_NOTES_PATH` | Host path mounted into container for notes |
-| `VIKUNJA_USERNAME` / `VIKUNJA_PASSWORD` | Service account for Vikunja |
-| `ACTUAL_HTTP_API_KEY` | API key for actual-http-api sidecar |
+| Variable                                | Purpose                                              |
+| --------------------------------------- | ---------------------------------------------------- |
+| `MCP_API_KEY`                           | Bearer token for `/mcp` endpoint                     |
+| `OPEN_ROUTER_KEY`                       | OpenRouter API key (used by both API and Open WebUI) |
+| `BRAIN_NOTES_PATH`                      | Host path mounted into container for notes           |
+| `VIKUNJA_USERNAME` / `VIKUNJA_PASSWORD` | Service account for Vikunja                          |
+| `ACTUAL_HTTP_API_KEY`                   | API key for actual-http-api sidecar                  |
 
 ## Getting Started
 
@@ -152,7 +152,3 @@ Contributions are not welcome yet! This project is currently in its early stages
 ## License
 
 This project is licensed under the MIT License.
-
-```
-
-```
