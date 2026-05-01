@@ -89,6 +89,16 @@ jobs:
       - name: Wait for deployment
         timeout-minutes: 30
         run: |
+          echo "Waiting for Pi to be reachable..."
+          for attempt in $(seq 1 20); do
+            if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }} "echo ok" 2>/dev/null; then
+              echo "SSH reachable after $attempt attempt(s)"
+              break
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+
           ssh -o StrictHostKeyChecking=no ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }} "
           for i in \$(seq 1 30); do [ -f /tmp/deploy.log ] && break; sleep 2; done
           if [ ! -f /tmp/deploy.log ]; then echo 'Deploy log not found - deploy did not launch'; exit 1; fi
