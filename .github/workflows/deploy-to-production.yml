@@ -46,45 +46,57 @@ jobs:
           scp -o StrictHostKeyChecking=no deploy-api.sh ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }}:~/deploy-api.sh
           ssh -o StrictHostKeyChecking=no ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }} "chmod +x ~/deploy-api.sh"
 
-      - name: Pre-pull large images on Pi
-        continue-on-error: true
-        timeout-minutes: 20
+      - name: Launch deploy on Pi
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }} "\
-          docker pull nousresearch/hermes-agent:latest || true"
+          ssh -o StrictHostKeyChecking=no ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }} "
+          rm -f /tmp/deploy.log /tmp/deploy.exit
+          export GITHUB_TOKEN='${{ secrets.GITHUB_TOKEN }}'
+          export GITHUB_ACTOR='${{ github.actor }}'
+          export DB_USER='${{ secrets.DB_USER }}'
+          export DB_PASSWORD='${{ secrets.DB_PASSWORD }}'
+          export DB_HOST='${{ secrets.DB_HOST }}'
+          export DB_NAME='${{ secrets.DB_NAME }}'
+          export DB_PORT='${{ secrets.DB_PORT }}'
+          export CORS_ORIGINS='${{ secrets.CORS_ORIGINS }}'
+          export JWT_SECRET_KEY='${{ secrets.JWT_SECRET_KEY }}'
+          export JWT_ALGORITHM='${{ secrets.JWT_ALGORITHM }}'
+          export JWT_EXPIRE_HOURS='${{ secrets.JWT_EXPIRE_HOURS }}'
+          export BCRYPT_ROUNDS='${{ secrets.BCRYPT_ROUNDS }}'
+          export COOKIE_DOMAIN='${{ secrets.COOKIE_DOMAIN }}'
+          export COOKIE_SECURE=True
+          export ENVIRONMENT=production
+          export REDIS_PASSWORD='${{ secrets.REDIS_PASSWORD }}'
+          export VIKUNJA_USERNAME='${{ secrets.VIKUNJA_USERNAME }}'
+          export VIKUNJA_PASSWORD='${{ secrets.VIKUNJA_PASSWORD }}'
+          export ACTUAL_HTTP_API_KEY='${{ secrets.ACTUAL_HTTP_API_KEY }}'
+          export ACTUAL_BUDGET_SYNC_ID='${{ secrets.ACTUAL_BUDGET_SYNC_ID }}'
+          export ACTUAL_SERVER_URL='${{ secrets.ACTUAL_SERVER_URL }}'
+          export ACTUAL_SERVER_PASSWORD='${{ secrets.ACTUAL_SERVER_PASSWORD }}'
+          export OPEN_ROUTER_KEY='${{ secrets.OPEN_ROUTER_KEY }}'
+          export SERPER_API_KEY='${{ secrets.SERPER_API_KEY }}'
+          export BRAIN_NOTES_PATH='${{ secrets.BRAIN_NOTES_PATH }}'
+          export BRAIN_GIT_REMOTE='${{ secrets.BRAIN_GIT_REMOTE }}'
+          export MCP_API_KEY='${{ secrets.MCP_API_KEY }}'
+          export HERMES_API_KEY='${{ secrets.HERMES_API_KEY }}'
+          nohup bash -c 'cd ~ && ./deploy-api.sh > /tmp/deploy.log 2>&1; echo \$? > /tmp/deploy.exit' &
+          echo \"Deploy launched with PID: \$!\"
+          "
+        shell: bash
 
-      - name: Deploy to Production
+      - name: Wait for deployment
+        timeout-minutes: 30
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }} "\
-          export GITHUB_TOKEN='${{ secrets.GITHUB_TOKEN }}' && \
-          export GITHUB_ACTOR='${{ github.actor }}' && \
-          export DB_USER='${{ secrets.DB_USER }}' && \
-          export DB_PASSWORD='${{ secrets.DB_PASSWORD }}' && \
-          export DB_HOST='${{ secrets.DB_HOST }}' && \
-          export DB_NAME='${{ secrets.DB_NAME }}' && \
-          export DB_PORT='${{ secrets.DB_PORT }}' && \
-          export CORS_ORIGINS='${{ secrets.CORS_ORIGINS }}' && \
-          export JWT_SECRET_KEY='${{ secrets.JWT_SECRET_KEY }}' && \
-          export JWT_ALGORITHM='${{ secrets.JWT_ALGORITHM }}' && \
-          export JWT_EXPIRE_HOURS='${{ secrets.JWT_EXPIRE_HOURS }}' && \
-          export BCRYPT_ROUNDS='${{ secrets.BCRYPT_ROUNDS }}' && \
-          export COOKIE_DOMAIN='${{ secrets.COOKIE_DOMAIN }}' && \
-          export COOKIE_SECURE=True && \
-          export ENVIRONMENT=production && \
-          export REDIS_PASSWORD='${{ secrets.REDIS_PASSWORD }}' && \
-          export VIKUNJA_USERNAME='${{ secrets.VIKUNJA_USERNAME }}' && \
-          export VIKUNJA_PASSWORD='${{ secrets.VIKUNJA_PASSWORD }}' && \
-          export ACTUAL_HTTP_API_KEY='${{ secrets.ACTUAL_HTTP_API_KEY }}' && \
-          export ACTUAL_BUDGET_SYNC_ID='${{ secrets.ACTUAL_BUDGET_SYNC_ID }}' && \
-          export ACTUAL_SERVER_URL='${{ secrets.ACTUAL_SERVER_URL }}' && \
-          export ACTUAL_SERVER_PASSWORD='${{ secrets.ACTUAL_SERVER_PASSWORD }}' && \
-          export OPEN_ROUTER_KEY='${{ secrets.OPEN_ROUTER_KEY }}' && \
-          export SERPER_API_KEY='${{ secrets.SERPER_API_KEY }}' && \
-          export BRAIN_NOTES_PATH='${{ secrets.BRAIN_NOTES_PATH }}' && \
-          export BRAIN_GIT_REMOTE='${{ secrets.BRAIN_GIT_REMOTE }}' && \
-          export MCP_API_KEY='${{ secrets.MCP_API_KEY }}' && \
-          export HERMES_API_KEY='${{ secrets.HERMES_API_KEY }}' && \
-          ./deploy-api.sh"
+          ssh -o StrictHostKeyChecking=no ${{ secrets.CLOUDFLARE_TUNNEL_DOMAIN }} "
+          for i in \$(seq 1 30); do [ -f /tmp/deploy.log ] && break; sleep 2; done
+          tail -f /tmp/deploy.log &
+          TAIL_PID=\$!
+          while [ ! -f /tmp/deploy.exit ]; do sleep 5; done
+          sleep 1
+          kill \$TAIL_PID 2>/dev/null || true
+          EXIT_CODE=\$(cat /tmp/deploy.exit)
+          echo \"Deploy finished with exit code: \$EXIT_CODE\"
+          exit \$EXIT_CODE
+          "
         shell: bash
 
       - name: Generate deployment summary
