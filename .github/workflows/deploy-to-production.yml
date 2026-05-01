@@ -78,6 +78,7 @@ jobs:
           export BRAIN_GIT_REMOTE='${{ secrets.BRAIN_GIT_REMOTE }}'
           export MCP_API_KEY='${{ secrets.MCP_API_KEY }}'
           export HERMES_API_KEY='${{ secrets.HERMES_API_KEY }}'
+          export OAUTH_SERVER_URL='${{ secrets.OAUTH_SERVER_URL }}'
           nohup bash -c 'cd ~ && ./deploy-api.sh > /tmp/deploy.log 2>&1; echo \$? > /tmp/deploy.exit' &
           disown
           sleep 2
